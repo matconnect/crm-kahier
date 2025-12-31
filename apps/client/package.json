@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "client",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -12,9 +12,12 @@
   },
   "dependencies": {
     "@repo/ui": "workspace:*",
+    "bcryptjs": "^3.0.3",
     "next": "16.1.0",
+    "next-auth": "5.0.0-beta.30",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "@kahier/db": "workspace:*"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
