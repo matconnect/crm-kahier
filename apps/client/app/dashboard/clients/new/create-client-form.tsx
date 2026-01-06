@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ClientSegment, ClientStatus } from "@prisma/client";
+import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import { CLIENT_SEGMENT_OPTIONS, CLIENT_STATUS_OPTIONS } from "@/lib/client-enums";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,19 +13,12 @@ import { ContactsCard } from "./components/contacts-card";
 import { NotesCard } from "./components/notes-card";
 import type { ContactState, FormState, OwnerOption } from "./types";
 
-const statusOptions: { value: ClientStatus; label: string }[] = [
-    { value: ClientStatus.PROSPECT, label: "Prospect" },
-    { value: ClientStatus.ACTIVE, label: "Client actif" },
-    { value: ClientStatus.INACTIVE, label: "Ancien client" },
-];
+const statusOptions = CLIENT_STATUS_OPTIONS.map((s) => ({
+    ...s,
+    label: s.value === "INACTIVE" ? "Ancien client" : s.label,
+}));
 
-const segmentOptions: { value: ClientSegment; label: string }[] = [
-    { value: ClientSegment.TPE, label: "TPE" },
-    { value: ClientSegment.PME, label: "PME" },
-    { value: ClientSegment.ETI, label: "ETI" },
-    { value: ClientSegment.GE, label: "Grand compte" },
-    { value: ClientSegment.OTHER, label: "Autre" },
-];
+const segmentOptions = CLIENT_SEGMENT_OPTIONS;
 
 const textareaClass =
     "border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground h-28 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50";
@@ -45,8 +39,8 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
     const [form, setForm] = React.useState<FormState>({
         name: "",
         ownerId: currentUserId,
-        status: ClientStatus.PROSPECT,
-        segment: ClientSegment.OTHER,
+        status: "PROSPECT",
+        segment: "OTHER",
         location: "",
         primaryEmail: "",
         primaryPhone: "",

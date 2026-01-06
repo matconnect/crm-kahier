@@ -4,6 +4,8 @@ import { Server } from "socket.io";
 import http from "http";
 import dotenv from "dotenv";
 import router from "./routes/clients.route";
+import profileRouter from "./routes/profile.route";
+import companyRouter from "./routes/company.route";
 
 dotenv.config();
 
@@ -34,3 +36,5 @@ app.use(express.json({ limit: "2mb" }));
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/clients", router);
+app.use("/profile", profileRouter);
+app.use("/company", companyRouter);

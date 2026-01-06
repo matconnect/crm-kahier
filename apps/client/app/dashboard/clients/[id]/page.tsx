@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
-import type { ClientSegment, ClientStatus } from "@prisma/client";
+import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 import { requireAuth } from "@/lib/authz";
 import { DashboardTopBar } from "@/components/dashboard/top-bar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

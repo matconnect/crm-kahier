@@ -22,7 +22,7 @@ import {
 import { ContactFlash } from "./contact-flash";
 import { LogInteraction } from "./log-interaction";
 import { EditClientDialog } from "./edit-client-dialog";
-import type { ClientSegment, ClientStatus } from "@prisma/client";
+import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 
 type Interaction = {
     id: string;

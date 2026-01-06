@@ -18,11 +18,13 @@ type CompanyUser = {
 
 type CompanyResponse =
     | {
-        company: { id: string; name: string; code: string; createdAt: string; users: CompanyUser[] };
-        viewerRole: "USER" | "MANAGER" | "ADMIN";
-        creatorId: string | null;
-    }
+          company: { id: string; name: string; code: string; createdAt: string; users: CompanyUser[] };
+          viewerRole: "USER" | "MANAGER" | "ADMIN";
+          creatorId: string | null;
+      }
     | { error: string };
+
+type Props = { userId: string; companyId: string };
 
 function roleLabel(role: CompanyUser["role"]) {
     if (role === "ADMIN") return "Administrateur";
@@ -30,7 +32,7 @@ function roleLabel(role: CompanyUser["role"]) {
     return "Utilisateur";
 }
 
-export function CompanySection() {
+export function CompanySection({ userId, companyId }: Props) {
     const [company, setCompany] = React.useState<CompanyResponse | null>(null);
     const [loading, setLoading] = React.useState(true);
 
@@ -38,7 +40,12 @@ export function CompanySection() {
         let active = true;
         async function load() {
             try {
-                const res = await fetch("/api/company", { cache: "no-store" });
+                const apiBase = process.env.NEXT_PUBLIC_API_URL;
+                if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
+                const res = await fetch(`${apiBase}/company`, {
+                    cache: "no-store",
+                    headers: { "x-user-id": userId, "x-company-id": companyId },
+                });
                 const data = (await res.json()) as CompanyResponse;
                 if (active) setCompany(data);
             } catch {
@@ -115,9 +122,15 @@ export function CompanySection() {
                                                 disabled={isCreator}
                                                 onValueChange={async (nextRole) => {
                                                     try {
-                                                        const res = await fetch("/api/company", {
+                                                        const apiBase = process.env.NEXT_PUBLIC_API_URL;
+                                                        if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
+                                                        const res = await fetch(`${apiBase}/company`, {
                                                             method: "PATCH",
-                                                            headers: { "Content-Type": "application/json" },
+                                                            headers: {
+                                                                "Content-Type": "application/json",
+                                                                "x-user-id": userId,
+                                                                "x-company-id": companyId,
+                                                            },
                                                             body: JSON.stringify({ userId: user.id, role: nextRole }),
                                                         });
                                                         if (!res.ok) throw new Error();

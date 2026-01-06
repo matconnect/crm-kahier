@@ -3,11 +3,16 @@ import { DashboardTopBar } from "@/components/dashboard/top-bar";
 
 import { CompanySection } from "../_components/company-section";
 import { ProfileSection } from "../_components/profile-section";
+import { requireAuth } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function SettingsPage() {
+    const session = await requireAuth();
+    const userId = session.user?.id ?? "";
+    const companyId = session.user?.companyId ?? "";
+    const email = session.user?.email ?? "";
 
     return (
         <div className="min-h-screen bg-background">
@@ -34,11 +39,11 @@ export default async function SettingsPage() {
                 </div>
 
                 <div id="profile" className="scroll-mt-24">
-                    <ProfileSection />
+                    <ProfileSection userId={userId} email={email} />
                 </div>
 
                 <div id="company" className="scroll-mt-24">
-                    <CompanySection />
+                    <CompanySection userId={userId} companyId={companyId} />
                 </div>
             </div>
         </div>

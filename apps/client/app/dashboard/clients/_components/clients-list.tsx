@@ -1,4 +1,4 @@
-import { ClientSegment, ClientStatus } from "@prisma/client";
+import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 
 import { Badge } from "@/components/ui/badge";
 import { ClientCard } from "./client-card";
@@ -135,10 +135,10 @@ export async function ClientsList({ searchParams, currentUserId, companyId }: Li
 
 function parseStatus(value?: string | null) {
     if (!value) return undefined;
-    return Object.values(ClientStatus).includes(value as ClientStatus) ? (value as ClientStatus) : undefined;
+    return ["ACTIVE", "INACTIVE", "PROSPECT"].includes(value) ? (value as ClientStatus) : undefined;
 }
 
 function parseSegment(value?: string | null) {
     if (!value) return undefined;
-    return Object.values(ClientSegment).includes(value as ClientSegment) ? (value as ClientSegment) : undefined;
+    return ["TPE", "PME", "ETI", "GE", "OTHER"].includes(value) ? (value as ClientSegment) : undefined;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ClientSegment, ClientStatus } from "@prisma/client";
+import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 import { Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,17 +33,17 @@ type Props = {
 };
 
 const statusOptions: { value: ClientStatus; label: string }[] = [
-    { value: ClientStatus.PROSPECT, label: "Prospect" },
-    { value: ClientStatus.ACTIVE, label: "Client actif" },
-    { value: ClientStatus.INACTIVE, label: "Client inactif" },
+    { value: "PROSPECT", label: "Prospect" },
+    { value: "ACTIVE", label: "Client actif" },
+    { value: "INACTIVE", label: "Client inactif" },
 ];
 
 const segmentOptions: { value: ClientSegment; label: string }[] = [
-    { value: ClientSegment.TPE, label: "TPE" },
-    { value: ClientSegment.PME, label: "PME" },
-    { value: ClientSegment.ETI, label: "ETI" },
-    { value: ClientSegment.GE, label: "Grand compte" },
-    { value: ClientSegment.OTHER, label: "Autre" },
+    { value: "TPE", label: "TPE" },
+    { value: "PME", label: "PME" },
+    { value: "ETI", label: "ETI" },
+    { value: "GE", label: "Grand compte" },
+    { value: "OTHER", label: "Autre" },
 ];
 
 export function EditClientDialog(props: Props) {

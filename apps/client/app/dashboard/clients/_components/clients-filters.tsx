@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ClientSegment, ClientStatus } from "@prisma/client";
 import { Filter, MapPin, Search, SlidersHorizontal, Tag } from "lucide-react";
+import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import { CLIENT_SEGMENT_OPTIONS, CLIENT_STATUS_OPTIONS } from "@/lib/client-enums";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,28 +22,17 @@ type FiltersProps = {
     };
 };
 
-const statusOptions: { value: ClientStatus; label: string }[] = [
-    { value: ClientStatus.PROSPECT, label: "Prospect" },
-    { value: ClientStatus.ACTIVE, label: "Client actif" },
-    { value: ClientStatus.INACTIVE, label: "Client inactif" },
-];
-
-const segmentOptions: { value: ClientSegment; label: string }[] = [
-    { value: ClientSegment.TPE, label: "TPE" },
-    { value: ClientSegment.PME, label: "PME" },
-    { value: ClientSegment.ETI, label: "ETI" },
-    { value: ClientSegment.GE, label: "Grand compte" },
-    { value: ClientSegment.OTHER, label: "Autre" },
-];
+const statusOptions = CLIENT_STATUS_OPTIONS;
+const segmentOptions = CLIENT_SEGMENT_OPTIONS;
 
 const locationOptions = ["France", "Belgique", "Suisse", "Luxembourg"];
 
 function isValidStatus(value?: string) {
-    return value && Object.values(ClientStatus).includes(value as ClientStatus);
+    return value && ["ACTIVE", "INACTIVE", "PROSPECT"].includes(value);
 }
 
 function isValidSegment(value?: string) {
-    return value && Object.values(ClientSegment).includes(value as ClientSegment);
+    return value && ["TPE", "PME", "ETI", "GE", "OTHER"].includes(value);
 }
 
 export function ClientsFilters({ searchParams }: FiltersProps) {

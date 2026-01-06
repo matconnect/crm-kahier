@@ -14,20 +14,25 @@ type ProfileResponse =
     }
     | { error: string };
 
-export function ProfileSection() {
+type Props = { userId: string; email: string };
+
+export function ProfileSection({ userId, email: initialEmail }: Props) {
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
     const [firstName, setFirstName] = React.useState("");
     const [lastName, setLastName] = React.useState("");
     const [password, setPassword] = React.useState("");
     const [passwordConfirm, setPasswordConfirm] = React.useState("");
-    const [email, setEmail] = React.useState("");
+    const [email, setEmail] = React.useState(initialEmail);
+    const [emailConfirm, setEmailConfirm] = React.useState(initialEmail);
 
     React.useEffect(() => {
         let active = true;
         async function load() {
             try {
-                const res = await fetch("/api/profile");
+                const apiBase = process.env.NEXT_PUBLIC_API_URL;
+                if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
+                const res = await fetch(`${apiBase}/profile`, { headers: { "x-user-id": userId } });
                 const data = (await res.json()) as ProfileResponse;
                 if (!res.ok || "error" in data) {
                     throw new Error("error" in data ? data.error : "Impossible de charger le profil");
@@ -52,17 +57,24 @@ export function ProfileSection() {
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (password && password !== passwordConfirm) {
-            toast.error("Les mots de passe ne correspondent pas");
+            toast.error("Les mots de passe ne correspondent pas.");
+            return;
+        }
+        if (email.trim() !== emailConfirm.trim()) {
+            toast.error("Les adresses email ne correspondent pas.");
             return;
         }
         setSaving(true);
         try {
-            const res = await fetch("/api/profile", {
+            const apiBase = process.env.NEXT_PUBLIC_API_URL;
+            if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
+            const res = await fetch(`${apiBase}/profile`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "x-user-id": userId },
                 body: JSON.stringify({
                     firstName: firstName.trim(),
                     lastName: lastName.trim(),
+                    email: email.trim(),
                     ...(password ? { password } : {}),
                 }),
             });
@@ -84,7 +96,7 @@ export function ProfileSection() {
         <Card className="border-muted/60">
             <CardHeader>
                 <CardTitle className="text-base">Profil</CardTitle>
-                <CardDescription>Mets à jour ton nom, prénom et mot de passe.</CardDescription>
+                <CardDescription>Mettez à jour votre nom, email et mot de passe.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form className="grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
@@ -96,9 +108,13 @@ export function ProfileSection() {
                         <Label>Nom</Label>
                         <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
                     </div>
-                    <div className="space-y-2 md:col-span-2">
-                        <Label>Email</Label>
-                        <Input value={email} disabled />
+                    <div className="space-y-2">
+                        <Label>Nouvel email</Label>
+                        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Confirmer l&apos;email</Label>
+                        <Input type="email" value={emailConfirm} onChange={(e) => setEmailConfirm(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label>Nouveau mot de passe</Label>
