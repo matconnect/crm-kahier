@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    env_file:
+      - .env
+    environment:
+      PORT: "3011"
+    ports:
+      - "3011:3011"
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    env_file:
+      - .env
+    environment:
+      PORT: "3010"
+    ports:
+      - "3010:3010"
