@@ -7,10 +7,13 @@ RUN corepack enable
 
 # Install dependencies
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json prisma.config.ts ./
+COPY prisma ./prisma
 COPY packages ./packages
 COPY apps/api/package.json apps/api/
 COPY apps/client/package.json apps/client/
 RUN pnpm install --frozen-lockfile
+# Génère le client Prisma (nécessaire pour @prisma/client)
+RUN pnpm exec prisma generate
 
 # Copy source
 COPY apps/api ./apps/api
