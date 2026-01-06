@@ -4,6 +4,8 @@ WORKDIR /app
 ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
 
 # Install dependencies
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json prisma.config.ts ./
