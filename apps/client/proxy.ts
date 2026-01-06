@@ -4,15 +4,29 @@ import { auth } from "@/auth";
 
 export async function proxy(request: NextRequest) {
     const session = await auth();
+    const pathname = request.nextUrl.pathname;
 
-    if (!session) {
-        const url = new URL("/login", request.url);
-        return NextResponse.redirect(url);
+    //SECTION Middleware d'auth
+    //NOTE //* Routes protégées - Authentification uniquement
+    const protectedPaths = pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
+
+    if (protectedPaths && !session) {
+        return NextResponse.redirect(new URL("/login", request.url));
     }
+
+    //NOTE //* Routes protégées - Admin uniquement
+    if (pathname.startsWith("/admin")) {
+        const role = session?.user?.role;
+        if (role !== "ADMIN") {
+            return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
+    }
+
+    //!SECTION Fin du middleware d'authentification et d'autorisation
 
     return NextResponse.next();
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*"],
+    matcher: ["/dashboard/:path*", "/admin/:path*"],
 };

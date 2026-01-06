@@ -35,8 +35,10 @@ const authConfig: Parameters<typeof NextAuth>[0] = {
                 return {
                     id: dbUser.id,
                     email: dbUser.email,
-                    name: dbUser.name ?? undefined,
+                    firstName: dbUser.firstName,
+                    lastName: dbUser.lastName,
                     role: dbUser.role,
+                    companyId: dbUser.companyId ?? null,
                 } as unknown as User;
             },
         }),
@@ -47,6 +49,7 @@ const authConfig: Parameters<typeof NextAuth>[0] = {
             if (user) {
                 token.sub = user.id;
                 (token as JWT & { role?: string }).role = (user as User & { role?: string }).role;
+                (token as JWT & { companyId?: string | null }).companyId = (user as User & { companyId?: string | null }).companyId ?? null;
             }
             return token;
         },
@@ -55,6 +58,7 @@ const authConfig: Parameters<typeof NextAuth>[0] = {
             session.user = session.user ?? ({} as Session["user"]);
             (session.user as Session["user"] & { id?: string }).id = token.sub ?? "";
             (session.user as Session["user"] & { role?: string }).role = (token as JWT & { role?: string }).role;
+            (session.user as Session["user"] & { companyId?: string | null }).companyId = (token as JWT & { companyId?: string | null }).companyId ?? null;
             return session;
         },
     },

@@ -1,20 +1,27 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
-import { LogoutButton } from "@/components/LogoutButton";
+import { requireAuth } from "@/lib/authz";
+import { DashboardTopBar } from "@/components/dashboard/top-bar";
+import { ActivitySection } from "./_components/activity-section";
+import { DashboardHeader } from "./_components/dashboard-header";
+import { StatsSection } from "./_components/stats-section";
 
 export default async function DashboardPage() {
-    const session = await auth();
-    if (!session) redirect("/login");
+    const session = await requireAuth();
+    const companyId = session.user?.companyId ?? "";
 
     return (
-        <div style={{ padding: 24 }}>
-            <h1>Dashboard</h1>
-
-            <pre style={{ marginTop: 16 }}>
-                {JSON.stringify(session, null, 2)}
-            </pre>
-
-            <LogoutButton />
+        <div className="min-h-screen bg-background">
+            <DashboardTopBar
+                subtitle="Dashboard"
+                anchors={[
+                    { label: "Vue d’ensemble", href: "#stats" },
+                    { label: "Activités", href: "#activity" },
+                ]}
+            />
+            <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
+                <DashboardHeader session={session} />
+                <StatsSection companyId={companyId} />
+                <ActivitySection companyId={companyId} />
+            </div>
         </div>
     );
 }

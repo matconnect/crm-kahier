@@ -6,12 +6,143 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
+//SECTION - Enums
+
+//NOTE - Role
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+//NOTE - Company
+model Company {
   id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("USER")
+  name      String
+  code      String   @unique @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  users   User[]
+  clients Client[]
 }
+
+//NOTE - ClientStatus
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+}
+
+//NOTE - ClientSegment
+enum ClientSegment {
+  TPE //NOTE - Très Petite Entreprise
+  PME //NOTE - Petite et Moyenne Entreprise
+  ETI //NOTE - Entreprise de Taille Intermédiaire
+  GE //NOTE - Grande Entreprise
+  OTHER
+}
+
+//!SECTION - Fin enums
+
+//SECTION Models - User
+model User {
+  id        String @id @default(cuid())
+  email     String @unique
+  password  String
+  firstName String
+  lastName  String
+  role      Role   @default(USER)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //NOTE - Relations
+  clientsOwned       Client[]            @relation("UserToClientOwner")
+  clientInteractions ClientInteraction[]
+}
+
+//!SECTION Models - Fin User
+
+//SECTION Models - Client
+model Client {
+  id           String        @id @default(cuid())
+  name         String
+  status       ClientStatus  @default(PROSPECT)
+  segment      ClientSegment @default(OTHER)
+  location     String?
+  companyId    String?
+  ownerId      String?
+  notes        String?
+  primaryEmail String?
+  primaryPhone String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //NOTE - Relations
+  owner        User?               @relation("UserToClientOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  company      Company?            @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  contacts     ClientContact[]
+  interactions ClientInteraction[]
+
+  //NOTE - Indexs
+  @@index([status])
+  @@index([segment])
+  @@index([location])
+  @@index([ownerId])
+  @@index([companyId])
+  @@index([name])
+  @@index([primaryEmail])
+  @@index([primaryPhone])
+}
+
+//!SECTION Models - Fin Client
+
+//SECTION Models - ClientContact
+model ClientContact {
+  id        String  @id @default(cuid())
+  clientId  String
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  role      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //NOTE - Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  //NOTE - Indexs
+  @@index([clientId])
+  @@index([email])
+}
+
+//!SECTION Models - Fin ClientContact
+
+//SECTION Models - ClientInteraction
+model ClientInteraction {
+  id         String   @id @default(cuid())
+  clientId   String
+  userId     String?
+  type       String
+  summary    String?
+  occurredAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //NOTE - Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  //NOTE - Indexs
+  @@index([clientId, occurredAt])
+  @@index([userId])
+}
+
+//!SECTION Models - Fin ClientInteraction

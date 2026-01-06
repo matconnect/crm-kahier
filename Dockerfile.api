@@ -1,0 +1,22 @@
+# Base image
+FROM node:22-alpine AS base
+WORKDIR /app
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+# Install dependencies
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json prisma.config.ts ./
+COPY packages ./packages
+COPY apps/api/package.json apps/api/
+COPY apps/client/package.json apps/client/
+RUN pnpm install --frozen-lockfile
+
+# Copy source
+COPY apps/api ./apps/api
+
+# Expose port (configure via PORT)
+EXPOSE 3001
+
+# Start the API (expects DATABASE_URL, PORT, URL_DEV/URL_PROD env vars)
+CMD ["pnpm", "--filter", "@kahier/api", "exec", "tsx", "app/src/server.ts"]

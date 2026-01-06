@@ -1,22 +1,22 @@
 "use client";
 
+import { LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 
-export function LogoutButton() {
+import { Button } from "./ui/button";
+
+type LogoutButtonProps = React.ComponentProps<typeof Button>;
+
+export function LogoutButton({ children = "Déconnexion", ...props }: LogoutButtonProps) {
     return (
-        <button
+        <Button
+            variant="outline"
             onClick={() => signOut({ callbackUrl: "/login" })}
-            style={{
-                marginTop: 16,
-                padding: "8px 12px",
-                borderRadius: 6,
-                background: "#ef4444",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-            }}
+            className="gap-2"
+            {...props}
         >
-            Déconnexion
-        </button>
+            <LogOut className="h-4 w-4" />
+            {children}
+        </Button>
     );
 }
