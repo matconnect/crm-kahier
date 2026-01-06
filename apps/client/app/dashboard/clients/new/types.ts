@@ -1,4 +1,4 @@
-import type { ClientSegment, ClientStatus } from "@prisma/client";
+import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 
 export type OwnerOption = {
     id: string;
