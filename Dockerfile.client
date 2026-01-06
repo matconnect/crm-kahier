@@ -37,5 +37,5 @@ COPY --from=base /app/apps/client/public /app/apps/client/public
 COPY --from=base /app/apps/client/next.config.js /app/apps/client/next.config.js
 COPY --from=base /app/packages /app/packages
 
-EXPOSE 3000
+EXPOSE 3010
 CMD ["pnpm", "--filter", "client", "start"]

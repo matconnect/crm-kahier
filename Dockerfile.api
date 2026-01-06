@@ -16,7 +16,7 @@ RUN pnpm install --frozen-lockfile
 COPY apps/api ./apps/api
 
 # Expose port (configure via PORT)
-EXPOSE 3001
+EXPOSE 3011
 
 # Start the API (expects DATABASE_URL, PORT, URL_DEV/URL_PROD env vars)
 CMD ["pnpm", "--filter", "@kahier/api", "exec", "tsx", "app/src/server.ts"]
