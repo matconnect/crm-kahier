@@ -1,7 +1,8 @@
 import { requireRole } from "@/lib/authz";
+import type { Role } from "@/lib/roles";
 
 export default async function AdminPage() {
-    const session = await requireRole("ADMIN");
+    const session = await requireRole("ADMIN" as Role);
 
     return (
         <div style={{ padding: 24 }}>
