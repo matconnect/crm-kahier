@@ -7,8 +7,17 @@ services:
       - .env
     environment:
       PORT: "3011"
-    ports:
-      - "3011:3011"
+    expose:
+      - "3011"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.crm.kahier.com`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api.tls.certresolver=le"
+      - "traefik.http.services.api.loadbalancer.server.port=3011"
+    networks:
+      - web
 
   client:
     build:
@@ -18,5 +27,18 @@ services:
       - .env
     environment:
       PORT: "3010"
-    ports:
-      - "3010:3010"
+    expose:
+      - "3010"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crm.rule=Host(`crm.kahier.com`)"
+      - "traefik.http.routers.crm.entrypoints=websecure"
+      - "traefik.http.routers.crm.tls=true"
+      - "traefik.http.routers.crm.tls.certresolver=le"
+      - "traefik.http.services.crm.loadbalancer.server.port=3010"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
