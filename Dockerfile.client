@@ -31,10 +31,8 @@ ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# Only install production deps for the client workspace
-COPY --from=base /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/package.json /app/turbo.json /app/prisma.config.ts ./
-COPY --from=base /app/apps/client/package.json /app/apps/client/
-RUN pnpm install --prod --frozen-lockfile
+# Copy deps from builder (includes generated Prisma client)
+COPY --from=base /app/node_modules /app/node_modules
 
 # Copy built client
 COPY --from=base /app/apps/client/.next /app/apps/client/.next
