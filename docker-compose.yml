@@ -37,7 +37,7 @@ services:
       - "traefik.http.routers.crm.tls.certresolver=le"
       - "traefik.http.services.crm.loadbalancer.server.port=3010"
     networks:
-      - web
+      - traefik-net
 
 networks:
   web:
