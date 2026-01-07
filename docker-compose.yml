@@ -17,7 +17,7 @@ services:
       - "traefik.http.routers.api.tls.certresolver=le"
       - "traefik.http.services.api.loadbalancer.server.port=3011"
     networks:
-      - web
+      - traefik-net
 
   client:
     build:
@@ -40,5 +40,5 @@ services:
       - traefik-net
 
 networks:
-  web:
+  traefik-net:
     external: true
