@@ -17,7 +17,7 @@ services:
       - "traefik.http.routers.api-secure.rule=Host(`api.crm.kahier.com`)"
       - "traefik.http.routers.api-secure.entrypoints=websecure"
       - "traefik.http.routers.api-secure.tls=true"
-      - "traefik.http.routers.api-secure.tls.certresolver=le"
+      - "traefik.http.routers.api-secure.tls.certresolver=myresolver"
 
       - "traefik.http.services.api.loadbalancer.server.port=3011"
 
@@ -47,7 +47,7 @@ services:
       - "traefik.http.routers.crm-secure.rule=Host(`crm.kahier.com`)"
       - "traefik.http.routers.crm-secure.entrypoints=websecure"
       - "traefik.http.routers.crm-secure.tls=true"
-      - "traefik.http.routers.crm-secure.tls.certresolver=le"
+      - "traefik.http.routers.crm-secure.tls.certresolver=myresolver"
 
       - "traefik.http.services.crm.loadbalancer.server.port=3010"
 
