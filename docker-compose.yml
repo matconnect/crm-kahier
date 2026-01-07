@@ -19,15 +19,14 @@ services:
       - "traefik.http.routers.api-secure.tls=true"
       - "traefik.http.routers.api-secure.tls.certresolver=le"
 
-      # Le service écoute sur 3011 dans le container
       - "traefik.http.services.api.loadbalancer.server.port=3011"
 
       # (Optionnel) HTTP -> HTTPS
-      # - "traefik.http.routers.api.rule=Host(`api.crm.kahier.com`)"
-      # - "traefik.http.routers.api.entrypoints=web"
-      # - "traefik.http.routers.api.middlewares=redirect-to-https"
-      #
-      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.api.rule=Host(`api.crm.kahier.com`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.api.middlewares=redirect-to-https"
+      
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
 
   client:
@@ -50,17 +49,14 @@ services:
       - "traefik.http.routers.crm-secure.tls=true"
       - "traefik.http.routers.crm-secure.tls.certresolver=le"
 
-      # IMPORTANT: le standalone Next écoute généralement 3000.
-      # Si votre Dockerfile client EXPOSE/PORT=3010, gardez 3010.
-      # Sinon mettez 3000 ici.
       - "traefik.http.services.crm.loadbalancer.server.port=3010"
 
       # (Optionnel) HTTP -> HTTPS
-      # - "traefik.http.routers.crm.rule=Host(`crm.kahier.com`)"
-      # - "traefik.http.routers.crm.entrypoints=web"
-      # - "traefik.http.routers.crm.middlewares=redirect-to-https"
-      #
-      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.crm.rule=Host(`crm.kahier.com`)"
+      - "traefik.http.routers.crm.entrypoints=web"
+      - "traefik.http.routers.crm.middlewares=redirect-to-https"
+      
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
 
 networks:
