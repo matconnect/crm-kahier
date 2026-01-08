@@ -13,21 +13,24 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-net"
 
-      # HTTPS
+      # Service
+      - "traefik.http.services.api.loadbalancer.server.port=3011"
+
+      # HTTPS router
       - "traefik.http.routers.api-secure.rule=Host(`api.crm.kahier.com`)"
       - "traefik.http.routers.api-secure.entrypoints=websecure"
       - "traefik.http.routers.api-secure.tls=true"
       - "traefik.http.routers.api-secure.tls.certresolver=myresolver"
+      - "traefik.http.routers.api-secure.service=api"
 
-      - "traefik.http.services.api.loadbalancer.server.port=3011"
-
-      # (Optionnel) HTTP -> HTTPS
+      # HTTP router -> redirect
       - "traefik.http.routers.api.rule=Host(`api.crm.kahier.com`)"
       - "traefik.http.routers.api.entrypoints=web"
-      - "traefik.http.routers.api.middlewares=redirect-to-https"
-      
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.api.middlewares=api-redirect"
+      - "traefik.http.routers.api.service=api"
 
+      - "traefik.http.middlewares.api-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.api-redirect.redirectscheme.permanent=true"
 
   client:
     build:
