@@ -13,24 +13,15 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-net"
 
-      # Service (nom unique)
+      # Service
       - "traefik.http.services.kahier-api.loadbalancer.server.port=3011"
 
-      # HTTPS router (nom unique)
-      - "traefik.http.routers.kahier-api-secure.rule=Host(`api.crm.kahier.com`)"
-      - "traefik.http.routers.kahier-api-secure.entrypoints=websecure"
-      - "traefik.http.routers.kahier-api-secure.tls=true"
-      - "traefik.http.routers.kahier-api-secure.tls.certresolver=myresolver"
-      - "traefik.http.routers.kahier-api-secure.service=kahier-api"
-
-      # HTTP router -> redirect (nom unique)
+      # HTTPS router only
       - "traefik.http.routers.kahier-api.rule=Host(`api.crm.kahier.com`)"
-      - "traefik.http.routers.kahier-api.entrypoints=web"
-      - "traefik.http.routers.kahier-api.middlewares=kahier-api-redirect"
+      - "traefik.http.routers.kahier-api.entrypoints=websecure"
+      - "traefik.http.routers.kahier-api.tls=true"
+      - "traefik.http.routers.kahier-api.tls.certresolver=myresolver"
       - "traefik.http.routers.kahier-api.service=kahier-api"
-
-      - "traefik.http.middlewares.kahier-api-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.kahier-api-redirect.redirectscheme.permanent=true"
 
   client:
     build:
@@ -46,21 +37,15 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-net"
 
+      # Service
       - "traefik.http.services.kahier-crm.loadbalancer.server.port=3010"
 
-      - "traefik.http.routers.kahier-crm-secure.rule=Host(`crm.kahier.com`)"
-      - "traefik.http.routers.kahier-crm-secure.entrypoints=websecure"
-      - "traefik.http.routers.kahier-crm-secure.tls=true"
-      - "traefik.http.routers.kahier-crm-secure.tls.certresolver=myresolver"
-      - "traefik.http.routers.kahier-crm-secure.service=kahier-crm"
-
+      # HTTPS router only
       - "traefik.http.routers.kahier-crm.rule=Host(`crm.kahier.com`)"
-      - "traefik.http.routers.kahier-crm.entrypoints=web"
-      - "traefik.http.routers.kahier-crm.middlewares=kahier-crm-redirect"
+      - "traefik.http.routers.kahier-crm.entrypoints=websecure"
+      - "traefik.http.routers.kahier-crm.tls=true"
+      - "traefik.http.routers.kahier-crm.tls.certresolver=myresolver"
       - "traefik.http.routers.kahier-crm.service=kahier-crm"
-
-      - "traefik.http.middlewares.kahier-crm-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.kahier-crm-redirect.redirectscheme.permanent=true"
 
 networks:
   traefik-net:
