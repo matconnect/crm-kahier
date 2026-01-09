@@ -24,7 +24,7 @@ function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
     );
 }
 
-export async function ClientsSummary({ companyId }: { companyId: string }) {
+export async function ClientsSummary({ currentUserId }: { currentUserId: string }) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     if (!apiBase) {
         throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer le résumé clients");
@@ -32,7 +32,7 @@ export async function ClientsSummary({ companyId }: { companyId: string }) {
 
     const res = await fetch(`${apiBase}/clients/summary`, {
         cache: "no-store",
-        headers: companyId ? { "x-company-id": companyId } : undefined,
+        headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
     });
     if (!res.ok) {
         throw new Error("Impossible de récupérer le résumé clients");

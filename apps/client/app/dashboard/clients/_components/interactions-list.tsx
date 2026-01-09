@@ -26,12 +26,11 @@ type Props = {
     interactions: Interaction[];
     clientId: string;
     currentUserId: string;
-    companyId: string;
 };
 
 const PER_PAGE = 5;
 
-export function InteractionsList({ interactions, clientId, currentUserId, companyId }: Props) {
+export function InteractionsList({ interactions, clientId, currentUserId }: Props) {
     const [page, setPage] = useState(1);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingSummary, setEditingSummary] = useState<string>("");
@@ -58,13 +57,17 @@ export function InteractionsList({ interactions, clientId, currentUserId, compan
             toast.error("Le résumé ne peut pas être vide");
             return;
         }
+        if (!currentUserId) {
+            toast.error("Utilisateur non authentifié");
+            return;
+        }
 
         try {
         const res = await fetch(`${apiBase}/clients/${clientId}/interactions/${id}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
-                ...(companyId ? { "x-company-id": companyId } : {}),
+                "x-user-id": currentUserId,
             },
             body: JSON.stringify({ summary: editingSummary.trim(), userId: currentUserId }),
         });
@@ -83,11 +86,15 @@ export function InteractionsList({ interactions, clientId, currentUserId, compan
             toast.error("NEXT_PUBLIC_API_URL manquant");
             return;
         }
+        if (!currentUserId) {
+            toast.error("Utilisateur non authentifié");
+            return;
+        }
         try {
             setPendingDelete(true);
             const res = await fetch(`${apiBase}/clients/${clientId}/interactions/${id}`, {
                 method: "DELETE",
-                headers: companyId ? { "x-company-id": companyId } : undefined,
+                headers: { "x-user-id": currentUserId },
             });
             if (!res.ok) throw new Error("Impossible de supprimer l'interaction");
             toast.success("Interaction supprimée");

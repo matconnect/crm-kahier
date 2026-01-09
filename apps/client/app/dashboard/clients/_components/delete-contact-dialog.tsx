@@ -18,10 +18,10 @@ import {
 type Props = {
     clientId: string;
     contactId: string;
-    companyId: string;
+    currentUserId: string;
 };
 
-export function DeleteContactDialog({ clientId, contactId, companyId }: Props) {
+export function DeleteContactDialog({ clientId, contactId, currentUserId }: Props) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     const [open, setOpen] = React.useState(false);
     const [pending, setPending] = React.useState(false);
@@ -31,12 +31,16 @@ export function DeleteContactDialog({ clientId, contactId, companyId }: Props) {
             toast.error("NEXT_PUBLIC_API_URL manquant");
             return;
         }
+        if (!currentUserId) {
+            toast.error("Utilisateur non authentifié");
+            return;
+        }
 
         setPending(true);
         try {
             const res = await fetch(`${apiBase}/clients/${clientId}/contacts/${contactId}`, {
                 method: "DELETE",
-                headers: companyId ? { "x-company-id": companyId } : undefined,
+                headers: { "x-user-id": currentUserId },
             });
             if (!res.ok) throw new Error("Impossible de supprimer le contact");
             toast.success("Contact supprimé");

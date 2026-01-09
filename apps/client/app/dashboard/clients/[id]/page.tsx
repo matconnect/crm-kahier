@@ -44,14 +44,14 @@ type ClientDetail = {
     }[];
 };
 
-async function fetchClient(id: string, companyId: string): Promise<ClientDetail | null> {
+async function fetchClient(id: string, currentUserId: string): Promise<ClientDetail | null> {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     if (!apiBase) {
         throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer le client");
     }
     const res = await fetch(`${apiBase}/clients/${id}`, {
         cache: "no-store",
-        headers: companyId ? { "x-company-id": companyId } : undefined,
+        headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
     });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error("Impossible de récupérer le client");
@@ -68,14 +68,14 @@ async function fetchClient(id: string, companyId: string): Promise<ClientDetail 
 
 export default async function ClientDetailPage({ params }: DetailPageProps) {
     const session = await requireAuth();
-    const companyId = session.user?.companyId ?? "";
+    const currentUserId = session.user?.id ?? "";
 
     const { id } = await params;
     if (!id) {
         notFound();
     }
 
-    const client = await fetchClient(id, companyId);
+    const client = await fetchClient(id, currentUserId);
 
     if (!client) notFound();
 
@@ -148,9 +148,9 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                             primaryEmail={client.primaryEmail}
                             primaryPhone={client.primaryPhone}
                             notes={client.notes}
-                            companyId={companyId}
+                            currentUserId={currentUserId}
                         />
-                        <AddContactDialog clientId={client.id} companyId={companyId} />
+                        <AddContactDialog clientId={client.id} currentUserId={currentUserId} />
                     </div>
                 </div>
 
@@ -173,8 +173,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                 <InteractionsList
                                     interactions={client.interactions}
                                     clientId={client.id}
-                                    currentUserId={session.user?.id ?? ""}
-                                    companyId={companyId}
+                                    currentUserId={currentUserId}
                                 />
                             </div>
                         </CardContent>
@@ -216,8 +215,8 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                         )}
                                     </div>
                                     <div className="pt-2 flex flex-wrap gap-2 justify-end">
-                                        <EditContactDialog clientId={client.id} contact={contact} companyId={companyId} />
-                                        <DeleteContactDialog clientId={client.id} contactId={contact.id} companyId={companyId} />
+                                        <EditContactDialog clientId={client.id} contact={contact} currentUserId={currentUserId} />
+                                        <DeleteContactDialog clientId={client.id} contactId={contact.id} currentUserId={currentUserId} />
                                     </div>
                                 </div>
                             ))}
@@ -225,7 +224,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                     </Card>
                 </div>
 
-                <LogInteraction clientId={client.id} currentUserId={session.user?.id ?? ""} companyId={companyId} />
+                <LogInteraction clientId={client.id} currentUserId={currentUserId} />
             </div>
         </div>
     );

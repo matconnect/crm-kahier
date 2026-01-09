@@ -53,7 +53,9 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
         async function loadOwners() {
             try {
                 if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
-                const res = await fetch(`${apiBase}/users`);
+                const res = await fetch(`${apiBase}/users`, {
+                    headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
+                });
                 const data = (await res.json()) as { users?: OwnerOption[]; error?: string };
                 if (!res.ok) throw new Error(data.error ?? "Impossible de charger les utilisateurs.");
                 if (!active || !data.users) return;
@@ -110,6 +112,10 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
             toast.error("Configuration API manquante.");
             return;
         }
+        if (!currentUserId) {
+            toast.error("Utilisateur non authentifié.");
+            return;
+        }
 
         setPending(true);
         try {
@@ -128,7 +134,7 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
 
             const res = await fetch(`${apiBase}/clients`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "x-user-id": currentUserId },
                 body: JSON.stringify(payload),
             });
 

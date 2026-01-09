@@ -29,7 +29,7 @@ type Props = {
     primaryPhone: string | null;
     notes: string | null;
     triggerClassName?: string;
-    companyId?: string;
+    currentUserId: string;
 };
 
 const statusOptions: { value: ClientStatus; label: string }[] = [
@@ -68,13 +68,17 @@ export function EditClientDialog(props: Props) {
             toast.error("Le nom est requis");
             return;
         }
+        if (!props.currentUserId) {
+            toast.error("Utilisateur non authentifié");
+            return;
+        }
         setPending(true);
         try {
             const res = await fetch(`${apiBase}/clients/${props.clientId}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(props.companyId ? { "x-company-id": props.companyId } : {}),
+                    "x-user-id": props.currentUserId,
                 },
                 body: JSON.stringify({
                     name: name.trim(),

@@ -11,7 +11,6 @@ export const revalidate = 0;
 export default async function SettingsPage() {
     const session = await requireAuth();
     const userId = session.user?.id ?? "";
-    const companyId = session.user?.companyId ?? "";
     const email = session.user?.email ?? "";
 
     return (
@@ -43,7 +42,7 @@ export default async function SettingsPage() {
                 </div>
 
                 <div id="company" className="scroll-mt-24">
-                    <CompanySection userId={userId} companyId={companyId} />
+                    <CompanySection userId={userId} />
                 </div>
             </div>
         </div>

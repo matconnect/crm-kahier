@@ -20,10 +20,10 @@ import { Label } from "@/components/ui/label";
 type Props = {
     clientId: string;
     contact: { id: string; firstName: string; lastName: string; email: string | null; phone: string | null; role: string | null };
-    companyId: string;
+    currentUserId: string;
 };
 
-export function EditContactDialog({ clientId, contact, companyId }: Props) {
+export function EditContactDialog({ clientId, contact, currentUserId }: Props) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     const [open, setOpen] = React.useState(false);
     const [pending, setPending] = React.useState(false);
@@ -40,6 +40,10 @@ export function EditContactDialog({ clientId, contact, companyId }: Props) {
             toast.error("NEXT_PUBLIC_API_URL manquant");
             return;
         }
+        if (!currentUserId) {
+            toast.error("Utilisateur non authentifié");
+            return;
+        }
 
         setPending(true);
         try {
@@ -47,7 +51,7 @@ export function EditContactDialog({ clientId, contact, companyId }: Props) {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(companyId ? { "x-company-id": companyId } : {}),
+                    "x-user-id": currentUserId,
                 },
                 body: JSON.stringify({
                     contacts: {

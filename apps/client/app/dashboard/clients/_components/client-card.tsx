@@ -47,10 +47,9 @@ type ClientCardProps = {
         interactions: Interaction[];
     };
     currentUserId: string;
-    companyId: string;
 };
 
-export function ClientCard({ client, currentUserId, companyId }: ClientCardProps) {
+export function ClientCard({ client, currentUserId }: ClientCardProps) {
     const ownerFullName = `${client.owner?.firstName ?? ""} ${client.owner?.lastName ?? ""}`.trim();
     const ownerDisplay = ownerFullName || client.owner?.email || "Non assigné";
     const statusLabel =
@@ -175,7 +174,7 @@ export function ClientCard({ client, currentUserId, companyId }: ClientCardProps
                             )}
                         </div>
                         <div className="pt-2">
-                            <LogInteraction clientId={client.id} currentUserId={currentUserId} companyId={companyId} />
+                            <LogInteraction clientId={client.id} currentUserId={currentUserId} />
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -190,6 +189,7 @@ export function ClientCard({ client, currentUserId, companyId }: ClientCardProps
                         primaryPhone={client.primaryPhone}
                         notes={client.notes}
                         triggerClassName="w-full justify-center"
+                        currentUserId={currentUserId}
                     />
                     <Button asChild variant="outline" size="sm" className="gap-2 w-full">
                         <Link href={`/dashboard/clients/${client.id}`} className="text-black">

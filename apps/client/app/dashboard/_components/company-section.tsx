@@ -24,7 +24,7 @@ type CompanyResponse =
       }
     | { error: string };
 
-type Props = { userId: string; companyId: string };
+type Props = { userId: string };
 
 function roleLabel(role: CompanyUser["role"]) {
     if (role === "ADMIN") return "Administrateur";
@@ -32,7 +32,7 @@ function roleLabel(role: CompanyUser["role"]) {
     return "Utilisateur";
 }
 
-export function CompanySection({ userId, companyId }: Props) {
+export function CompanySection({ userId }: Props) {
     const [company, setCompany] = React.useState<CompanyResponse | null>(null);
     const [loading, setLoading] = React.useState(true);
 
@@ -44,7 +44,7 @@ export function CompanySection({ userId, companyId }: Props) {
                 if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
                 const res = await fetch(`${apiBase}/company`, {
                     cache: "no-store",
-                    headers: { "x-user-id": userId, "x-company-id": companyId },
+                    headers: { "x-user-id": userId },
                 });
                 const data = (await res.json()) as CompanyResponse;
                 if (active) setCompany(data);
@@ -129,7 +129,6 @@ export function CompanySection({ userId, companyId }: Props) {
                                                             headers: {
                                                                 "Content-Type": "application/json",
                                                                 "x-user-id": userId,
-                                                                "x-company-id": companyId,
                                                             },
                                                             body: JSON.stringify({ userId: user.id, role: nextRole }),
                                                         });

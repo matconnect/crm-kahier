@@ -21,10 +21,9 @@ const typeOptions = [
 type Props = {
     clientId: string;
     currentUserId: string;
-    companyId: string;
 };
 
-export function LogInteraction({ clientId, currentUserId, companyId }: Props) {
+export function LogInteraction({ clientId, currentUserId }: Props) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     const router = useRouter();
     const [pending, setPending] = React.useState(false);
@@ -45,6 +44,10 @@ export function LogInteraction({ clientId, currentUserId, companyId }: Props) {
             toast.error("Ajoute un résumé pour l'interaction.");
             return;
         }
+        if (!currentUserId) {
+            toast.error("Utilisateur non authentifié.");
+            return;
+        }
 
         setPending(true);
         try {
@@ -52,7 +55,7 @@ export function LogInteraction({ clientId, currentUserId, companyId }: Props) {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(companyId ? { "x-company-id": companyId } : {}),
+                    "x-user-id": currentUserId,
                 },
                 body: JSON.stringify({
                     type,

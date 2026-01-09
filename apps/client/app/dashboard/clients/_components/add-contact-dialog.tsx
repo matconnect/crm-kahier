@@ -19,10 +19,10 @@ import { Label } from "@/components/ui/label";
 
 type Props = {
     clientId: string;
-    companyId: string;
+    currentUserId: string;
 };
 
-export function AddContactDialog({ clientId, companyId }: Props) {
+export function AddContactDialog({ clientId, currentUserId }: Props) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     const [open, setOpen] = React.useState(false);
     const [pending, setPending] = React.useState(false);
@@ -47,6 +47,10 @@ export function AddContactDialog({ clientId, companyId }: Props) {
             toast.error("NEXT_PUBLIC_API_URL manquant");
             return;
         }
+        if (!currentUserId) {
+            toast.error("Utilisateur non authentifié");
+            return;
+        }
         if (!firstName && !lastName && !email && !phone && !role) {
             toast.error("Ajoute au moins une information de contact");
             return;
@@ -66,7 +70,7 @@ export function AddContactDialog({ clientId, companyId }: Props) {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(companyId ? { "x-company-id": companyId } : {}),
+                    "x-user-id": currentUserId,
                 },
                 body: JSON.stringify({
                     firstName,

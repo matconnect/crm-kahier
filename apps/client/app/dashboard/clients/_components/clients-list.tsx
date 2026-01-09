@@ -40,10 +40,9 @@ type ListProps = {
         pageSize?: string;
     };
     currentUserId: string;
-    companyId: string;
 };
 
-export async function ClientsList({ searchParams, currentUserId, companyId }: ListProps) {
+export async function ClientsList({ searchParams, currentUserId }: ListProps) {
     const page = Number(searchParams.page ?? "1") || 1;
     const pageSize = Number(searchParams.pageSize ?? "20") || 20;
 
@@ -67,7 +66,7 @@ export async function ClientsList({ searchParams, currentUserId, companyId }: Li
 
     const res = await fetch(`${apiBase}/clients?${params.toString()}`, {
         cache: "no-store",
-        headers: { "x-company-id": companyId },
+        headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
     });
     if (!res.ok) {
         throw new Error("Impossible de récupérer les clients");
@@ -124,7 +123,6 @@ export async function ClientsList({ searchParams, currentUserId, companyId }: Li
                                 })),
                             }}
                             currentUserId={currentUserId}
-                            companyId={companyId}
                         />
                     ))}
                 </div>

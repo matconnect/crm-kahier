@@ -6,7 +6,7 @@ import { StatsSection } from "./_components/stats-section";
 
 export default async function DashboardPage() {
     const session = await requireAuth();
-    const companyId = session.user?.companyId ?? "";
+    const currentUserId = session.user?.id ?? "";
 
     return (
         <div className="min-h-screen bg-background">
@@ -19,8 +19,8 @@ export default async function DashboardPage() {
             />
             <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
                 <DashboardHeader session={session} />
-                <StatsSection companyId={companyId} />
-                <ActivitySection companyId={companyId} />
+                <StatsSection currentUserId={currentUserId} />
+                <ActivitySection currentUserId={currentUserId} />
             </div>
         </div>
     );

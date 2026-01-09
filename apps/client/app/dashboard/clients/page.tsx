@@ -25,7 +25,7 @@ type PageProps = {
 export default async function ClientsPage({ searchParams }: PageProps) {
     const session = await requireAuth();
     const sp = await searchParams;
-    const companyId = session.user?.companyId ?? "";
+    const currentUserId = session.user?.id ?? "";
 
     return (
         <div className="min-h-screen bg-background">
@@ -64,9 +64,9 @@ export default async function ClientsPage({ searchParams }: PageProps) {
                     </div>
                 </div>
 
-                <ClientsSummary companyId={companyId} />
+                <ClientsSummary currentUserId={currentUserId} />
                 <ClientsFilters searchParams={sp} />
-                <ClientsList searchParams={sp} currentUserId={session.user?.id ?? ""} companyId={companyId} />
+                <ClientsList searchParams={sp} currentUserId={currentUserId} />
             </div>
         </div>
     );

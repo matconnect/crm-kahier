@@ -17,7 +17,7 @@ type ApiListResponse = {
     }[];
 };
 
-export async function ActivitySection({ companyId }: { companyId: string }) {
+export async function ActivitySection({ currentUserId }: { currentUserId: string }) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     if (!apiBase) {
         throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer les activités");
@@ -25,7 +25,7 @@ export async function ActivitySection({ companyId }: { companyId: string }) {
 
     const res = await fetch(`${apiBase}/clients?page=1&pageSize=10`, {
         cache: "no-store",
-        headers: companyId ? { "x-company-id": companyId } : undefined,
+        headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
     });
     if (!res.ok) {
         throw new Error("Impossible de récupérer les activités");
