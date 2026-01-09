@@ -32,6 +32,7 @@ type Props = {
 export function CreateClientForm({ currentUserId, currentUserLabel, currentUserEmail }: Props) {
     const router = useRouter();
     const [pending, setPending] = React.useState(false);
+    const apiBase = process.env.NEXT_PUBLIC_API_URL;
     const [owners, setOwners] = React.useState<OwnerOption[]>([
         { id: currentUserId, label: currentUserLabel, email: currentUserEmail },
     ]);
@@ -52,7 +53,8 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
         let active = true;
         async function loadOwners() {
             try {
-                const res = await fetch("/api/users");
+                if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
+                const res = await fetch(`${apiBase}/users`);
                 const data = (await res.json()) as { users?: OwnerOption[]; error?: string };
                 if (!res.ok) throw new Error(data.error ?? "Impossible de charger les utilisateurs.");
                 if (!active || !data.users) return;
@@ -105,6 +107,10 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
             toast.error("Ajoute un nom de client.");
             return;
         }
+        if (!apiBase) {
+            toast.error("Configuration API manquante.");
+            return;
+        }
 
         setPending(true);
         try {
@@ -121,7 +127,7 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
                 contacts: contactsPayload.length ? contactsPayload : undefined,
             };
 
-            const res = await fetch("/api/clients", {
+            const res = await fetch(`${apiBase}/clients`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
