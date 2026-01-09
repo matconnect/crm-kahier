@@ -55,10 +55,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3010
+ENV HOSTNAME=0.0.0.0
 
 RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S nextjs -G nodejs
 
-# Standalone output (server.js + node_modules minimal)
 COPY --from=build --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
 COPY --from=build --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
