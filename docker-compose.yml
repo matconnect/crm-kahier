@@ -34,6 +34,7 @@ services:
       PORT: "3010"
     networks:
       - traefik-net
+      - app-net
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-net"
