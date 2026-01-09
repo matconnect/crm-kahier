@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 import { CLIENT_SEGMENT_OPTIONS, CLIENT_STATUS_OPTIONS } from "@/lib/client-enums";
 import { toast } from "sonner";
 
@@ -75,7 +74,7 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
         return () => {
             active = false;
         };
-    }, []);
+    }, [apiBase]);
 
     function update<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((prev) => ({ ...prev, [key]: value }));
