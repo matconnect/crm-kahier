@@ -7,6 +7,9 @@ type Interaction = {
     summary: string | null;
     occurredAt: string;
     user?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    collaborator?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    meetingStart?: string | null;
+    meetingEnd?: string | null;
 };
 
 type ApiListResponse = {

@@ -122,14 +122,40 @@ export async function logInteraction(req: Request, res: Response) {
     const summary = typeof req.body?.summary === "string" ? req.body.summary.trim() : undefined;
     const occurredAt = req.body?.occurredAt ? new Date(req.body.occurredAt) : undefined;
     const userId = typeof req.body?.userId === "string" ? req.body.userId.trim() : undefined;
+    const collaboratorId =
+        typeof req.body?.collaboratorId === "string" ? req.body.collaboratorId.trim() : undefined;
+    const meetingStart = req.body?.meetingStart ? new Date(req.body.meetingStart) : undefined;
+    const meetingEnd = req.body?.meetingEnd ? new Date(req.body.meetingEnd) : undefined;
 
     if (!type || !userId) {
         res.status(400).json({ error: "Type et utilisateur requis" });
         return;
     }
+    if (type === "Réunion") {
+        if (!meetingStart || !meetingEnd) {
+            res.status(400).json({ error: "Heures de début et de fin requises pour une réunion" });
+            return;
+        }
+        if (Number.isNaN(meetingStart.getTime()) || Number.isNaN(meetingEnd.getTime())) {
+            res.status(400).json({ error: "Dates de réunion invalides" });
+            return;
+        }
+        if (meetingEnd.getTime() <= meetingStart.getTime()) {
+            res.status(400).json({ error: "L'heure de fin doit être après l'heure de début" });
+            return;
+        }
+    }
 
     try {
-        const interaction = await service.addInteraction(clientId, companyId, { type, summary, occurredAt, userId });
+        const interaction = await service.addInteraction(clientId, companyId, {
+            type,
+            summary,
+            occurredAt,
+            userId,
+            collaboratorId,
+            meetingStart,
+            meetingEnd,
+        });
         res.status(201).json({ interaction });
     } catch (error) {
         console.error("logInteraction", error);
@@ -179,14 +205,34 @@ export async function updateInteraction(req: Request, res: Response) {
     const summary = typeof req.body?.summary === "string" ? req.body.summary.trim() : undefined;
     const occurredAt = req.body?.occurredAt ? new Date(req.body.occurredAt) : undefined;
     const userId = typeof req.body?.userId === "string" ? req.body.userId.trim() : undefined;
+    const collaboratorId =
+        typeof req.body?.collaboratorId === "string" ? req.body.collaboratorId.trim() : undefined;
+    const meetingStart = req.body?.meetingStart ? new Date(req.body.meetingStart) : undefined;
+    const meetingEnd = req.body?.meetingEnd ? new Date(req.body.meetingEnd) : undefined;
 
-    if (!type && !summary && !occurredAt && userId === undefined) {
+    if (
+        !type &&
+        !summary &&
+        !occurredAt &&
+        userId === undefined &&
+        collaboratorId === undefined &&
+        meetingStart === undefined &&
+        meetingEnd === undefined
+    ) {
         res.status(400).json({ error: "Aucune donnée à mettre à jour" });
         return;
     }
 
     try {
-        const interaction = await service.updateInteraction(interactionId, companyId, { type, summary, occurredAt, userId });
+        const interaction = await service.updateInteraction(interactionId, companyId, {
+            type,
+            summary,
+            occurredAt,
+            userId,
+            collaboratorId,
+            meetingStart,
+            meetingEnd,
+        });
         res.json({ interaction });
     } catch (error) {
         console.error("updateInteraction", error);

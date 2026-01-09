@@ -44,7 +44,10 @@ export async function list(params: ListParams): Promise<ListResponse> {
                         type: true,
                         summary: true,
                         occurredAt: true,
+                        meetingStart: true,
+                        meetingEnd: true,
                         user: { select: { firstName: true, lastName: true, email: true } },
+                        collaborator: { select: { firstName: true, lastName: true, email: true } },
                     },
                 },
                 contacts: { select: { email: true, phone: true }, take: 1 },
@@ -157,7 +160,10 @@ export async function getById(id: string, companyId: string): Promise<ClientWith
             owner: { select: { firstName: true, lastName: true, email: true } },
             interactions: {
                 orderBy: { occurredAt: "desc" },
-                include: { user: { select: { firstName: true, lastName: true, email: true } } },
+                include: {
+                    user: { select: { firstName: true, lastName: true, email: true } },
+                    collaborator: { select: { firstName: true, lastName: true, email: true } },
+                },
             },
         },
     });
@@ -174,7 +180,15 @@ export async function remove(id: string, companyId: string) {
 export async function addInteraction(
     clientId: string,
     companyId: string,
-    input: { type: string; summary?: string | null; occurredAt?: Date; userId?: string | null },
+    input: {
+        type: string;
+        summary?: string | null;
+        occurredAt?: Date;
+        userId?: string | null;
+        collaboratorId?: string | null;
+        meetingStart?: Date | null;
+        meetingEnd?: Date | null;
+    },
 ) {
     await prisma.client.findFirstOrThrow({ where: { id: clientId, companyId } });
     const occurredAt = input.occurredAt ?? new Date();
@@ -186,6 +200,9 @@ export async function addInteraction(
             summary,
             occurredAt,
             userId: input.userId ?? null,
+            collaboratorId: input.collaboratorId ?? null,
+            meetingStart: input.meetingStart ?? null,
+            meetingEnd: input.meetingEnd ?? null,
         },
     });
 }
@@ -193,7 +210,15 @@ export async function addInteraction(
 export async function updateInteraction(
     interactionId: string,
     companyId: string,
-    input: { type?: string; summary?: string | null; occurredAt?: Date; userId?: string | null },
+    input: {
+        type?: string;
+        summary?: string | null;
+        occurredAt?: Date;
+        userId?: string | null;
+        collaboratorId?: string | null;
+        meetingStart?: Date | null;
+        meetingEnd?: Date | null;
+    },
 ) {
     const interaction = await prisma.clientInteraction.findUniqueOrThrow({
         where: { id: interactionId },
@@ -207,6 +232,9 @@ export async function updateInteraction(
         ...(input.summary !== undefined ? { summary: input.summary?.trim() || null } : {}),
         ...(input.occurredAt ? { occurredAt: input.occurredAt } : {}),
         ...(input.userId !== undefined ? { userId: input.userId || null } : {}),
+        ...(input.collaboratorId !== undefined ? { collaboratorId: input.collaboratorId || null } : {}),
+        ...(input.meetingStart !== undefined ? { meetingStart: input.meetingStart } : {}),
+        ...(input.meetingEnd !== undefined ? { meetingEnd: input.meetingEnd } : {}),
     };
     return prisma.clientInteraction.update({ where: { id: interactionId }, data });
 }

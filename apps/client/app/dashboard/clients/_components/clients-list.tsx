@@ -9,6 +9,9 @@ type Interaction = {
     summary: string | null;
     occurredAt: string;
     user?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    collaborator?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    meetingStart?: string | null;
+    meetingEnd?: string | null;
 };
 
 type ApiListResponse = {
@@ -78,6 +81,9 @@ export async function ClientsList({ searchParams, currentUserId }: ListProps) {
         interactions: client.interactions.map((i) => ({
             ...i,
             occurredAt: i.occurredAt,
+            meetingStart: i.meetingStart ?? null,
+            meetingEnd: i.meetingEnd ?? null,
+            collaborator: i.collaborator ?? null,
         })),
     }));
     const total = data.total;

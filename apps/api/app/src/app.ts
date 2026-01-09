@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import router from "./routes/clients.route";
 import profileRouter from "./routes/profile.route";
 import companyRouter from "./routes/company.route";
+import usersRouter from "./routes/users.route";
 
 dotenv.config();
 
@@ -38,3 +39,4 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/clients", router);
 app.use("/profile", profileRouter);
 app.use("/company", companyRouter);
+app.use("/users", usersRouter);

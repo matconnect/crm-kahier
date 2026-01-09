@@ -30,6 +30,9 @@ type Interaction = {
     summary: string | null;
     occurredAt: string;
     user?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    collaborator?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    meetingStart?: string | null;
+    meetingEnd?: string | null;
 };
 
 type ClientCardProps = {
@@ -137,12 +140,26 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                     {interaction.summary && (
                                         <p className="text-sm text-muted-foreground mt-1">{interaction.summary}</p>
                                     )}
+                                    {interaction.type === "Réunion" && interaction.meetingStart && interaction.meetingEnd && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {format(new Date(interaction.meetingStart), "Pp", { locale: fr })} →{" "}
+                                            {format(new Date(interaction.meetingEnd), "Pp", { locale: fr })}
+                                        </p>
+                                    )}
                                     {interaction.user && (
                                         <p className="text-xs text-muted-foreground mt-1">
                                             Par{" "}
                                             {`${interaction.user.firstName ?? ""} ${interaction.user.lastName ?? ""}`.trim() ||
                                                 interaction.user.email ||
                                                 "Utilisateur"}
+                                        </p>
+                                    )}
+                                    {interaction.collaborator && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Avec{" "}
+                                            {`${interaction.collaborator.firstName ?? ""} ${interaction.collaborator.lastName ?? ""}`.trim() ||
+                                                interaction.collaborator.email ||
+                                                "Collaborateur"}
                                         </p>
                                     )}
                                 </div>

@@ -20,6 +20,9 @@ type Interaction = {
     summary: string | null;
     occurredAt: string;
     user?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    collaborator?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    meetingStart?: string | null;
+    meetingEnd?: string | null;
 };
 
 type Props = {
@@ -123,6 +126,22 @@ export function InteractionsList({ interactions, clientId, currentUserId }: Prop
                                         {`${interaction.user.firstName ?? ""} ${interaction.user.lastName ?? ""}`.trim() ||
                                             interaction.user.email ||
                                             "Utilisateur"}
+                                    </>
+                                ) : null}
+                                {interaction.type === "Réunion" && interaction.meetingStart && interaction.meetingEnd ? (
+                                    <>
+                                        {" · "}
+                                        {new Date(interaction.meetingStart).toLocaleString("fr-FR")} →{" "}
+                                        {new Date(interaction.meetingEnd).toLocaleString("fr-FR")}
+                                    </>
+                                ) : null}
+                                {interaction.collaborator ? (
+                                    <>
+                                        {" · "}
+                                        Avec{" "}
+                                        {`${interaction.collaborator.firstName ?? ""} ${interaction.collaborator.lastName ?? ""}`.trim() ||
+                                            interaction.collaborator.email ||
+                                            "Collaborateur"}
                                     </>
                                 ) : null}
                             </div>

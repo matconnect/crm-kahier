@@ -23,6 +23,12 @@ type Props = {
     currentUserId: string;
 };
 
+type CollaboratorOption = {
+    id: string;
+    label: string;
+    email?: string | null;
+};
+
 export function LogInteraction({ clientId, currentUserId }: Props) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     const router = useRouter();
@@ -33,6 +39,38 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
         const now = new Date();
         return now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
     });
+    const [meetingStart, setMeetingStart] = React.useState<string>(() => {
+        const now = new Date();
+        return now.toISOString().slice(0, 16);
+    });
+    const [meetingEnd, setMeetingEnd] = React.useState<string>(() => {
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        return now.toISOString().slice(0, 16);
+    });
+    const [collaborators, setCollaborators] = React.useState<CollaboratorOption[]>([]);
+    const [collaboratorId, setCollaboratorId] = React.useState<string>("none");
+
+    React.useEffect(() => {
+        let active = true;
+        async function loadCollaborators() {
+            if (!apiBase || !currentUserId) return;
+            try {
+                const res = await fetch(`${apiBase}/users`, {
+                    headers: { "x-user-id": currentUserId },
+                });
+                const data = (await res.json()) as { users?: CollaboratorOption[] };
+                if (!res.ok || !data.users) return;
+                if (active) setCollaborators(data.users);
+            } catch {
+                // ignore
+            }
+        }
+        void loadCollaborators();
+        return () => {
+            active = false;
+        };
+    }, [apiBase, currentUserId]);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -48,9 +86,28 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
             toast.error("Utilisateur non authentifié.");
             return;
         }
+        if (type === "Réunion") {
+            if (!meetingStart || !meetingEnd) {
+                toast.error("Renseigne l'heure de début et de fin.");
+                return;
+            }
+            if (new Date(meetingEnd).getTime() <= new Date(meetingStart).getTime()) {
+                toast.error("L'heure de fin doit être après l'heure de début.");
+                return;
+            }
+        }
 
         setPending(true);
         try {
+            const meetingPayload =
+                type === "Réunion"
+                    ? {
+                        meetingStart: new Date(meetingStart).toISOString(),
+                        meetingEnd: new Date(meetingEnd).toISOString(),
+                    }
+                    : {};
+            const occurredAtIso =
+                type === "Réunion" && meetingStart ? new Date(meetingStart).toISOString() : new Date(occurredAt).toISOString();
             const res = await fetch(`${apiBase}/clients/${clientId}/interactions`, {
                 method: "POST",
                 headers: {
@@ -60,8 +117,10 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                 body: JSON.stringify({
                     type,
                     summary: summary.trim() || null,
-                    occurredAt: occurredAt ? new Date(occurredAt).toISOString() : new Date().toISOString(),
+                    occurredAt: occurredAtIso,
                     userId: currentUserId,
+                    collaboratorId: collaboratorId === "none" ? null : collaboratorId,
+                    ...meetingPayload,
                 }),
             });
             const data = await res.json().catch(() => null);
@@ -70,6 +129,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
             }
             toast.success("Interaction enregistrée");
             setSummary("");
+            setCollaboratorId("none");
             router.refresh();
         } catch (error) {
             const message = error instanceof Error ? error.message : "Erreur inattendue";
@@ -114,14 +174,50 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                             disabled={pending}
                         />
                     </div>
-                    <div className="space-y-2">
-                        <Label>Date / heure</Label>
-                        <Input
-                            type="datetime-local"
-                            value={occurredAt}
-                            onChange={(e) => setOccurredAt(e.target.value)}
-                            disabled={pending}
-                        />
+                    {type === "Réunion" ? (
+                        <div className="space-y-2 sm:col-span-2">
+                            <Label>Heure de réunion</Label>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                <Input
+                                    type="datetime-local"
+                                    value={meetingStart}
+                                    onChange={(e) => setMeetingStart(e.target.value)}
+                                    disabled={pending}
+                                />
+                                <Input
+                                    type="datetime-local"
+                                    value={meetingEnd}
+                                    onChange={(e) => setMeetingEnd(e.target.value)}
+                                    disabled={pending}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            <Label>Date / heure</Label>
+                            <Input
+                                type="datetime-local"
+                                value={occurredAt}
+                                onChange={(e) => setOccurredAt(e.target.value)}
+                                disabled={pending}
+                            />
+                        </div>
+                    )}
+                    <div className="space-y-2 sm:col-span-3">
+                        <Label>Collaborateur concerné (optionnel)</Label>
+                        <Select value={collaboratorId} onValueChange={setCollaboratorId} disabled={pending}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Aucun" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Aucun</SelectItem>
+                                {collaborators.map((user) => (
+                                    <SelectItem key={user.id} value={user.id}>
+                                        {user.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div className="sm:col-span-3 flex justify-end">
                         <Button type="submit" className="gap-2" disabled={pending}>
