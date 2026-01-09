@@ -13,6 +13,38 @@ async function getCompanyIdFromUser(req: Request): Promise<string | null> {
     return user?.companyId ?? null;
 }
 
+function normalizeContacts(contacts: unknown) {
+    if (!Array.isArray(contacts) || contacts.length === 0) return undefined;
+    const cleaned = contacts
+        .map((contact) => {
+            if (!contact || typeof contact !== "object") return null;
+            const c = contact as {
+                firstName?: unknown;
+                lastName?: unknown;
+                email?: unknown;
+                phone?: unknown;
+                role?: unknown;
+            };
+            const firstName = typeof c.firstName === "string" ? c.firstName.trim() : "";
+            const lastName = typeof c.lastName === "string" ? c.lastName.trim() : "";
+            const email = typeof c.email === "string" ? c.email.trim() : undefined;
+            const phone = typeof c.phone === "string" ? c.phone.trim() : undefined;
+            const role = typeof c.role === "string" ? c.role.trim() : undefined;
+            if (!firstName && !lastName && !email && !phone && !role) return null;
+            return {
+                firstName: firstName || "Contact",
+                lastName,
+                email: email || null,
+                phone: phone || null,
+                role: role || null,
+            };
+        })
+        .filter((contact) => contact !== null);
+
+    if (cleaned.length === 0) return undefined;
+    return { create: cleaned };
+}
+
 export async function list(req: Request, res: Response) {
     const companyId = await getCompanyIdFromUser(req);
     if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
@@ -37,7 +69,13 @@ export async function summary(_req: Request, res: Response) {
 export async function create(req: Request, res: Response) {
     const companyId = await getCompanyIdFromUser(req);
     if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    res.status(201).json(await service.create({ ...req.body, companyId }));
+    const { contacts, ...rest } = req.body ?? {};
+    const normalizedContacts = normalizeContacts(contacts);
+    const payload = { ...rest, companyId };
+    if (normalizedContacts) {
+        (payload as typeof payload & { contacts: typeof normalizedContacts }).contacts = normalizedContacts;
+    }
+    res.status(201).json(await service.create(payload));
 }
 
 export async function getById(req: Request, res: Response) {
