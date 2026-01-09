@@ -19,6 +19,15 @@ function RegisterForm() {
 
     //NOTE - Récupération du callbackUrl
     const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+    const toRelativeUrl = React.useCallback((url: string | null) => {
+        if (!url) return null;
+        try {
+            const target = new URL(url, window.location.origin);
+            return `${target.pathname}${target.search}${target.hash}`;
+        } catch {
+            return null;
+        }
+    }, []);
 
     //SECTION - Champs du formulaire
     const [firstName, setFirstName] = React.useState("");
@@ -103,7 +112,8 @@ function RegisterForm() {
                 return;
             }
 
-            router.push(loginRes.url ?? callbackUrl);
+            const safeUrl = toRelativeUrl(loginRes.url) ?? toRelativeUrl(callbackUrl) ?? "/dashboard";
+            router.push(safeUrl);
             router.refresh();
         } catch {
             toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");

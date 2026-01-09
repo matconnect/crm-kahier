@@ -18,6 +18,15 @@ function LoginForm() {
 
     //NOTE - Récupération du callbackUrl
     const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+    const toRelativeUrl = React.useCallback((url: string | null) => {
+        if (!url) return null;
+        try {
+            const target = new URL(url, window.location.origin);
+            return `${target.pathname}${target.search}${target.hash}`;
+        } catch {
+            return null;
+        }
+    }, []);
 
     //SECTION - Champs du formulaire
     const [email, setEmail] = React.useState("");
@@ -69,7 +78,8 @@ function LoginForm() {
             toast.success("Connecté avec succès ! Redirection en cours...");
         }
 
-        router.push(res.url ?? callbackUrl);
+        const safeUrl = toRelativeUrl(res.url) ?? toRelativeUrl(callbackUrl) ?? "/dashboard";
+        router.push(safeUrl);
         router.refresh();
     }
     //!SECTION - Fin fonction de connexion
