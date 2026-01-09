@@ -2,10 +2,7 @@ import type { Request, Response } from "express";
 import { prisma } from "@kahier/db";
 import * as service from "../services/clients.service";
 
-async function getCompanyId(req: Request): Promise<string | null> {
-    const companyId = (req.headers["x-company-id"] as string | undefined)?.trim();
-    if (companyId) return companyId;
-
+async function getCompanyIdFromUser(req: Request): Promise<string | null> {
     const userId = (req.headers["x-user-id"] as string | undefined)?.trim();
     if (!userId) return null;
 
@@ -17,8 +14,8 @@ async function getCompanyId(req: Request): Promise<string | null> {
 }
 
 export async function list(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     const result = await service.list({
         q: (req.query.q as string) ?? "",
         status: (req.query.status as string) ?? undefined,
@@ -32,20 +29,20 @@ export async function list(req: Request, res: Response) {
 }
 
 export async function summary(_req: Request, res: Response) {
-    const companyId = await getCompanyId(_req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(_req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     res.json(await service.summary(companyId));
 }
 
 export async function create(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     res.status(201).json(await service.create({ ...req.body, companyId }));
 }
 
 export async function getById(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     if (!req.params.id) {
         res.status(400).json({ error: "ID is required" });
         return;
@@ -54,8 +51,8 @@ export async function getById(req: Request, res: Response) {
 }
 
 export async function update(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     if (!req.params.id) {
         res.status(400).json({ error: "ID is required" });
         return;
@@ -64,8 +61,8 @@ export async function update(req: Request, res: Response) {
 }
 
 export async function remove(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     if (!req.params.id) {
         res.status(400).json({ error: "ID is required" });
         return;
@@ -75,8 +72,8 @@ export async function remove(req: Request, res: Response) {
 }
 
 export async function logInteraction(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     const clientId = req.params.id;
     if (!clientId) {
         res.status(400).json({ error: "ID is required" });
@@ -103,8 +100,8 @@ export async function logInteraction(req: Request, res: Response) {
 }
 
 export async function addContact(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     const clientId = req.params.id;
     if (!clientId) {
         res.status(400).json({ error: "ID is required" });
@@ -132,8 +129,8 @@ export async function addContact(req: Request, res: Response) {
 }
 
 export async function updateInteraction(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     const interactionId = req.params.interactionId;
     if (!interactionId) {
         res.status(400).json({ error: "interactionId is required" });
@@ -160,8 +157,8 @@ export async function updateInteraction(req: Request, res: Response) {
 }
 
 export async function deleteInteraction(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     const interactionId = req.params.interactionId;
     if (!interactionId) {
         res.status(400).json({ error: "interactionId is required" });
@@ -178,8 +175,8 @@ export async function deleteInteraction(req: Request, res: Response) {
 }
 
 export async function deleteContact(req: Request, res: Response) {
-    const companyId = await getCompanyId(req);
-    if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     const contactId = req.params.contactId;
     if (!contactId) {
         res.status(400).json({ error: "contactId is required" });
