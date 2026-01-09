@@ -1,13 +1,23 @@
 import type { Request, Response } from "express";
+import { prisma } from "@kahier/db";
 import * as service from "../services/clients.service";
 
-function getCompanyId(req: Request): string | null {
+async function getCompanyId(req: Request): Promise<string | null> {
     const companyId = (req.headers["x-company-id"] as string | undefined)?.trim();
-    return companyId || null;
+    if (companyId) return companyId;
+
+    const userId = (req.headers["x-user-id"] as string | undefined)?.trim();
+    if (!userId) return null;
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { companyId: true },
+    });
+    return user?.companyId ?? null;
 }
 
 export async function list(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     const result = await service.list({
         q: (req.query.q as string) ?? "",
@@ -22,19 +32,19 @@ export async function list(req: Request, res: Response) {
 }
 
 export async function summary(_req: Request, res: Response) {
-    const companyId = getCompanyId(_req);
+    const companyId = await getCompanyId(_req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     res.json(await service.summary(companyId));
 }
 
 export async function create(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     res.status(201).json(await service.create({ ...req.body, companyId }));
 }
 
 export async function getById(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     if (!req.params.id) {
         res.status(400).json({ error: "ID is required" });
@@ -44,7 +54,7 @@ export async function getById(req: Request, res: Response) {
 }
 
 export async function update(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     if (!req.params.id) {
         res.status(400).json({ error: "ID is required" });
@@ -54,7 +64,7 @@ export async function update(req: Request, res: Response) {
 }
 
 export async function remove(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     if (!req.params.id) {
         res.status(400).json({ error: "ID is required" });
@@ -65,7 +75,7 @@ export async function remove(req: Request, res: Response) {
 }
 
 export async function logInteraction(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     const clientId = req.params.id;
     if (!clientId) {
@@ -93,7 +103,7 @@ export async function logInteraction(req: Request, res: Response) {
 }
 
 export async function addContact(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     const clientId = req.params.id;
     if (!clientId) {
@@ -122,7 +132,7 @@ export async function addContact(req: Request, res: Response) {
 }
 
 export async function updateInteraction(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     const interactionId = req.params.interactionId;
     if (!interactionId) {
@@ -150,7 +160,7 @@ export async function updateInteraction(req: Request, res: Response) {
 }
 
 export async function deleteInteraction(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     const interactionId = req.params.interactionId;
     if (!interactionId) {
@@ -168,7 +178,7 @@ export async function deleteInteraction(req: Request, res: Response) {
 }
 
 export async function deleteContact(req: Request, res: Response) {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     if (!companyId) return res.status(401).json({ error: "CompanyId requis" });
     const contactId = req.params.contactId;
     if (!contactId) {

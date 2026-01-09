@@ -40,13 +40,8 @@ export function TopBar({ session }: { session: SessionData }) {
                 <div className="flex items-center gap-2">
                     {session ? (
                         <>
-                            <Button asChild variant="ghost" className="hidden sm:inline-flex">
-                                <Link href="/dashboard">Accéder au dashboard</Link>
-                            </Button>
-                            <Button asChild>
-                                <Link href="/dashboard">
-                                    Ouvrir <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
+                            <Button asChild className="hidden sm:inline-flex">
+                                <Link href="/dashboard">Accéder au dashboard <ArrowRight className="ml-2 h-4 w-4" /></Link>
                             </Button>
                         </>
                     ) : (
