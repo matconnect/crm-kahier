@@ -27,7 +27,7 @@ export type ListItem = {
         summary: string | null;
         occurredAt: Date;
         user?: { firstName: string | null; lastName: string | null; email: string | null } | null;
-        collaborator?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+        collaborators?: { firstName: string | null; lastName: string | null; email: string | null }[];
         meetingStart?: Date | null;
         meetingEnd?: Date | null;
     }[];
@@ -48,7 +48,7 @@ export type ClientWithRelations = Prisma.ClientGetPayload<{
             orderBy: { occurredAt: "desc" };
             include: {
                 user: { select: { firstName: true; lastName: true; email: true } };
-                collaborator: { select: { firstName: true; lastName: true; email: true } };
+                collaborators: { select: { firstName: true; lastName: true; email: true } };
             };
         };
     };

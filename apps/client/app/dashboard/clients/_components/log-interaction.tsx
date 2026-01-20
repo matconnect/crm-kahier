@@ -2,13 +2,17 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Mail, MessageSquare, PhoneCall, Send } from "lucide-react";
+import { Calendar, ChevronDown, Mail, MessageSquare, PhoneCall, Send } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const typeOptions = [
@@ -28,6 +32,24 @@ type CollaboratorOption = {
     label: string;
     email?: string | null;
 };
+
+function formatTime(value: Date) {
+    const hours = String(value.getHours()).padStart(2, "0");
+    const minutes = String(value.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+}
+
+function roundToStep(date: Date, stepMinutes = 30) {
+    const ms = 1000 * 60 * stepMinutes;
+    return new Date(Math.ceil(date.getTime() / ms) * ms);
+}
+
+function normalizeSearch(value: string) {
+    return value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+}
 
 type KahierPeriodeTab = {
     id: number;
@@ -50,21 +72,32 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
     const [pending, setPending] = React.useState(false);
     const [type, setType] = React.useState<string>("Email");
     const [summary, setSummary] = React.useState("");
-    const [occurredAt, setOccurredAt] = React.useState<string>(() => {
-        const now = new Date();
-        return now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+    const [occurredDate, setOccurredDate] = React.useState<Date | undefined>(() => new Date());
+    const [occurredTime, setOccurredTime] = React.useState<string>(() => {
+        const now = roundToStep(new Date());
+        return formatTime(now);
     });
-    const [meetingStart, setMeetingStart] = React.useState<string>(() => {
-        const now = new Date();
-        return now.toISOString().slice(0, 16);
+    const [meetingDate, setMeetingDate] = React.useState<Date | undefined>(() => new Date());
+    const [meetingStartTime, setMeetingStartTime] = React.useState<string>(() => {
+        const now = roundToStep(new Date());
+        return formatTime(now);
     });
-    const [meetingEnd, setMeetingEnd] = React.useState<string>(() => {
-        const now = new Date();
+    const [meetingEndTime, setMeetingEndTime] = React.useState<string>(() => {
+        const now = roundToStep(new Date());
         now.setHours(now.getHours() + 1);
-        return now.toISOString().slice(0, 16);
+        return formatTime(now);
     });
     const [collaborators, setCollaborators] = React.useState<CollaboratorOption[]>([]);
-    const [collaboratorId, setCollaboratorId] = React.useState<string>("none");
+    const [collaboratorIds, setCollaboratorIds] = React.useState<string[]>([]);
+    const [meetingOpen, setMeetingOpen] = React.useState(false);
+    const [occurredOpen, setOccurredOpen] = React.useState(false);
+    const [collaboratorsOpen, setCollaboratorsOpen] = React.useState(false);
+    const [collaboratorQuery, setCollaboratorQuery] = React.useState("");
+    const filteredCollaborators = React.useMemo(() => {
+        const query = normalizeSearch(collaboratorQuery);
+        if (query.length === 0) return collaborators;
+        return collaborators.filter((user) => normalizeSearch(user.label ?? "").includes(query));
+    }, [collaborators, collaboratorQuery]);
     const [createTask, setCreateTask] = React.useState(false);
     const [tabs, setTabs] = React.useState<KahierPeriodeTab[]>([]);
     const [categoriesByTab, setCategoriesByTab] = React.useState<Record<string, KahierCategory[]>>({});
@@ -163,27 +196,47 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
             return;
         }
         if (type === "Réunion") {
-            if (!meetingStart || !meetingEnd) {
+            if (!meetingDate || !meetingStartTime || !meetingEndTime) {
                 toast.error("Renseigne l'heure de début et de fin.");
                 return;
             }
-            if (new Date(meetingEnd).getTime() <= new Date(meetingStart).getTime()) {
+            const meetingDateValue = format(meetingDate, "yyyy-MM-dd");
+            const start = new Date(`${meetingDateValue}T${meetingStartTime}:00`);
+            const end = new Date(`${meetingDateValue}T${meetingEndTime}:00`);
+            if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+                toast.error("Horaires de réunion invalides.");
+                return;
+            }
+            if (end.getTime() <= start.getTime()) {
                 toast.error("L'heure de fin doit être après l'heure de début.");
                 return;
             }
         }
 
+        if (!occurredDate || !occurredTime) {
+            toast.error("Renseigne la date et l'heure.");
+            return;
+        }
         setPending(true);
         try {
+            const occurredDateValue = format(occurredDate, "yyyy-MM-dd");
             const meetingPayload =
                 type === "Réunion"
                     ? {
-                        meetingStart: new Date(meetingStart).toISOString(),
-                        meetingEnd: new Date(meetingEnd).toISOString(),
+                        meetingStart: new Date(
+                            `${format(meetingDate as Date, "yyyy-MM-dd")}T${meetingStartTime}:00`
+                        ).toISOString(),
+                        meetingEnd: new Date(
+                            `${format(meetingDate as Date, "yyyy-MM-dd")}T${meetingEndTime}:00`
+                        ).toISOString(),
                     }
                     : {};
             const occurredAtIso =
-                type === "Réunion" && meetingStart ? new Date(meetingStart).toISOString() : new Date(occurredAt).toISOString();
+                type === "Réunion"
+                    ? new Date(
+                        `${format(meetingDate as Date, "yyyy-MM-dd")}T${meetingStartTime}:00`
+                    ).toISOString()
+                    : new Date(`${occurredDateValue}T${occurredTime}:00`).toISOString();
             const res = await fetch(`${apiBase}/clients/${clientId}/interactions`, {
                 method: "POST",
                 headers: {
@@ -195,7 +248,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                     summary: summary.trim() || null,
                     occurredAt: occurredAtIso,
                     userId: currentUserId,
-                    collaboratorId: collaboratorId === "none" ? null : collaboratorId,
+                    collaboratorIds,
                     ...meetingPayload,
                 }),
             });
@@ -205,7 +258,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
             }
             toast.success("Interaction enregistrée");
             setSummary("");
-            setCollaboratorId("none");
+            setCollaboratorIds([]);
             router.refresh();
         } catch (error) {
             const message = error instanceof Error ? error.message : "Erreur inattendue";
@@ -311,51 +364,189 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                         </>
                     )}
                     {type === "Réunion" ? (
-                        <div className="space-y-2 sm:col-span-2">
-                            <Label>Heure de réunion</Label>
-                            <div className="grid gap-2 sm:grid-cols-2">
-                                <Input
-                                    type="datetime-local"
-                                    value={meetingStart}
-                                    onChange={(e) => setMeetingStart(e.target.value)}
-                                    disabled={pending}
-                                />
-                                <Input
-                                    type="datetime-local"
-                                    value={meetingEnd}
-                                    onChange={(e) => setMeetingEnd(e.target.value)}
-                                    disabled={pending}
-                                />
+                        <div className="space-y-2">
+                            <Label>Horaire de réunion</Label>
+                            <div className="grid gap-2 sm:grid-cols-3">
+                                <div className="flex flex-col gap-2">
+                                    <Label className="text-xs text-muted-foreground">Date</Label>
+                                    <Popover open={meetingOpen} onOpenChange={setMeetingOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-between font-normal">
+                                                {meetingDate ? format(meetingDate, "P") : "Choisir une date"}
+                                                <ChevronDown className="h-4 w-4 opacity-60" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <CalendarPicker
+                                                mode="single"
+                                                selected={meetingDate}
+                                                onSelect={(date) => {
+                                                    setMeetingDate(date);
+                                                    setMeetingOpen(false);
+                                                }}
+                                                captionLayout="dropdown"
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label className="text-xs text-muted-foreground">Début</Label>
+                                    <Input
+                                        type="time"
+                                        value={meetingStartTime}
+                                        onChange={(e) => setMeetingStartTime(e.target.value)}
+                                        disabled={pending}
+                                        className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label className="text-xs text-muted-foreground">Fin</Label>
+                                    <Input
+                                        type="time"
+                                        value={meetingEndTime}
+                                        onChange={(e) => setMeetingEndTime(e.target.value)}
+                                        disabled={pending}
+                                        className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                    />
+                                </div>
                             </div>
                         </div>
                     ) : (
                         <div className="space-y-2">
-                            <Label>Date / heure</Label>
-                            <Input
-                                type="datetime-local"
-                                value={occurredAt}
-                                onChange={(e) => setOccurredAt(e.target.value)}
-                                disabled={pending}
-                            />
+                            <Label>Quand</Label>
+                            <div className="flex gap-3">
+                                <div className="space-y-2 w-1/4">
+                                    <Label className="text-xs text-muted-foreground">Date</Label>
+                                    <Popover open={occurredOpen} onOpenChange={setOccurredOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-between font-normal">
+                                                {occurredDate ? format(occurredDate, "P") : "Choisir une date"}
+                                                <ChevronDown className="h-4 w-4 opacity-60" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <CalendarPicker
+                                                mode="single"
+                                                selected={occurredDate}
+                                                onSelect={(date) => {
+                                                    setOccurredDate(date);
+                                                    setOccurredOpen(false);
+                                                }}
+                                                captionLayout="dropdown"
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="space-y-2 w-3/4">
+                                    <Label className="text-xs text-muted-foreground">Heure</Label>
+                                    <Input
+                                        type="time"
+                                        value={occurredTime}
+                                        onChange={(e) => setOccurredTime(e.target.value)}
+                                        disabled={pending}
+                                        className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     )}
-                    <div className="space-y-2 sm:col-span-3">
-                        <Label>Collaborateur concerné (optionnel)</Label>
-                        <Select value={collaboratorId} onValueChange={setCollaboratorId} disabled={pending}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Aucun" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">Aucun</SelectItem>
-                                {collaborators.map((user) => (
-                                    <SelectItem key={user.id} value={user.id}>
-                                        {user.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="space-y-2">
+                        <Label>
+                            {`Collaborateurs concernés (optionnel)${collaboratorIds.length > 0
+                                ? ` · ${collaboratorIds.length} sélectionné${collaboratorIds.length > 1 ? "s" : ""
+                                }`
+                                : ""
+                                }`}
+                        </Label>
+                        {collaborators.length === 0 ? (
+                            <div className="text-xs text-muted-foreground">Aucun collaborateur disponible.</div>
+                        ) : (
+                            <Popover open={collaboratorsOpen} onOpenChange={setCollaboratorsOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-between font-normal">
+                                        {collaboratorIds.length
+                                            ? collaborators
+                                                .filter((user) => collaboratorIds.includes(user.id))
+                                                .slice(0, 3)
+                                                .map((user) => user.label)
+                                                .join(", ")
+                                            : "Sélectionner des collaborateurs"}
+                                        <ChevronDown className="h-4 w-4 opacity-60" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72 p-2" align="start">
+                                    <div className="space-y-2">
+                                        <Input
+                                            placeholder="Rechercher un collaborateur..."
+                                            value={collaboratorQuery}
+                                            onChange={(e) => setCollaboratorQuery(e.target.value)}
+                                        />
+                                        <div className="flex items-center justify-center gap-2 rounded-md border bg-muted/40 p-1">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 px-2 text-xs"
+                                                onClick={() =>
+                                                    setCollaboratorIds(filteredCollaborators.map((user) => user.id))
+                                                }
+                                            >
+                                                Tout cocher
+                                            </Button>
+                                            <span className="h-4 w-px bg-border" aria-hidden />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 px-2 text-xs"
+                                                onClick={() => setCollaboratorIds([])}
+                                            >
+                                                Tout décocher
+                                            </Button>
+                                        </div>
+                                        <div
+                                            className="max-h-28 overflow-y-auto"
+                                            onWheel={(e) => {
+                                                e.currentTarget.scrollTop += e.deltaY;
+                                            }}
+                                        >
+                                            {filteredCollaborators.map((user) => {
+                                                const active = collaboratorIds.includes(user.id);
+                                                return (
+                                                    <label
+                                                        key={user.id}
+                                                        className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
+                                                    >
+                                                        <Checkbox
+                                                            checked={active}
+                                                            onCheckedChange={(checked) => {
+                                                                setCollaboratorIds((prev) => {
+                                                                    const next = new Set(prev);
+                                                                    if (checked) {
+                                                                        next.add(user.id);
+                                                                    } else {
+                                                                        next.delete(user.id);
+                                                                    }
+                                                                    return Array.from(next);
+                                                                });
+                                                            }}
+                                                        />
+                                                        <span className="text-sm">{user.label}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                            {filteredCollaborators.length === 0 && (
+                                                <div className="text-xs text-muted-foreground px-2 py-1.5">
+                                                    Aucun résultat.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        )}
                     </div>
-                    <div className="sm:col-span-3 flex justify-end">
+                    <div className="flex justify-end">
                         <Button type="submit" className="gap-2" disabled={pending}>
                             <Send className="h-4 w-4" />
                             Enregistrer

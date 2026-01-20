@@ -87,6 +87,7 @@ export function CompanySection({ userId }: Props) {
                             className="h-8 w-8"
                             onClick={async () => {
                                 await navigator.clipboard.writeText(company.company.code);
+                                toast.success("Code d'établissement copié");
                             }}
                         >
                             <Clipboard className="h-4 w-4" />

@@ -30,7 +30,7 @@ type Interaction = {
     summary: string | null;
     occurredAt: string;
     user?: { firstName: string | null; lastName: string | null; email: string | null } | null;
-    collaborator?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    collaborators?: { firstName: string | null; lastName: string | null; email: string | null }[];
     meetingStart?: string | null;
     meetingEnd?: string | null;
 };
@@ -154,12 +154,17 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                                 "Utilisateur"}
                                         </p>
                                     )}
-                                    {interaction.collaborator && (
+                                    {interaction.collaborators && interaction.collaborators.length > 0 && (
                                         <p className="text-xs text-muted-foreground">
                                             Avec{" "}
-                                            {`${interaction.collaborator.firstName ?? ""} ${interaction.collaborator.lastName ?? ""}`.trim() ||
-                                                interaction.collaborator.email ||
-                                                "Collaborateur"}
+                                            {interaction.collaborators
+                                                .map(
+                                                    (collaborator) =>
+                                                        `${collaborator.firstName ?? ""} ${collaborator.lastName ?? ""}`.trim() ||
+                                                        collaborator.email ||
+                                                        "Collaborateur",
+                                                )
+                                                .join(", ")}
                                         </p>
                                     )}
                                 </div>
