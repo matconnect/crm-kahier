@@ -167,7 +167,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
         return () => {
             active = false;
         };
-    }, [apiBase, createTask, kahierZoneId]);
+    }, [apiBase, createTask, kahierZoneId, selectedTabId]);
 
     React.useEffect(() => {
         if (!selectedTabId) return;
@@ -177,7 +177,10 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
             return;
         }
         if (!selectedCategoryId || !categories.some((cat) => String(cat.id) === selectedCategoryId)) {
-            setSelectedCategoryId(String(categories[0].id));
+            const firstCategory = categories[0];
+            if (firstCategory) {
+                setSelectedCategoryId(String(firstCategory.id));
+            }
         }
     }, [categoriesByTab, selectedCategoryId, selectedTabId]);
 
@@ -268,6 +271,102 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
         }
     }
 
+    const collaboratorsField = (
+        <div className="space-y-2">
+            <Label>
+                {`Collaborateurs concernés (optionnel)${collaboratorIds.length > 0
+                    ? ` · ${collaboratorIds.length} sélectionné${collaboratorIds.length > 1 ? "s" : ""}`
+                    : ""
+                    }`}
+            </Label>
+            {collaborators.length === 0 ? (
+                <div className="text-xs text-muted-foreground">Aucun collaborateur disponible.</div>
+            ) : (
+                <Popover open={collaboratorsOpen} onOpenChange={setCollaboratorsOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between font-normal">
+                            {collaboratorIds.length
+                                ? collaborators
+                                    .filter((user) => collaboratorIds.includes(user.id))
+                                    .slice(0, 3)
+                                    .map((user) => user.label)
+                                    .join(", ")
+                                : "Sélectionner des collaborateurs"}
+                            <ChevronDown className="h-4 w-4 opacity-60" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-2" align="start">
+                        <div className="space-y-2">
+                            <Input
+                                placeholder="Rechercher un collaborateur..."
+                                value={collaboratorQuery}
+                                onChange={(e) => setCollaboratorQuery(e.target.value)}
+                            />
+                            <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-1">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => setCollaboratorIds(filteredCollaborators.map((user) => user.id))}
+                                >
+                                    Tout cocher
+                                </Button>
+                                <span className="h-4 w-px bg-border" aria-hidden />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => setCollaboratorIds([])}
+                                >
+                                    Tout décocher
+                                </Button>
+                            </div>
+                            <div
+                                className="max-h-28 overflow-y-auto"
+                                onWheel={(e) => {
+                                    e.currentTarget.scrollTop += e.deltaY;
+                                }}
+                            >
+                                {filteredCollaborators.map((user) => {
+                                    const active = collaboratorIds.includes(user.id);
+                                    return (
+                                        <label
+                                            key={user.id}
+                                            className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
+                                        >
+                                            <Checkbox
+                                                checked={active}
+                                                onCheckedChange={(checked) => {
+                                                    setCollaboratorIds((prev) => {
+                                                        const next = new Set(prev);
+                                                        if (checked) {
+                                                            next.add(user.id);
+                                                        } else {
+                                                            next.delete(user.id);
+                                                        }
+                                                        return Array.from(next);
+                                                    });
+                                                }}
+                                            />
+                                            <span className="text-sm">{user.label}</span>
+                                        </label>
+                                    );
+                                })}
+                                {filteredCollaborators.length === 0 && (
+                                    <div className="text-xs text-muted-foreground px-2 py-1.5">
+                                        Aucun résultat.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            )}
+        </div>
+    );
+
     return (
         <Card className="border-muted/60">
             <CardHeader>
@@ -275,41 +374,43 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                 <CardDescription>Log un email, appel, réunion ou note avec ce client.</CardDescription>
             </CardHeader>
             <CardContent>
-                <form className="grid gap-3 sm:grid-cols-3" onSubmit={onSubmit}>
-                    <div className="space-y-2">
-                        <Label>Type</Label>
-                        <Select value={type} onValueChange={setType} disabled={pending}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Choisir un type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {typeOptions.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
-                                        <div className="inline-flex items-center gap-2">
-                                            <opt.icon className="h-4 w-4" />
-                                            {opt.label}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Note</Label>
-                        <Input
-                            placeholder="Ex : Email de relance signé"
-                            value={summary}
-                            onChange={(e) => setSummary(e.target.value)}
-                            disabled={pending}
-                        />
-                    </div>
-                    <div className="space-y-2 sm:col-span-3">
-                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <input
-                                type="checkbox"
-                                checked={createTask}
-                                onChange={(e) => setCreateTask(e.target.checked)}
+                <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+                    <div className="grid gap-3 sm:grid-cols-[160px,1fr]">
+                        <div className="space-y-2">
+                            <Label>Type</Label>
+                            <Select value={type} onValueChange={setType} disabled={pending}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Choisir un type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {typeOptions.map((opt) => (
+                                        <SelectItem key={opt.value} value={opt.value}>
+                                            <div className="inline-flex items-center gap-2">
+                                                <opt.icon className="h-4 w-4" />
+                                                {opt.label}
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Note</Label>
+                            <Input
+                                placeholder="Ex : Email de relance"
+                                value={summary}
+                                onChange={(e) => setSummary(e.target.value)}
                                 disabled={pending}
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                            <Checkbox
+                                checked={createTask}
+                                onCheckedChange={(checked) => setCreateTask(checked as boolean)}
+                                disabled={pending}
+                                className="cursor-pointer"
                             />
                             Créer une tâche sur Kahier
                         </label>
@@ -317,7 +418,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                         {createTask && tabsLoading && <p className="text-xs text-muted-foreground">Chargement des onglets…</p>}
                     </div>
                     {createTask && (
-                        <>
+                        <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>Onglet</Label>
                                 <Select
@@ -361,7 +462,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </>
+                        </div>
                     )}
                     {type === "Réunion" ? (
                         <div className="space-y-2">
@@ -412,146 +513,64 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            <Label>Quand</Label>
-                            <div className="flex gap-3">
-                                <div className="space-y-2 w-1/4">
-                                    <Label className="text-xs text-muted-foreground">Date</Label>
-                                    <Popover open={occurredOpen} onOpenChange={setOccurredOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-between font-normal">
-                                                {occurredDate ? format(occurredDate, "P") : "Choisir une date"}
-                                                <ChevronDown className="h-4 w-4 opacity-60" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <CalendarPicker
-                                                mode="single"
-                                                selected={occurredDate}
-                                                onSelect={(date) => {
-                                                    setOccurredDate(date);
-                                                    setOccurredOpen(false);
-                                                }}
-                                                captionLayout="dropdown"
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                        <div className="grid gap-3 sm:grid-cols-[1fr,1fr,auto] items-end">
+                            <div className="space-y-2">
+                                <Label>Quand</Label>
+                                <div className="grid gap-2 sm:grid-cols-[140px,1fr]">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs text-muted-foreground">Date</Label>
+                                        <Popover open={occurredOpen} onOpenChange={setOccurredOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className="w-full justify-between font-normal">
+                                                    {occurredDate ? format(occurredDate, "P") : "Choisir une date"}
+                                                    <ChevronDown className="h-4 w-4 opacity-60" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <CalendarPicker
+                                                    mode="single"
+                                                    selected={occurredDate}
+                                                    onSelect={(date) => {
+                                                        setOccurredDate(date);
+                                                        setOccurredOpen(false);
+                                                    }}
+                                                    captionLayout="dropdown"
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs text-muted-foreground">Heure</Label>
+                                        <Input
+                                            type="time"
+                                            value={occurredTime}
+                                            onChange={(e) => setOccurredTime(e.target.value)}
+                                            disabled={pending}
+                                            className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="space-y-2 w-3/4">
-                                    <Label className="text-xs text-muted-foreground">Heure</Label>
-                                    <Input
-                                        type="time"
-                                        value={occurredTime}
-                                        onChange={(e) => setOccurredTime(e.target.value)}
-                                        disabled={pending}
-                                        className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                                    />
-                                </div>
+                            </div>
+                            {collaboratorsField}
+                            <div className="flex justify-end sm:justify-start">
+                                <Button type="submit" className="gap-2" disabled={pending}>
+                                    <Send className="h-4 w-4" />
+                                    Enregistrer
+                                </Button>
                             </div>
                         </div>
                     )}
-                    <div className="space-y-2">
-                        <Label>
-                            {`Collaborateurs concernés (optionnel)${collaboratorIds.length > 0
-                                ? ` · ${collaboratorIds.length} sélectionné${collaboratorIds.length > 1 ? "s" : ""
-                                }`
-                                : ""
-                                }`}
-                        </Label>
-                        {collaborators.length === 0 ? (
-                            <div className="text-xs text-muted-foreground">Aucun collaborateur disponible.</div>
-                        ) : (
-                            <Popover open={collaboratorsOpen} onOpenChange={setCollaboratorsOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className="w-full justify-between font-normal">
-                                        {collaboratorIds.length
-                                            ? collaborators
-                                                .filter((user) => collaboratorIds.includes(user.id))
-                                                .slice(0, 3)
-                                                .map((user) => user.label)
-                                                .join(", ")
-                                            : "Sélectionner des collaborateurs"}
-                                        <ChevronDown className="h-4 w-4 opacity-60" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-72 p-2" align="start">
-                                    <div className="space-y-2">
-                                        <Input
-                                            placeholder="Rechercher un collaborateur..."
-                                            value={collaboratorQuery}
-                                            onChange={(e) => setCollaboratorQuery(e.target.value)}
-                                        />
-                                        <div className="flex items-center justify-center gap-2 rounded-md border bg-muted/40 p-1">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 px-2 text-xs"
-                                                onClick={() =>
-                                                    setCollaboratorIds(filteredCollaborators.map((user) => user.id))
-                                                }
-                                            >
-                                                Tout cocher
-                                            </Button>
-                                            <span className="h-4 w-px bg-border" aria-hidden />
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 px-2 text-xs"
-                                                onClick={() => setCollaboratorIds([])}
-                                            >
-                                                Tout décocher
-                                            </Button>
-                                        </div>
-                                        <div
-                                            className="max-h-28 overflow-y-auto"
-                                            onWheel={(e) => {
-                                                e.currentTarget.scrollTop += e.deltaY;
-                                            }}
-                                        >
-                                            {filteredCollaborators.map((user) => {
-                                                const active = collaboratorIds.includes(user.id);
-                                                return (
-                                                    <label
-                                                        key={user.id}
-                                                        className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
-                                                    >
-                                                        <Checkbox
-                                                            checked={active}
-                                                            onCheckedChange={(checked) => {
-                                                                setCollaboratorIds((prev) => {
-                                                                    const next = new Set(prev);
-                                                                    if (checked) {
-                                                                        next.add(user.id);
-                                                                    } else {
-                                                                        next.delete(user.id);
-                                                                    }
-                                                                    return Array.from(next);
-                                                                });
-                                                            }}
-                                                        />
-                                                        <span className="text-sm">{user.label}</span>
-                                                    </label>
-                                                );
-                                            })}
-                                            {filteredCollaborators.length === 0 && (
-                                                <div className="text-xs text-muted-foreground px-2 py-1.5">
-                                                    Aucun résultat.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                        )}
-                    </div>
-                    <div className="flex justify-end">
-                        <Button type="submit" className="gap-2" disabled={pending}>
-                            <Send className="h-4 w-4" />
-                            Enregistrer
-                        </Button>
-                    </div>
+                    {type === "Réunion" && (
+                        <div className="grid gap-3 sm:grid-cols-[1fr,auto] items-end">
+                            {collaboratorsField}
+                            <div className="flex justify-end sm:justify-start">
+                                <Button type="submit" className="gap-2" disabled={pending}>
+                                    <Send className="h-4 w-4" />
+                                    Enregistrer
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </form>
             </CardContent>
         </Card>

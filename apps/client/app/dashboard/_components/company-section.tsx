@@ -18,10 +18,10 @@ type CompanyUser = {
 
 type CompanyResponse =
     | {
-          company: { id: string; name: string; code: string; createdAt: string; users: CompanyUser[] };
-          viewerRole: "USER" | "MANAGER" | "ADMIN";
-          creatorId: string | null;
-      }
+        company: { id: string; name: string; code: string; createdAt: string; users: CompanyUser[] };
+        viewerRole: "USER" | "MANAGER" | "ADMIN";
+        creatorId: string | null;
+    }
     | { error: string };
 
 type Props = { userId: string };
@@ -58,7 +58,7 @@ export function CompanySection({ userId }: Props) {
         return () => {
             active = false;
         };
-    }, []);
+    }, [userId]);
 
     if (loading) return null;
     if (!company || "error" in company) return null;

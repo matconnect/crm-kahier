@@ -9,7 +9,9 @@
         "NODE_ENV",
         "PORT",
         "URL_DEV",
-        "URL_PROD"
+        "URL_PROD",
+        "KAHIER_API_BASE",
+        "KAHIER_API_TOKEN"
       ],
       "inputs": [
         "$TURBO_DEFAULT$",
@@ -32,7 +34,9 @@
         "NODE_ENV",
         "PORT",
         "URL_DEV",
-        "URL_PROD"
+        "URL_PROD",
+        "KAHIER_API_BASE",
+        "KAHIER_API_TOKEN"
       ]
     },
     "lint": {
