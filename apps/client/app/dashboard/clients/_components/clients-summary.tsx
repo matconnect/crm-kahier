@@ -27,7 +27,7 @@ function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
 export async function ClientsSummary({ currentUserId }: { currentUserId: string }) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     if (!apiBase) {
-        throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer le résumé clients");
+        throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer la note clients");
     }
 
     const res = await fetch(`${apiBase}/clients/summary`, {
@@ -35,7 +35,7 @@ export async function ClientsSummary({ currentUserId }: { currentUserId: string 
         headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
     });
     if (!res.ok) {
-        throw new Error("Impossible de récupérer le résumé clients");
+        throw new Error("Impossible de récupérer la note clients");
     }
     const { active, prospects, inactive, interactions } = (await res.json()) as {
         active: number;

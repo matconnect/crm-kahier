@@ -100,7 +100,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
             <DashboardTopBar
                 subtitle="Client"
                 anchors={[
-                    { label: "Résumé", href: "#client-summary" },
+                    { label: "Note", href: "#client-summary" },
                     { label: "Contacts", href: "#client-contacts" },
                     { label: "Interactions", href: "#client-interactions" },
                 ]}

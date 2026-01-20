@@ -57,7 +57,7 @@ export function InteractionsList({ interactions, clientId, currentUserId }: Prop
             return;
         }
         if (!editingSummary.trim()) {
-            toast.error("Le résumé ne peut pas être vide");
+            toast.error("La note ne peut pas être vide");
             return;
         }
         if (!currentUserId) {

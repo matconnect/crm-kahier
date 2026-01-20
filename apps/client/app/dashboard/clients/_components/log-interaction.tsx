@@ -79,7 +79,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
             return;
         }
         if (!summary.trim()) {
-            toast.error("Ajoute un résumé pour l'interaction.");
+            toast.error("Ajoute une note pour l'interaction.");
             return;
         }
         if (!currentUserId) {
@@ -166,7 +166,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label>Résumé</Label>
+                        <Label>Note</Label>
                         <Input
                             placeholder="Ex : Email de relance signé"
                             value={summary}
