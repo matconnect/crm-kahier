@@ -29,8 +29,23 @@ type CollaboratorOption = {
     email?: string | null;
 };
 
+type KahierPeriodeTab = {
+    id: number;
+    name: string;
+    label: string;
+};
+
+type KahierCategory = {
+    id: number;
+    name: string;
+    displayOrder: number;
+    periodeTabId: number;
+    color?: string | null;
+};
+
 export function LogInteraction({ clientId, currentUserId }: Props) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const kahierZoneId = Number(process.env.NEXT_PUBLIC_KAHIER_ZONE_ID ?? 33);
     const router = useRouter();
     const [pending, setPending] = React.useState(false);
     const [type, setType] = React.useState<string>("Email");
@@ -50,6 +65,13 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
     });
     const [collaborators, setCollaborators] = React.useState<CollaboratorOption[]>([]);
     const [collaboratorId, setCollaboratorId] = React.useState<string>("none");
+    const [createTask, setCreateTask] = React.useState(false);
+    const [tabs, setTabs] = React.useState<KahierPeriodeTab[]>([]);
+    const [categoriesByTab, setCategoriesByTab] = React.useState<Record<string, KahierCategory[]>>({});
+    const [selectedTabId, setSelectedTabId] = React.useState<string>("");
+    const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>("");
+    const [tabsLoading, setTabsLoading] = React.useState(false);
+    const [tabsError, setTabsError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         let active = true;
@@ -71,6 +93,60 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
             active = false;
         };
     }, [apiBase, currentUserId]);
+
+    React.useEffect(() => {
+        let active = true;
+        async function loadTabs() {
+            if (!createTask || !kahierZoneId) return;
+            if (!apiBase) {
+                setTabsError("NEXT_PUBLIC_API_URL manquant.");
+                return;
+            }
+            setTabsLoading(true);
+            setTabsError(null);
+            try {
+                const res = await fetch(`${apiBase}/kahier/zone/${kahierZoneId}`);
+                const data = (await res.json()) as {
+                    periodes?: KahierPeriodeTab[];
+                    categoriesByPeriode?: Record<string, KahierCategory[]>;
+                    error?: string;
+                };
+                if (!res.ok || !data.periodes || !data.categoriesByPeriode) {
+                    throw new Error(data.error ?? "Impossible de récupérer les onglets.");
+                }
+                if (!active) return;
+                setTabs(data.periodes);
+                setCategoriesByTab(data.categoriesByPeriode);
+                if (!selectedTabId && data.periodes[0]) {
+                    const firstId = String(data.periodes[0].id);
+                    setSelectedTabId(firstId);
+                    const firstCategories = data.categoriesByPeriode[firstId] ?? [];
+                    setSelectedCategoryId(firstCategories[0] ? String(firstCategories[0].id) : "");
+                }
+            } catch (error) {
+                if (!active) return;
+                setTabsError(error instanceof Error ? error.message : "Erreur inattendue.");
+            } finally {
+                if (active) setTabsLoading(false);
+            }
+        }
+        void loadTabs();
+        return () => {
+            active = false;
+        };
+    }, [apiBase, createTask, kahierZoneId]);
+
+    React.useEffect(() => {
+        if (!selectedTabId) return;
+        const categories = categoriesByTab[selectedTabId] ?? [];
+        if (!categories.length) {
+            setSelectedCategoryId("");
+            return;
+        }
+        if (!selectedCategoryId || !categories.some((cat) => String(cat.id) === selectedCategoryId)) {
+            setSelectedCategoryId(String(categories[0].id));
+        }
+    }, [categoriesByTab, selectedCategoryId, selectedTabId]);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -174,6 +250,66 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
                             disabled={pending}
                         />
                     </div>
+                    <div className="space-y-2 sm:col-span-3">
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <input
+                                type="checkbox"
+                                checked={createTask}
+                                onChange={(e) => setCreateTask(e.target.checked)}
+                                disabled={pending}
+                            />
+                            Créer une tâche sur Kahier
+                        </label>
+                        {createTask && tabsError && <p className="text-xs text-destructive">{tabsError}</p>}
+                        {createTask && tabsLoading && <p className="text-xs text-muted-foreground">Chargement des onglets…</p>}
+                    </div>
+                    {createTask && (
+                        <>
+                            <div className="space-y-2">
+                                <Label>Onglet</Label>
+                                <Select
+                                    value={selectedTabId}
+                                    onValueChange={setSelectedTabId}
+                                    disabled={pending || tabsLoading || tabs.length === 0}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Choisir un onglet" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {tabs.map((tab) => (
+                                            <SelectItem key={tab.id} value={String(tab.id)}>
+                                                {tab.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Catégorie</Label>
+                                <Select
+                                    value={selectedCategoryId}
+                                    onValueChange={setSelectedCategoryId}
+                                    disabled={
+                                        pending ||
+                                        tabsLoading ||
+                                        !selectedTabId ||
+                                        (categoriesByTab[selectedTabId]?.length ?? 0) === 0
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Choisir une catégorie" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(categoriesByTab[selectedTabId] ?? []).map((category) => (
+                                            <SelectItem key={category.id} value={String(category.id)}>
+                                                {category.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </>
+                    )}
                     {type === "Réunion" ? (
                         <div className="space-y-2 sm:col-span-2">
                             <Label>Heure de réunion</Label>
