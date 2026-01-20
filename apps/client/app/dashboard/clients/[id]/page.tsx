@@ -41,7 +41,7 @@ type ClientDetail = {
         summary: string | null;
         occurredAt: string;
         user?: { firstName: string | null; lastName: string | null; email: string | null } | null;
-        collaborator?: { firstName: string | null; lastName: string | null; email: string | null } | null;
+        collaborators?: { firstName: string | null; lastName: string | null; email: string | null }[];
         meetingStart?: string | null;
         meetingEnd?: string | null;
     }[];
@@ -67,6 +67,7 @@ async function fetchClient(id: string, currentUserId: string): Promise<ClientDet
             occurredAt: new Date(i.occurredAt).toISOString(),
             meetingStart: i.meetingStart ? new Date(i.meetingStart).toISOString() : null,
             meetingEnd: i.meetingEnd ? new Date(i.meetingEnd).toISOString() : null,
+            collaborators: i.collaborators ?? [],
         })),
     };
 }

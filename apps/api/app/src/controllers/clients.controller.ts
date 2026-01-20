@@ -122,8 +122,12 @@ export async function logInteraction(req: Request, res: Response) {
     const summary = typeof req.body?.summary === "string" ? req.body.summary.trim() : undefined;
     const occurredAt = req.body?.occurredAt ? new Date(req.body.occurredAt) : undefined;
     const userId = typeof req.body?.userId === "string" ? req.body.userId.trim() : undefined;
-    const collaboratorId =
-        typeof req.body?.collaboratorId === "string" ? req.body.collaboratorId.trim() : undefined;
+    const collaboratorIds = Array.isArray(req.body?.collaboratorIds)
+        ? (req.body.collaboratorIds as unknown[])
+            .filter((id) => typeof id === "string")
+            .map((id) => (id as string).trim())
+            .filter(Boolean)
+        : undefined;
     const meetingStart = req.body?.meetingStart ? new Date(req.body.meetingStart) : undefined;
     const meetingEnd = req.body?.meetingEnd ? new Date(req.body.meetingEnd) : undefined;
 
@@ -152,7 +156,7 @@ export async function logInteraction(req: Request, res: Response) {
             summary,
             occurredAt,
             userId,
-            collaboratorId,
+            collaboratorIds,
             meetingStart,
             meetingEnd,
         });
@@ -205,8 +209,12 @@ export async function updateInteraction(req: Request, res: Response) {
     const summary = typeof req.body?.summary === "string" ? req.body.summary.trim() : undefined;
     const occurredAt = req.body?.occurredAt ? new Date(req.body.occurredAt) : undefined;
     const userId = typeof req.body?.userId === "string" ? req.body.userId.trim() : undefined;
-    const collaboratorId =
-        typeof req.body?.collaboratorId === "string" ? req.body.collaboratorId.trim() : undefined;
+    const collaboratorIds = Array.isArray(req.body?.collaboratorIds)
+        ? (req.body.collaboratorIds as unknown[])
+            .filter((id) => typeof id === "string")
+            .map((id) => (id as string).trim())
+            .filter(Boolean)
+        : undefined;
     const meetingStart = req.body?.meetingStart ? new Date(req.body.meetingStart) : undefined;
     const meetingEnd = req.body?.meetingEnd ? new Date(req.body.meetingEnd) : undefined;
 
@@ -215,7 +223,7 @@ export async function updateInteraction(req: Request, res: Response) {
         !summary &&
         !occurredAt &&
         userId === undefined &&
-        collaboratorId === undefined &&
+        collaboratorIds === undefined &&
         meetingStart === undefined &&
         meetingEnd === undefined
     ) {
@@ -229,7 +237,7 @@ export async function updateInteraction(req: Request, res: Response) {
             summary,
             occurredAt,
             userId,
-            collaboratorId,
+            collaboratorIds,
             meetingStart,
             meetingEnd,
         });

@@ -47,12 +47,12 @@ enum ClientSegment {
 
 //SECTION Models - User
 model User {
-  id        String @id @default(cuid())
-  email     String @unique
+  id        String   @id @default(cuid())
+  email     String   @unique
   password  String
   firstName String
   lastName  String
-  role      Role   @default(USER)
+  role      Role     @default(USER)
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
@@ -60,9 +60,9 @@ model User {
   updatedAt DateTime @updatedAt
 
   //NOTE - Relations
-  clientsOwned             Client[]            @relation("UserToClientOwner")
-  clientInteractions       ClientInteraction[]
-  collaboratorInteractions ClientInteraction[] @relation("ClientInteractionCollaborator")
+  clientsOwned              Client[]            @relation("UserToClientOwner")
+  clientInteractions        ClientInteraction[]
+  collaboratingInteractions ClientInteraction[] @relation("InteractionCollaborators")
 }
 
 //!SECTION Models - Fin User
@@ -127,28 +127,26 @@ model ClientContact {
 
 //SECTION Models - ClientInteraction
 model ClientInteraction {
-  id            String   @id @default(cuid())
-  clientId      String
-  userId        String?
-  collaboratorId String?
-  type          String
-  summary       String?
-  occurredAt    DateTime @default(now())
-  meetingStart  DateTime?
-  meetingEnd    DateTime?
+  id           String   @id @default(cuid())
+  clientId     String
+  userId       String?
+  type         String
+  summary      String?
+  occurredAt   DateTime @default(now())
+  meetingStart DateTime?
+  meetingEnd   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   //NOTE - Relations
-  client       Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user         User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
-  collaborator User?  @relation("ClientInteractionCollaborator", fields: [collaboratorId], references: [id], onDelete: SetNull)
+  client        Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user          User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  collaborators User[] @relation("InteractionCollaborators")
 
   //NOTE - Indexs
   @@index([clientId, occurredAt])
   @@index([userId])
-  @@index([collaboratorId])
 }
 
 //!SECTION Models - Fin ClientInteraction

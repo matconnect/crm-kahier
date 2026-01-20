@@ -47,7 +47,7 @@ export async function list(params: ListParams): Promise<ListResponse> {
                         meetingStart: true,
                         meetingEnd: true,
                         user: { select: { firstName: true, lastName: true, email: true } },
-                        collaborator: { select: { firstName: true, lastName: true, email: true } },
+                        collaborators: { select: { firstName: true, lastName: true, email: true } },
                     },
                 },
                 contacts: { select: { email: true, phone: true }, take: 1 },
@@ -162,7 +162,7 @@ export async function getById(id: string, companyId: string): Promise<ClientWith
                 orderBy: { occurredAt: "desc" },
                 include: {
                     user: { select: { firstName: true, lastName: true, email: true } },
-                    collaborator: { select: { firstName: true, lastName: true, email: true } },
+                    collaborators: { select: { firstName: true, lastName: true, email: true } },
                 },
             },
         },
@@ -185,7 +185,7 @@ export async function addInteraction(
         summary?: string | null;
         occurredAt?: Date;
         userId?: string | null;
-        collaboratorId?: string | null;
+        collaboratorIds?: string[] | null;
         meetingStart?: Date | null;
         meetingEnd?: Date | null;
     },
@@ -200,7 +200,9 @@ export async function addInteraction(
             summary,
             occurredAt,
             userId: input.userId ?? null,
-            collaboratorId: input.collaboratorId ?? null,
+            ...(input.collaboratorIds && input.collaboratorIds.length
+                ? { collaborators: { connect: input.collaboratorIds.map((id) => ({ id })) } }
+                : {}),
             meetingStart: input.meetingStart ?? null,
             meetingEnd: input.meetingEnd ?? null,
         },
@@ -215,7 +217,7 @@ export async function updateInteraction(
         summary?: string | null;
         occurredAt?: Date;
         userId?: string | null;
-        collaboratorId?: string | null;
+        collaboratorIds?: string[] | null;
         meetingStart?: Date | null;
         meetingEnd?: Date | null;
     },
@@ -232,7 +234,9 @@ export async function updateInteraction(
         ...(input.summary !== undefined ? { summary: input.summary?.trim() || null } : {}),
         ...(input.occurredAt ? { occurredAt: input.occurredAt } : {}),
         ...(input.userId !== undefined ? { userId: input.userId || null } : {}),
-        ...(input.collaboratorId !== undefined ? { collaboratorId: input.collaboratorId || null } : {}),
+        ...(input.collaboratorIds !== undefined
+            ? { collaborators: { set: (input.collaboratorIds ?? []).map((id) => ({ id })) } }
+            : {}),
         ...(input.meetingStart !== undefined ? { meetingStart: input.meetingStart } : {}),
         ...(input.meetingEnd !== undefined ? { meetingEnd: input.meetingEnd } : {}),
     };
