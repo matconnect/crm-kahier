@@ -32,7 +32,7 @@ export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOp
     }));
 
     return (
-        <Card className="border-muted/60 lg:col-span-2">
+        <Card className="border-muted/60">
             <CardHeader className="space-y-1">
                 <CardTitle className="text-base">Informations client</CardTitle>
                 <CardDescription>Nom, statut, segment, localisation et coordonnées principales.</CardDescription>

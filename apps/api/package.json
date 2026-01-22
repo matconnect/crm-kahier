@@ -7,6 +7,8 @@
     "dev": "tsx watch app/src/server.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.972.0",
+    "@aws-sdk/s3-request-presigner": "^3.972.0",
     "@kahier/db": "workspace:^",
     "@repo/ui": "workspace:*",
     "bcryptjs": "^3.0.3",

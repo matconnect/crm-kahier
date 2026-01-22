@@ -11,7 +11,11 @@
         "URL_DEV",
         "URL_PROD",
         "KAHIER_API_BASE",
-        "KAHIER_API_KEY"
+        "KAHIER_API_KEY",
+        "AWS_REGION",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_S3_BUCKET_NAME"
       ],
       "inputs": [
         "$TURBO_DEFAULT$",
@@ -36,7 +40,11 @@
         "URL_DEV",
         "URL_PROD",
         "KAHIER_API_BASE",
-        "KAHIER_API_KEY"
+        "KAHIER_API_KEY",
+        "AWS_REGION",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_S3_BUCKET_NAME"
       ]
     },
     "lint": {

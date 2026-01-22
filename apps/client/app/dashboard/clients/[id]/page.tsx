@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
 import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 import { requireAuth } from "@/lib/authz";
 import { DashboardTopBar } from "@/components/dashboard/top-bar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +14,7 @@ import { EditClientDialog } from "../_components/edit-client-dialog";
 import { AddContactDialog } from "../_components/add-contact-dialog";
 import { EditContactDialog } from "../_components/edit-contact-dialog";
 import { DeleteContactDialog } from "../_components/delete-contact-dialog";
+import { ClientDocumentsCard } from "../_components/client-documents-card";
 
 type DetailPageProps = {
     params: { id: string };
@@ -100,8 +102,23 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
             : client.status === "INACTIVE"
                 ? "Client inactif"
                 : client.status === "PROSPECT"
-                    ? "Prospect"
-                    : client.status;
+                ? "Prospect"
+                : client.status;
+    const now = Date.now();
+    const alertWindowDays = 7;
+    const alertWindowMs = alertWindowDays * 24 * 60 * 60 * 1000;
+    const upcomingInteractions = client.interactions
+        .map((interaction) => ({
+            ...interaction,
+            upcomingAt: interaction.meetingStart ?? interaction.occurredAt,
+        }))
+        .filter((interaction) => {
+            if (!interaction.upcomingAt) return false;
+            const time = new Date(interaction.upcomingAt).getTime();
+            return time >= now && time <= now + alertWindowMs;
+        })
+        .sort((a, b) => new Date(a.upcomingAt).getTime() - new Date(b.upcomingAt).getTime());
+    const nextInteraction = upcomingInteractions[0];
 
     return (
         <div className="min-h-screen bg-background">
@@ -115,10 +132,10 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
             />
 
             <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="space-y-1" id="client-summary">
-                            <div className="text-xs text-muted-foreground uppercase tracking-wide">{client.segment}</div>
-                            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{client.name}</h1>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-1" id="client-summary">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wide">{client.segment}</div>
+                        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{client.name}</h1>
                         <p className="text-sm text-muted-foreground">
                             Statut : {statusLabel} · Gestionnaire : {ownerDisplay}
                         </p>
@@ -173,6 +190,26 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                             </div>
                         )}
                     </div>
+                    {nextInteraction && (
+                        <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                            <AlertTriangle />
+                            <AlertTitle>Interaction planifiée bientôt</AlertTitle>
+                            <AlertDescription>
+                                <p>
+                                    Prochaine interaction : {nextInteraction.type}{" "}
+                                    {new Date(nextInteraction.upcomingAt).toLocaleString("fr-FR", {
+                                        dateStyle: "medium",
+                                        timeStyle: "short",
+                                    })}
+                                </p>
+                                {upcomingInteractions.length > 1 && (
+                                    <p>
+                                        {upcomingInteractions.length - 1} autre(s) interaction(s) prévue(s) dans les {alertWindowDays} prochains jours.
+                                    </p>
+                                )}
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
                     <Link
                         href="/dashboard/clients"
@@ -270,6 +307,8 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                         </CardContent>
                     </Card>
                 </div>
+
+                <ClientDocumentsCard clientId={client.id} currentUserId={currentUserId} />
 
                 <LogInteraction clientId={client.id} currentUserId={currentUserId} />
             </div>

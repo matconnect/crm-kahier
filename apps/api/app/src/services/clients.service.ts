@@ -260,6 +260,70 @@ export async function updateInteraction(
     return prisma.clientInteraction.update({ where: { id: interactionId }, data });
 }
 
+async function assertClientAccess(clientId: string, companyId: string) {
+    await prisma.client.findFirstOrThrow({ where: { id: clientId, companyId }, select: { id: true } });
+}
+
+export async function listDocuments(clientId: string, companyId: string) {
+    await assertClientAccess(clientId, companyId);
+    return prisma.clientDocument.findMany({
+        where: { clientId },
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            fileName: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+            uploader: { select: { firstName: true, lastName: true, email: true } },
+        },
+    });
+}
+
+export async function createDocument(
+    clientId: string,
+    companyId: string,
+    input: {
+        uploaderId?: string | null;
+        fileName: string;
+        s3Key: string;
+        mimeType?: string | null;
+        size?: number | null;
+    },
+) {
+    await assertClientAccess(clientId, companyId);
+    return prisma.clientDocument.create({
+        data: {
+            clientId,
+            uploaderId: input.uploaderId ?? null,
+            fileName: input.fileName,
+            s3Key: input.s3Key,
+            mimeType: input.mimeType ?? null,
+            size: input.size ?? null,
+        },
+    });
+}
+
+export async function getDocumentForDownload(
+    documentId: string,
+    clientId: string,
+    companyId: string,
+) {
+    return prisma.clientDocument.findFirstOrThrow({
+        where: {
+            id: documentId,
+            clientId,
+            client: { companyId },
+        },
+        select: {
+            id: true,
+            fileName: true,
+            s3Key: true,
+            mimeType: true,
+        },
+    });
+}
+
 export async function deleteInteraction(interactionId: string, companyId: string) {
     const interaction = await prisma.clientInteraction.findUniqueOrThrow({
         where: { id: interactionId },

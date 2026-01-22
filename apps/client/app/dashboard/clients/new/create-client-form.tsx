@@ -198,7 +198,7 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
                 </CardContent>
             </Card>
 
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-6">
                 <ClientInfoCard
                     form={form}
                     pending={pending}

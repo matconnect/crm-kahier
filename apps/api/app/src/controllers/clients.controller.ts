@@ -1,6 +1,9 @@
 import type { Request, Response } from "express";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { prisma } from "@kahier/db";
 import * as service from "../services/clients.service";
+import { s3 } from "../lib/s3";
 
 async function getCompanyIdFromUser(req: Request): Promise<string | null> {
     const userId = (req.headers["x-user-id"] as string | undefined)?.trim();
@@ -293,6 +296,150 @@ export async function addContact(req: Request, res: Response) {
     } catch (error) {
         console.error("addContact", error);
         res.status(500).json({ error: "Impossible d'ajouter le contact" });
+    }
+}
+
+export async function listDocuments(req: Request, res: Response) {
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = req.params.id;
+    if (!clientId) {
+        res.status(400).json({ error: "ID is required" });
+        return;
+    }
+
+    try {
+        const documents = await service.listDocuments(clientId, companyId);
+        res.json({ documents });
+    } catch (error) {
+        console.error("listDocuments", error);
+        res.status(500).json({ error: "Impossible de récupérer les documents" });
+    }
+}
+
+export async function presignDocument(req: Request, res: Response) {
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = req.params.id;
+    if (!clientId) {
+        res.status(400).json({ error: "ID is required" });
+        return;
+    }
+
+    const fileName = typeof req.body?.fileName === "string" ? req.body.fileName.trim() : "";
+    const contentType = typeof req.body?.contentType === "string" ? req.body.contentType.trim() : "";
+    const size = typeof req.body?.size === "number" ? req.body.size : Number(req.body?.size ?? 0);
+
+    if (!fileName) {
+        res.status(400).json({ error: "Nom de fichier requis" });
+        return;
+    }
+    if (!Number.isFinite(size) || size <= 0) {
+        res.status(400).json({ error: "Taille du fichier invalide" });
+        return;
+    }
+    const maxSize = 25 * 1024 * 1024;
+    if (size > maxSize) {
+        res.status(400).json({ error: "Fichier trop volumineux (25MB max)" });
+        return;
+    }
+
+    const bucket = process.env.AWS_S3_BUCKET_NAME;
+    if (!bucket) {
+        res.status(500).json({ error: "Bucket S3 non configuré" });
+        return;
+    }
+
+    const safeName = fileName.replace(/[^a-zA-Z0-9.\-_ ]/g, "").trim().replace(/\s+/g, "_");
+    const key = `clients/${clientId}/${Date.now()}-${crypto.randomUUID()}-${safeName || "document"}`;
+
+    try {
+        await service.getById(clientId, companyId);
+        const command = new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            ContentType: contentType || "application/octet-stream",
+        });
+        const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
+        res.json({
+            uploadUrl,
+            key,
+            fileName,
+            contentType: contentType || "application/octet-stream",
+        });
+    } catch (error) {
+        console.error("presignDocument", error);
+        res.status(500).json({ error: "Impossible de générer l'URL d'upload" });
+    }
+}
+
+export async function createDocument(req: Request, res: Response) {
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = req.params.id;
+    if (!clientId) {
+        res.status(400).json({ error: "ID is required" });
+        return;
+    }
+
+    const fileName = typeof req.body?.fileName === "string" ? req.body.fileName.trim() : "";
+    const s3Key = typeof req.body?.key === "string" ? req.body.key.trim() : "";
+    const mimeType = typeof req.body?.contentType === "string" ? req.body.contentType.trim() : undefined;
+    const size = typeof req.body?.size === "number" ? req.body.size : Number(req.body?.size ?? 0);
+
+    if (!fileName || !s3Key) {
+        res.status(400).json({ error: "Nom de fichier et clé S3 requis" });
+        return;
+    }
+    if (!s3Key.includes(`clients/${clientId}/`)) {
+        res.status(400).json({ error: "Clé S3 invalide" });
+        return;
+    }
+
+    try {
+        const uploaderId = (req.headers["x-user-id"] as string | undefined)?.trim();
+        const document = await service.createDocument(clientId, companyId, {
+            uploaderId,
+            fileName,
+            s3Key,
+            mimeType: mimeType || null,
+            size: Number.isFinite(size) && size > 0 ? size : null,
+        });
+        res.status(201).json({ document });
+    } catch (error) {
+        console.error("createDocument", error);
+        res.status(500).json({ error: "Impossible de créer le document" });
+    }
+}
+
+export async function getDocumentDownload(req: Request, res: Response) {
+    const companyId = await getCompanyIdFromUser(req);
+    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = req.params.id;
+    const documentId = req.params.documentId;
+    if (!clientId || !documentId) {
+        res.status(400).json({ error: "ID is required" });
+        return;
+    }
+
+    const bucket = process.env.AWS_S3_BUCKET_NAME;
+    if (!bucket) {
+        res.status(500).json({ error: "Bucket S3 non configuré" });
+        return;
+    }
+
+    try {
+        const doc = await service.getDocumentForDownload(documentId, clientId, companyId);
+        const command = new GetObjectCommand({
+            Bucket: bucket,
+            Key: doc.s3Key,
+            ResponseContentType: doc.mimeType ?? undefined,
+        });
+        const url = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
+        res.json({ url });
+    } catch (error) {
+        console.error("getDocumentDownload", error);
+        res.status(500).json({ error: "Impossible de générer le lien de téléchargement" });
     }
 }
 

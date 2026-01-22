@@ -64,6 +64,7 @@ model User {
   clientAssignments         ClientOwner[]
   clientInteractions        ClientInteraction[]
   collaboratingInteractions ClientInteraction[] @relation("InteractionCollaborators")
+  uploadedClientDocuments   ClientDocument[]
 }
 
 //!SECTION Models - Fin User
@@ -92,6 +93,7 @@ model Client {
   owners       ClientOwner[]
   contacts     ClientContact[]
   interactions ClientInteraction[]
+  documents    ClientDocument[]
 
   //NOTE - Indexs
   @@index([status])
@@ -146,12 +148,12 @@ model ClientContact {
 
 //SECTION Models - ClientInteraction
 model ClientInteraction {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   clientId     String
   userId       String?
   type         String
   summary      String?
-  occurredAt   DateTime @default(now())
+  occurredAt   DateTime  @default(now())
   meetingStart DateTime?
   meetingEnd   DateTime?
 
@@ -169,3 +171,24 @@ model ClientInteraction {
 }
 
 //!SECTION Models - Fin ClientInteraction
+
+//SECTION Models - ClientDocument
+model ClientDocument {
+  id         String  @id @default(cuid())
+  clientId   String
+  uploaderId String?
+  fileName   String
+  s3Key      String
+  mimeType   String?
+  size       Int?
+
+  createdAt DateTime @default(now())
+
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  uploader User?  @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@index([uploaderId])
+}
+
+//!SECTION Models - Fin ClientDocument
