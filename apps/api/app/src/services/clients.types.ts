@@ -21,6 +21,8 @@ export type ListItem = {
     owner: { firstName: string | null; lastName: string | null; email: string | null } | null;
     primaryEmail: string | null;
     primaryPhone: string | null;
+    emails: string[];
+    phones: string[];
     interactions: {
         id: string;
         type: string;

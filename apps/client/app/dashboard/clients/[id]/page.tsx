@@ -4,6 +4,7 @@ import { ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
 import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 import { requireAuth } from "@/lib/authz";
 import { DashboardTopBar } from "@/components/dashboard/top-bar";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LogInteraction } from "../_components/log-interaction";
@@ -25,6 +26,8 @@ type ClientDetail = {
     location: string | null;
     primaryEmail: string | null;
     primaryPhone: string | null;
+    emails?: string[] | null;
+    phones?: string[] | null;
     notes: string | null;
     owner: { firstName: string | null; lastName: string | null; email: string | null } | null;
     contacts: {
@@ -33,6 +36,8 @@ type ClientDetail = {
         lastName: string;
         email: string | null;
         phone: string | null;
+        emails?: string[] | null;
+        phones?: string[] | null;
         role: string | null;
     }[];
     interactions: {
@@ -87,6 +92,8 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
 
     const ownerFullName = `${client.owner?.firstName ?? ""} ${client.owner?.lastName ?? ""}`.trim();
     const ownerDisplay = ownerFullName || client.owner?.email || "Non assigné";
+    const clientEmails = (client.emails ?? []).filter(Boolean);
+    const clientPhones = (client.phones ?? []).filter(Boolean);
     const statusLabel =
         client.status === "ACTIVE"
             ? "Client actif"
@@ -122,19 +129,49 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                     {client.location}
                                 </span>
                             )}
-                            {client.primaryEmail && (
+                            {(clientEmails[0] || client.primaryEmail) && (
                                 <span className="inline-flex items-center gap-1">
                                     <Mail className="h-4 w-4" />
-                                    {client.primaryEmail}
+                                    {clientEmails[0] ?? client.primaryEmail}
                                 </span>
                             )}
-                            {client.primaryPhone && (
+                            {(clientPhones[0] || client.primaryPhone) && (
                                 <span className="inline-flex items-center gap-1">
                                     <Phone className="h-4 w-4" />
-                                    {client.primaryPhone}
+                                    {clientPhones[0] ?? client.primaryPhone}
                                 </span>
                             )}
                         </div>
+                        {(clientEmails.length > 1 || clientPhones.length > 1) && (
+                            <div className="mt-3 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
+                                {clientEmails.length > 0 && (
+                                    <div className="rounded-lg border border-dashed border-muted/70 px-3 py-2">
+                                        <p className="text-xs text-muted-foreground">Emails</p>
+                                        <div className="mt-1 space-y-1 text-sm font-medium text-foreground">
+                                            {clientEmails.map((email, index) => (
+                                                <div key={email} className="flex items-center gap-2">
+                                                    <span className="break-all">{email}</span>
+                                                    {index === 0 && <Badge variant="secondary">Principal</Badge>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {clientPhones.length > 0 && (
+                                    <div className="rounded-lg border border-dashed border-muted/70 px-3 py-2">
+                                        <p className="text-xs text-muted-foreground">Téléphones</p>
+                                        <div className="mt-1 space-y-1 text-sm font-medium text-foreground">
+                                            {clientPhones.map((phone, index) => (
+                                                <div key={phone} className="flex items-center gap-2">
+                                                    <span>{phone}</span>
+                                                    {index === 0 && <Badge variant="secondary">Principal</Badge>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <Link
@@ -153,6 +190,8 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                             location={client.location}
                             primaryEmail={client.primaryEmail}
                             primaryPhone={client.primaryPhone}
+                            emails={client.emails ?? []}
+                            phones={client.phones ?? []}
                             notes={client.notes}
                             currentUserId={currentUserId}
                         />
@@ -207,18 +246,20 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                         )}
                                     </div>
                                     <div className="mt-1 space-y-1 text-sm text-muted-foreground">
-                                        {contact.email && (
-                                            <span className="flex items-center gap-1">
+                                        {(contact.emails?.length ? contact.emails : contact.email ? [contact.email] : []).map((email, index) => (
+                                            <span key={`${contact.id}-${email}`} className="flex items-center gap-2">
                                                 <Mail className="h-4 w-4" />
-                                                {contact.email}
+                                                {email}
+                                                {index === 0 && <Badge variant="secondary">Principal</Badge>}
                                             </span>
-                                        )}
-                                        {contact.phone && (
-                                            <span className="flex items-center gap-1">
+                                        ))}
+                                        {(contact.phones?.length ? contact.phones : contact.phone ? [contact.phone] : []).map((phone, index) => (
+                                            <span key={`${contact.id}-${phone}`} className="flex items-center gap-2">
                                                 <Phone className="h-4 w-4" />
-                                                {contact.phone}
+                                                {phone}
+                                                {index === 0 && <Badge variant="secondary">Principal</Badge>}
                                             </span>
-                                        )}
+                                        ))}
                                     </div>
                                     <div className="pt-2 flex flex-wrap gap-2 justify-end">
                                         <EditContactDialog clientId={client.id} contact={contact} currentUserId={currentUserId} />

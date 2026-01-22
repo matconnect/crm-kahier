@@ -11,7 +11,7 @@
         "URL_DEV",
         "URL_PROD",
         "KAHIER_API_BASE",
-        "KAHIER_API_TOKEN"
+        "KAHIER_API_KEY"
       ],
       "inputs": [
         "$TURBO_DEFAULT$",
@@ -36,7 +36,7 @@
         "URL_DEV",
         "URL_PROD",
         "KAHIER_API_BASE",
-        "KAHIER_API_TOKEN"
+        "KAHIER_API_KEY"
       ]
     },
     "lint": {

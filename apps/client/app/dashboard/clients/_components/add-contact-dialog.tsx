@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiInput } from "@/components/ui/multi-input";
 
 type Props = {
     clientId: string;
@@ -29,8 +30,8 @@ export function AddContactDialog({ clientId, currentUserId }: Props) {
 
     const [firstName, setFirstName] = React.useState("");
     const [lastName, setLastName] = React.useState("");
-    const [email, setEmail] = React.useState("");
-    const [phone, setPhone] = React.useState("");
+    const [emails, setEmails] = React.useState<string[]>([""]);
+    const [phones, setPhones] = React.useState<string[]>([""]);
     const [role, setRole] = React.useState("");
 
     function isValidEmail(value: string) {
@@ -38,7 +39,15 @@ export function AddContactDialog({ clientId, currentUserId }: Props) {
     }
 
     function isValidPhone(value: string) {
-        return /^[+]?[\d\s().-]{6,}$/.test(value);
+        return /^[+]?[\d]{6,}$/.test(value.replace(/[^\d+]/g, ""));
+    }
+
+    function normalizeEmail(value: string) {
+        return value.trim().toLowerCase();
+    }
+
+    function normalizePhone(value: string) {
+        return value.replace(/\s+/g, "").replace(/[\-().]/g, "").trim();
     }
 
     async function onSubmit(e: React.FormEvent) {
@@ -51,16 +60,18 @@ export function AddContactDialog({ clientId, currentUserId }: Props) {
             toast.error("Utilisateur non authentifié");
             return;
         }
-        if (!firstName && !lastName && !email && !phone && !role) {
+        const cleanEmails = emails.map(normalizeEmail).filter(Boolean);
+        const cleanPhones = phones.map(normalizePhone).filter(Boolean);
+        if (!firstName && !lastName && cleanEmails.length === 0 && cleanPhones.length === 0 && !role) {
             toast.error("Ajoute au moins une information de contact");
             return;
         }
-        if (email && !isValidEmail(email)) {
-            toast.error("Email invalide");
+        if (cleanEmails.some((value) => !isValidEmail(value))) {
+            toast.error("Un email est invalide");
             return;
         }
-        if (phone && !isValidPhone(phone)) {
-            toast.error("Téléphone invalide");
+        if (cleanPhones.some((value) => !isValidPhone(value))) {
+            toast.error("Un téléphone est invalide");
             return;
         }
 
@@ -75,8 +86,10 @@ export function AddContactDialog({ clientId, currentUserId }: Props) {
                 body: JSON.stringify({
                     firstName,
                     lastName,
-                    email,
-                    phone,
+                    emails: cleanEmails,
+                    phones: cleanPhones,
+                    email: cleanEmails[0] ?? null,
+                    phone: cleanPhones[0] ?? null,
                     role,
                 }),
             });
@@ -86,8 +99,8 @@ export function AddContactDialog({ clientId, currentUserId }: Props) {
             setOpen(false);
             setFirstName("");
             setLastName("");
-            setEmail("");
-            setPhone("");
+            setEmails([""]);
+            setPhones([""]);
             setRole("");
             window.location.reload();
         } catch (error) {
@@ -122,14 +135,21 @@ export function AddContactDialog({ clientId, currentUserId }: Props) {
                         </div>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label>Email</Label>
-                            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="sophie@client.com" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Téléphone</Label>
-                            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+33 6 12 34 56 78" />
-                        </div>
+                        <MultiInput
+                            label="Emails"
+                            type="email"
+                            placeholder="sophie@client.com"
+                            values={emails}
+                            onChange={setEmails}
+                            disabled={pending}
+                        />
+                        <MultiInput
+                            label="Téléphones"
+                            placeholder="+33 6 12 34 56 78"
+                            values={phones}
+                            onChange={setPhones}
+                            disabled={pending}
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label>Rôle</Label>

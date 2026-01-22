@@ -23,19 +23,26 @@ function normalizeContacts(contacts: unknown) {
                 lastName?: unknown;
                 email?: unknown;
                 phone?: unknown;
+                emails?: unknown;
+                phones?: unknown;
                 role?: unknown;
             };
             const firstName = typeof c.firstName === "string" ? c.firstName.trim() : "";
             const lastName = typeof c.lastName === "string" ? c.lastName.trim() : "";
             const email = typeof c.email === "string" ? c.email.trim() : undefined;
             const phone = typeof c.phone === "string" ? c.phone.trim() : undefined;
+            const emails = normalizeStringArray(c.emails ?? c.email);
+            const phones = normalizeStringArray(c.phones ?? c.phone);
             const role = typeof c.role === "string" ? c.role.trim() : undefined;
-            if (!firstName && !lastName && !email && !phone && !role) return null;
+            if (!firstName && !lastName && !email && !phone && emails.length === 0 && phones.length === 0 && !role)
+                return null;
             return {
                 firstName: firstName || "Contact",
                 lastName,
-                email: email || null,
-                phone: phone || null,
+                email: email || emails[0] || null,
+                phone: phone || phones[0] || null,
+                emails: emails.length ? emails : undefined,
+                phones: phones.length ? phones : undefined,
                 role: role || null,
             };
         })
@@ -43,6 +50,21 @@ function normalizeContacts(contacts: unknown) {
 
     if (cleaned.length === 0) return undefined;
     return { create: cleaned };
+}
+
+function normalizeStringArray(value: unknown): string[] {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value
+            .filter((item): item is string => typeof item === "string")
+            .map((item) => item.trim())
+            .filter(Boolean);
+    }
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        return trimmed ? [trimmed] : [];
+    }
+    return [];
 }
 
 export async function list(req: Request, res: Response) {
@@ -71,7 +93,37 @@ export async function create(req: Request, res: Response) {
     if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     const { contacts, ...rest } = req.body ?? {};
     const normalizedContacts = normalizeContacts(contacts);
-    const payload = { ...rest, companyId };
+    const body = (req.body ?? {}) as {
+        emails?: unknown;
+        phones?: unknown;
+        primaryEmail?: unknown;
+        primaryPhone?: unknown;
+        ownerIds?: unknown;
+    };
+    const emails = normalizeStringArray(body.emails);
+    const phones = normalizeStringArray(body.phones);
+    const ownerIds = Array.isArray(body.ownerIds)
+        ? (body.ownerIds as unknown[])
+              .filter((id) => typeof id === "string")
+              .map((id) => (id as string).trim())
+              .filter(Boolean)
+        : [];
+    const primaryEmail = typeof body.primaryEmail === "string"
+        ? body.primaryEmail?.trim()
+        : undefined;
+    const primaryPhone = typeof body.primaryPhone === "string"
+        ? body.primaryPhone?.trim()
+        : undefined;
+    const payload = {
+        ...rest,
+        companyId,
+        emails: emails.length ? emails : undefined,
+        phones: phones.length ? phones : undefined,
+        primaryEmail: primaryEmail || emails[0] || null,
+        primaryPhone: primaryPhone || phones[0] || null,
+        ownerId: ownerIds[0] ?? (rest as { ownerId?: string | null }).ownerId ?? null,
+        owners: ownerIds.length ? { create: ownerIds.map((id) => ({ userId: id })) } : undefined,
+    };
     if (normalizedContacts) {
         (payload as typeof payload & { contacts: typeof normalizedContacts }).contacts = normalizedContacts;
     }
@@ -95,7 +147,45 @@ export async function update(req: Request, res: Response) {
         res.status(400).json({ error: "ID is required" });
         return;
     }
-    res.json(await service.update(req.params.id, companyId, req.body));
+    const body = (req.body ?? {}) as {
+        emails?: unknown;
+        phones?: unknown;
+        primaryEmail?: unknown;
+        primaryPhone?: unknown;
+        ownerIds?: unknown;
+    };
+    const emails = normalizeStringArray(body.emails);
+    const phones = normalizeStringArray(body.phones);
+    const primaryEmail = typeof body.primaryEmail === "string"
+        ? body.primaryEmail?.trim()
+        : undefined;
+    const primaryPhone = typeof body.primaryPhone === "string"
+        ? body.primaryPhone?.trim()
+        : undefined;
+    const ownerIds = Array.isArray(body.ownerIds)
+        ? (body.ownerIds as unknown[])
+              .filter((id) => typeof id === "string")
+              .map((id) => (id as string).trim())
+              .filter(Boolean)
+        : [];
+    const payload = {
+        ...req.body,
+        ...("emails" in body ? { emails: emails.length ? emails : [] } : {}),
+        ...("phones" in body ? { phones: phones.length ? phones : [] } : {}),
+        ...(primaryEmail !== undefined || "emails" in body
+            ? { primaryEmail: primaryEmail || emails[0] || null }
+            : {}),
+        ...(primaryPhone !== undefined || "phones" in body
+            ? { primaryPhone: primaryPhone || phones[0] || null }
+            : {}),
+        ...("ownerIds" in body
+            ? {
+                  ownerId: ownerIds[0] ?? null,
+                  owners: ownerIds.length ? { set: ownerIds.map((id) => ({ userId: id })) } : { set: [] },
+              }
+            : {}),
+    };
+    res.json(await service.update(req.params.id, companyId, payload));
 }
 
 export async function remove(req: Request, res: Response) {
@@ -180,15 +270,25 @@ export async function addContact(req: Request, res: Response) {
     const lastName = typeof req.body?.lastName === "string" ? req.body.lastName : undefined;
     const email = typeof req.body?.email === "string" ? req.body.email : undefined;
     const phone = typeof req.body?.phone === "string" ? req.body.phone : undefined;
+    const emails = normalizeStringArray(req.body?.emails ?? req.body?.email);
+    const phones = normalizeStringArray(req.body?.phones ?? req.body?.phone);
     const role = typeof req.body?.role === "string" ? req.body.role : undefined;
 
-    if (!firstName && !lastName && !email && !phone && !role) {
+    if (!firstName && !lastName && !email && !phone && emails.length === 0 && phones.length === 0 && !role) {
         res.status(400).json({ error: "Au moins une info de contact est requise" });
         return;
     }
 
     try {
-        const contact = await service.addContact(clientId, companyId, { firstName, lastName, email, phone, role });
+        const contact = await service.addContact(clientId, companyId, {
+            firstName,
+            lastName,
+            email: email ?? emails[0] ?? null,
+            phone: phone ?? phones[0] ?? null,
+            emails: emails.length ? emails : undefined,
+            phones: phones.length ? phones : undefined,
+            role,
+        });
         res.status(201).json({ contact });
     } catch (error) {
         console.error("addContact", error);

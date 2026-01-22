@@ -61,6 +61,7 @@ model User {
 
   //NOTE - Relations
   clientsOwned              Client[]            @relation("UserToClientOwner")
+  clientAssignments         ClientOwner[]
   clientInteractions        ClientInteraction[]
   collaboratingInteractions ClientInteraction[] @relation("InteractionCollaborators")
 }
@@ -79,6 +80,8 @@ model Client {
   notes        String?
   primaryEmail String?
   primaryPhone String?
+  emails       Json?
+  phones       Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -86,6 +89,7 @@ model Client {
   //NOTE - Relations
   owner        User?               @relation("UserToClientOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   company      Company?            @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  owners       ClientOwner[]
   contacts     ClientContact[]
   interactions ClientInteraction[]
 
@@ -100,6 +104,19 @@ model Client {
   @@index([primaryPhone])
 }
 
+model ClientOwner {
+  id       String @id @default(cuid())
+  clientId String
+  userId   String
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, userId])
+  @@index([clientId])
+  @@index([userId])
+}
+
 //!SECTION Models - Fin Client
 
 //SECTION Models - ClientContact
@@ -110,6 +127,8 @@ model ClientContact {
   lastName  String
   email     String?
   phone     String?
+  emails    Json?
+  phones    Json?
   role      String?
 
   createdAt DateTime @default(now())

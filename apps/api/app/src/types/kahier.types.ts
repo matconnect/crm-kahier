@@ -28,8 +28,35 @@ export type KahierTaskPayload = {
     displayOrder: number;
     positionAfterId: string;
     isRecurring: boolean;
+    endDate: string | null;
     reminder_1: string | null;
     reminder_2: string | null;
     reminder_3: string | null;
     priority: string | null;
+};
+
+export type KahierUser = {
+    id: number;
+    firstname: string;
+    lastname: string;
+    role: string;
+    email: string;
+    avatar: string | null;
+    color: string | null;
+    zones: { id: number; name: string }[];
+};
+
+export type KahierPlanning = {
+    id: number;
+    name: string;
+    type: string;
+    color: string | null;
+    establishmentId: number;
+};
+
+export type KahierLegend = {
+    id: number;
+    label: string;
+    color: string;
+    planningId: number;
 };

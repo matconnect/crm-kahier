@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiInput } from "@/components/ui/multi-input";
 
 type Props = {
     clientId: string;
@@ -27,6 +28,8 @@ type Props = {
     location: string | null;
     primaryEmail: string | null;
     primaryPhone: string | null;
+    emails?: string[];
+    phones?: string[];
     notes: string | null;
     triggerClassName?: string;
     currentUserId: string;
@@ -54,8 +57,12 @@ export function EditClientDialog(props: Props) {
     const [status, setStatus] = React.useState<ClientStatus>(props.status);
     const [segment, setSegment] = React.useState<ClientSegment>(props.segment);
     const [location, setLocation] = React.useState(props.location ?? "");
-    const [primaryEmail, setPrimaryEmail] = React.useState(props.primaryEmail ?? "");
-    const [primaryPhone, setPrimaryPhone] = React.useState(props.primaryPhone ?? "");
+    const [emails, setEmails] = React.useState<string[]>(
+        props.emails?.length ? props.emails : [props.primaryEmail ?? ""],
+    );
+    const [phones, setPhones] = React.useState<string[]>(
+        props.phones?.length ? props.phones : [props.primaryPhone ?? ""],
+    );
     const [notes, setNotes] = React.useState(props.notes ?? "");
 
     async function onSubmit(e: React.FormEvent) {
@@ -74,6 +81,16 @@ export function EditClientDialog(props: Props) {
         }
         setPending(true);
         try {
+            const cleanEmails = emails.map((value) => value.trim().toLowerCase()).filter(Boolean);
+            const cleanPhones = phones.map((value) => value.replace(/\s+/g, "").replace(/[\-().]/g, "").trim()).filter(Boolean);
+            if (cleanEmails.some((email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+                toast.error("Un email client est invalide");
+                return;
+            }
+            if (cleanPhones.some((phone) => !/^[+]?[\d]{6,}$/.test(phone.replace(/[^\d+]/g, "")))) {
+                toast.error("Un téléphone client est invalide");
+                return;
+            }
             const res = await fetch(`${apiBase}/clients/${props.clientId}`, {
                 method: "PATCH",
                 headers: {
@@ -85,8 +102,10 @@ export function EditClientDialog(props: Props) {
                     status,
                     segment,
                     location: location.trim() || null,
-                    primaryEmail: primaryEmail.trim() || null,
-                    primaryPhone: primaryPhone.trim() || null,
+                    emails: cleanEmails,
+                    phones: cleanPhones,
+                    primaryEmail: cleanEmails[0] ?? null,
+                    primaryPhone: cleanPhones[0] ?? null,
                     notes: notes.trim() || null,
                 }),
             });
@@ -157,14 +176,19 @@ export function EditClientDialog(props: Props) {
                             <Label>Localisation</Label>
                             <Input value={location} onChange={(e) => setLocation(e.target.value)} />
                         </div>
-                        <div className="space-y-2">
-                            <Label>Email principal</Label>
-                            <Input value={primaryEmail} onChange={(e) => setPrimaryEmail(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Téléphone principal</Label>
-                            <Input value={primaryPhone} onChange={(e) => setPrimaryPhone(e.target.value)} />
-                        </div>
+                        <MultiInput
+                            label="Emails"
+                            type="email"
+                            values={emails}
+                            onChange={setEmails}
+                            disabled={pending}
+                        />
+                        <MultiInput
+                            label="Téléphones"
+                            values={phones}
+                            onChange={setPhones}
+                            disabled={pending}
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label>Notes</Label>

@@ -1,14 +1,17 @@
 "use client";
 
 import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
-import { Mail, MapPin, Phone, UserRound } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiInput } from "@/components/ui/multi-input";
+import { UserPicker, type PickerOption } from "@/components/ui/user-picker";
 
 import type { FormState, OwnerOption } from "../types";
+import React from "react";
 
 type Props = {
     form: FormState;
@@ -20,6 +23,14 @@ type Props = {
 };
 
 export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOptions, onChange }: Props) {
+    const [ownersOpen, setOwnersOpen] = React.useState(false);
+    const [ownersQuery, setOwnersQuery] = React.useState("");
+    const ownerOptions: PickerOption[] = owners.map((owner) => ({
+        id: owner.id,
+        label: owner.label,
+        email: owner.email,
+    }));
+
     return (
         <Card className="border-muted/60 lg:col-span-2">
             <CardHeader className="space-y-1">
@@ -96,60 +107,36 @@ export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOp
                             />
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="primaryEmail">Email principal</Label>
-                        <div className="relative">
-                            <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                id="primaryEmail"
-                                type="email"
-                                placeholder="contact@client.com"
-                                className="pl-9"
-                                value={form.primaryEmail}
-                                onChange={(e) => onChange("primaryEmail", e.target.value)}
-                                disabled={pending}
-                            />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="primaryPhone">Téléphone</Label>
-                        <div className="relative">
-                            <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                id="primaryPhone"
-                                placeholder="+33 6 12 34 56 78"
-                                className="pl-9"
-                                value={form.primaryPhone}
-                                onChange={(e) => onChange("primaryPhone", e.target.value)}
-                                disabled={pending}
-                            />
-                        </div>
-                    </div>
+                    <MultiInput
+                        label="Emails"
+                        type="email"
+                        placeholder="contact@client.com"
+                        values={form.emails}
+                        onChange={(values) => onChange("emails", values)}
+                        disabled={pending}
+                    />
+                    <MultiInput
+                        label="Téléphones"
+                        placeholder="+33 6 12 34 56 78"
+                        values={form.phones}
+                        onChange={(values) => onChange("phones", values)}
+                        disabled={pending}
+                    />
                 </div>
 
-                <div className="space-y-2">
-                    <Label htmlFor="ownerId" className="flex items-center gap-2">
-                        <UserRound className="h-4 w-4 text-muted-foreground" />
-                        Assigné à
-                    </Label>
-                    <Select
-                        value={form.ownerId}
-                        onValueChange={(value) => onChange("ownerId", value)}
-                        disabled={pending || owners.length === 0}
-                    >
-                        <SelectTrigger id="ownerId" className="w-full">
-                            <SelectValue placeholder="Sélectionne un responsable" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {owners.map((owner) => (
-                                <SelectItem key={owner.id} value={owner.id}>
-                                    {owner.label}
-                                    {owner.email ? ` – ${owner.email}` : ""}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                <UserPicker
+                    label="Assigné à"
+                    options={ownerOptions}
+                    selectedIds={form.ownerIds}
+                    onChange={(ids) => onChange("ownerIds", ids)}
+                    placeholder="Sélectionne des gestionnaires"
+                    open={ownersOpen}
+                    onOpenChange={setOwnersOpen}
+                    query={ownersQuery}
+                    onQueryChange={setOwnersQuery}
+                    emptyMessage="Aucun gestionnaire disponible."
+                    searchPlaceholder="Rechercher un gestionnaire..."
+                />
             </CardContent>
         </Card>
     );

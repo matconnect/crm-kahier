@@ -1,18 +1,19 @@
 "use client";
 
-import { Mail, Phone, Trash, User, UserRound } from "lucide-react";
+import { Trash, User, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiInput } from "@/components/ui/multi-input";
 
 import type { ContactState } from "../types";
 
 type Props = {
     contacts: ContactState[];
     pending: boolean;
-    onChange: (id: string, key: keyof Omit<ContactState, "id">, value: string) => void;
+    onChange: (id: string, key: keyof Omit<ContactState, "id">, value: string | string[]) => void;
     onAdd: () => void;
     onRemove: (id: string) => void;
 };
@@ -74,35 +75,21 @@ export function ContactsCard({ contacts, pending, onChange, onAdd, onRemove }: P
                         </div>
 
                         <div className="grid gap-3 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label htmlFor={`contact-email-${contact.id}`}>Email</Label>
-                                <div className="relative">
-                                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        id={`contact-email-${contact.id}`}
-                                        type="email"
-                                        placeholder="sophie@client.com"
-                                        className="pl-9"
-                                        value={contact.email}
-                                        onChange={(e) => onChange(contact.id, "email", e.target.value)}
-                                        disabled={pending}
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor={`contact-phone-${contact.id}`}>Téléphone</Label>
-                                <div className="relative">
-                                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        id={`contact-phone-${contact.id}`}
-                                        placeholder="+33 7 00 00 00 00"
-                                        className="pl-9"
-                                        value={contact.phone}
-                                        onChange={(e) => onChange(contact.id, "phone", e.target.value)}
-                                        disabled={pending}
-                                    />
-                                </div>
-                            </div>
+                            <MultiInput
+                                label="Emails"
+                                type="email"
+                                placeholder="sophie@client.com"
+                                values={contact.emails}
+                                onChange={(values) => onChange(contact.id, "emails", values)}
+                                disabled={pending}
+                            />
+                            <MultiInput
+                                label="Téléphones"
+                                placeholder="+33 7 00 00 00 00"
+                                values={contact.phones}
+                                onChange={(values) => onChange(contact.id, "phones", values)}
+                                disabled={pending}
+                            />
                         </div>
 
                         <div className="space-y-2">

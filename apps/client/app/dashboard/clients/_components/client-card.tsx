@@ -46,6 +46,8 @@ type ClientCardProps = {
         contactsCount: number;
         primaryPhone: string | null;
         primaryEmail: string | null;
+        emails: string[];
+        phones: string[];
         notes: string | null;
         interactions: Interaction[];
     };
@@ -112,7 +114,12 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                     Dernière interaction : <span className="text-foreground">{lastActivity}</span>
                 </div>
                 <Separator />
-                <ContactFlash primaryPhone={primaryPhone} primaryEmail={primaryEmail} />
+                <ContactFlash
+                    primaryPhone={primaryPhone}
+                    primaryEmail={primaryEmail}
+                    emails={client.emails}
+                    phones={client.phones}
+                />
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button variant="outline" size="sm" className="gap-2 w-full">
@@ -120,83 +127,87 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                             Voir les interactions
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-xl">
-                        <DialogHeader>
-                            <DialogTitle>Interactions récentes</DialogTitle>
-                            <DialogDescription>Les 10 dernières interactions enregistrées pour ce client.</DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                            {client.interactions.length === 0 && (
-                                <p className="text-sm text-muted-foreground">Aucune interaction enregistrée.</p>
-                            )}
-                            {pagedInteractions.map((interaction) => (
-                                <div key={interaction.id} className="rounded-md border border-dashed border-muted px-3 py-2">
-                                    <div className="flex items-center justify-between text-sm font-medium">
-                                        <span>{interaction.type}</span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {format(new Date(interaction.occurredAt), "Pp", { locale: fr })}
+                    <DialogContent className="w-[calc(100vw-2rem)] max-w-xl max-h-[90vh] overflow-hidden rounded-2xl">
+                        <div className="flex max-h-[90vh] flex-col gap-3">
+                            <DialogHeader>
+                                <DialogTitle>Interactions récentes</DialogTitle>
+                                <DialogDescription>Les interactions les plus récentes enregistrées pour ce client.</DialogDescription>
+                            </DialogHeader>
+                            <div className="flex-1 max-h-[20vh] space-y-2 overflow-y-auto pr-1">
+                                {client.interactions.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">Aucune interaction enregistrée.</p>
+                                )}
+                                {pagedInteractions.map((interaction) => (
+                                    <div key={interaction.id} className="rounded-lg border border-dashed border-muted px-3 py-2">
+                                        <div className="flex flex-col gap-1 text-sm font-medium sm:flex-row sm:items-center sm:justify-between">
+                                            <span className="truncate">{interaction.type}</span>
+                                            <span className="text-xs text-muted-foreground sm:shrink-0">
+                                                {format(new Date(interaction.occurredAt), "Pp", { locale: fr })}
+                                            </span>
+                                        </div>
+                                        {interaction.summary && (
+                                            <p className="mt-1 text-sm text-muted-foreground line-clamp-3 break-words">
+                                                {interaction.summary}
+                                            </p>
+                                        )}
+                                        {interaction.type === "Réunion" && interaction.meetingStart && interaction.meetingEnd && (
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                {format(new Date(interaction.meetingStart), "Pp", { locale: fr })} →{" "}
+                                                {format(new Date(interaction.meetingEnd), "Pp", { locale: fr })}
+                                            </p>
+                                        )}
+                                        {interaction.user && (
+                                            <p className="mt-1 text-xs text-muted-foreground line-clamp-2 break-words">
+                                                Par{" "}
+                                                {`${interaction.user.firstName ?? ""} ${interaction.user.lastName ?? ""}`.trim() ||
+                                                    interaction.user.email ||
+                                                    "Utilisateur"}
+                                            </p>
+                                        )}
+                                        {interaction.collaborators && interaction.collaborators.length > 0 && (
+                                            <p className="text-xs text-muted-foreground line-clamp-2 break-words">
+                                                Avec{" "}
+                                                {interaction.collaborators
+                                                    .map(
+                                                        (collaborator) =>
+                                                            `${collaborator.firstName ?? ""} ${collaborator.lastName ?? ""}`.trim() ||
+                                                            collaborator.email ||
+                                                            "Collaborateur",
+                                                    )
+                                                    .join(", ")}
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                                {client.interactions.length > 0 && (
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                                        <span>
+                                            Page {page} / {totalPages}
                                         </span>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={page <= 1}
+                                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                            >
+                                                Précédent
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={page >= totalPages}
+                                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                            >
+                                                Suivant
+                                            </Button>
+                                        </div>
                                     </div>
-                                    {interaction.summary && (
-                                        <p className="text-sm text-muted-foreground mt-1">{interaction.summary}</p>
-                                    )}
-                                    {interaction.type === "Réunion" && interaction.meetingStart && interaction.meetingEnd && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            {format(new Date(interaction.meetingStart), "Pp", { locale: fr })} →{" "}
-                                            {format(new Date(interaction.meetingEnd), "Pp", { locale: fr })}
-                                        </p>
-                                    )}
-                                    {interaction.user && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Par{" "}
-                                            {`${interaction.user.firstName ?? ""} ${interaction.user.lastName ?? ""}`.trim() ||
-                                                interaction.user.email ||
-                                                "Utilisateur"}
-                                        </p>
-                                    )}
-                                    {interaction.collaborators && interaction.collaborators.length > 0 && (
-                                        <p className="text-xs text-muted-foreground">
-                                            Avec{" "}
-                                            {interaction.collaborators
-                                                .map(
-                                                    (collaborator) =>
-                                                        `${collaborator.firstName ?? ""} ${collaborator.lastName ?? ""}`.trim() ||
-                                                        collaborator.email ||
-                                                        "Collaborateur",
-                                                )
-                                                .join(", ")}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
-                            {client.interactions.length > 0 && (
-                                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                                    <span>
-                                        Page {page} / {totalPages}
-                                    </span>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={page <= 1}
-                                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                        >
-                                            Précédent
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={page >= totalPages}
-                                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                        >
-                                            Suivant
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <div className="pt-2">
-                            <LogInteraction clientId={client.id} currentUserId={currentUserId} />
+                                )}
+                            </div>
+                            <div className="max-h-[40vh] overflow-y-auto pr-1 pt-1">
+                                <LogInteraction clientId={client.id} currentUserId={currentUserId} />
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -209,6 +220,8 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                         location={client.location}
                         primaryEmail={client.primaryEmail}
                         primaryPhone={client.primaryPhone}
+                        emails={client.emails}
+                        phones={client.phones}
                         notes={client.notes}
                         triggerClassName="w-full justify-center"
                         currentUserId={currentUserId}

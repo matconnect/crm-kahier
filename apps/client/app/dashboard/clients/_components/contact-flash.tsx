@@ -18,10 +18,14 @@ import {
 type Props = {
     primaryPhone: string | null;
     primaryEmail: string | null;
+    emails?: string[];
+    phones?: string[];
 };
 
-export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
+export function ContactFlash({ primaryPhone, primaryEmail, emails = [], phones = [] }: Props) {
     const [callCapable, setCallCapable] = React.useState(false);
+    const resolvedEmail = primaryEmail ?? emails[0] ?? null;
+    const resolvedPhone = primaryPhone ?? phones[0] ?? null;
 
     React.useEffect(() => {
         const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
@@ -30,8 +34,8 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
         setCallCapable(isMobile || isMac);
     }, []);
 
-    const callDisabled = !primaryPhone;
-    const callLabel = !primaryPhone ? "Aucun numéro" : callCapable ? "Appeler" : "Appel indisponible";
+    const callDisabled = !resolvedPhone;
+    const callLabel = !resolvedPhone ? "Aucun numéro" : callCapable ? "Appeler" : "Appel indisponible";
 
     return (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
@@ -41,10 +45,10 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
                     Contact flash
                 </div>
                 <div className="text-xs text-muted-foreground">
-                    {primaryEmail
+                    {resolvedEmail
                         ? "Email dispo"
-                        : primaryPhone
-                            ? `Téléphone dispo (${primaryPhone})`
+                        : resolvedPhone
+                            ? `Téléphone dispo (${resolvedPhone})`
                             : "Aucune coordonnée"}
                 </div>
             </div>
@@ -79,7 +83,7 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
                             </DialogHeader>
                             <div className="rounded-md border bg-muted/50 p-3 text-sm">
                                 <div className="font-medium text-foreground">Téléphone</div>
-                                <div className="text-muted-foreground">{primaryPhone}</div>
+                                <div className="text-muted-foreground">{resolvedPhone}</div>
                             </div>
                             <DialogFooter className="gap-2">
                                 {!callCapable && (
@@ -88,9 +92,9 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
                                         variant="outline"
                                         size="sm"
                                         onClick={() => {
-                                            if (!primaryPhone) return;
+                                            if (!resolvedPhone) return;
                                             navigator.clipboard
-                                                ?.writeText(primaryPhone)
+                                                ?.writeText(resolvedPhone)
                                                 .then(() => toast.success("Numéro copié"))
                                                 .catch(() => toast.error("Impossible de copier le numéro"));
                                         }}
@@ -103,8 +107,8 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
                                     size="sm"
                                     disabled={!callCapable}
                                     onClick={() => {
-                                        if (!primaryPhone || !callCapable) return;
-                                        window.location.href = `tel:${primaryPhone}`;
+                                        if (!resolvedPhone || !callCapable) return;
+                                        window.location.href = `tel:${resolvedPhone}`;
                                     }}
                                 >
                                     Appeler
@@ -119,8 +123,8 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
                             size="sm"
                             variant="outline"
                             className="justify-center"
-                            disabled={!primaryEmail}
-                            title={primaryEmail ? "Voir l'email" : "Email manquant"}
+                            disabled={!resolvedEmail}
+                            title={resolvedEmail ? "Voir l'email" : "Email manquant"}
                         >
                             <span className="inline-flex items-center gap-1">
                                 <Mail className="h-4 w-4" />
@@ -128,7 +132,7 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
                             </span>
                         </Button>
                     </DialogTrigger>
-                    {primaryEmail && (
+                    {resolvedEmail && (
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Email du contact</DialogTitle>
@@ -136,7 +140,7 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
                             </DialogHeader>
                             <div className="rounded-md border bg-muted/50 p-3 text-sm">
                                 <div className="font-medium text-foreground">Email</div>
-                                <div className="text-muted-foreground break-all">{primaryEmail}</div>
+                                <div className="text-muted-foreground break-all">{resolvedEmail}</div>
                             </div>
                             <DialogFooter className="gap-2">
                                 <Button
@@ -145,7 +149,7 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
                                     size="sm"
                                     onClick={() => {
                                         navigator.clipboard
-                                            ?.writeText(primaryEmail)
+                                            ?.writeText(resolvedEmail)
                                             .then(() => toast.success("Email copié"))
                                             .catch(() => toast.error("Impossible de copier l'email"));
                                     }}
@@ -153,7 +157,7 @@ export function ContactFlash({ primaryPhone, primaryEmail }: Props) {
                                     Copier l&apos;email
                                 </Button>
                                 <Button type="button" size="sm" asChild>
-                                    <a href={`mailto:${primaryEmail}`}>Ouvrir dans le client mail</a>
+                                    <a href={`mailto:${resolvedEmail}`}>Ouvrir dans le client mail</a>
                                 </Button>
                             </DialogFooter>
                         </DialogContent>

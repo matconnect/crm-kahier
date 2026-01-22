@@ -1,5 +1,13 @@
 import type { Request, Response } from "express";
-import { KahierServiceError, createTask, getZoneData } from "../services/kahier.service";
+import {
+    KahierServiceError,
+    createPlanningEvent,
+    createTask,
+    getEstablishmentUsers,
+    getPlannings,
+    getPlanningLegends,
+    getZoneData,
+} from "../services/kahier.service";
 import type { KahierTaskPayload } from "../types/kahier.types";
 
 export async function getZone(req: Request, res: Response) {
@@ -34,6 +42,64 @@ export async function postTask(req: Request, res: Response) {
             return res.status(error.status).json({ error: error.message });
         }
         console.error("Erreur kahier task:", error);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+}
+
+export async function getUsers(_req: Request, res: Response) {
+    try {
+        const users = await getEstablishmentUsers();
+        return res.json(users);
+    } catch (error) {
+        if (error instanceof KahierServiceError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("Erreur kahier users:", error);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+}
+
+export async function getPlanningsController(_req: Request, res: Response) {
+    try {
+        const plannings = await getPlannings();
+        return res.json(plannings);
+    } catch (error) {
+        if (error instanceof KahierServiceError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("Erreur kahier plannings:", error);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+}
+
+export async function getPlanningLegendsController(req: Request, res: Response) {
+    const { planningId } = req.params;
+    const mode = typeof req.query.mode === "string" ? req.query.mode : "classic";
+    if (!planningId) {
+        return res.status(400).json({ error: "planningId requis" });
+    }
+
+    try {
+        const legends = await getPlanningLegends(planningId, mode);
+        return res.json(legends);
+    } catch (error) {
+        if (error instanceof KahierServiceError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("Erreur kahier legends:", error);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+}
+
+export async function postPlanningEvent(req: Request, res: Response) {
+    try {
+        const event = await createPlanningEvent(req.body ?? {});
+        return res.status(201).json(event);
+    } catch (error) {
+        if (error instanceof KahierServiceError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("Erreur kahier planning create:", error);
         return res.status(500).json({ error: "Erreur serveur" });
     }
 }

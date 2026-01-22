@@ -26,6 +26,8 @@ type ApiListResponse = {
         owner: { firstName: string | null; lastName: string | null; email: string | null } | null;
         primaryEmail: string | null;
         primaryPhone: string | null;
+        emails: string[];
+        phones: string[];
         interactions: Interaction[];
     }[];
     total: number;
@@ -119,6 +121,8 @@ export async function ClientsList({ searchParams, currentUserId }: ListProps) {
                                 contactsCount: client.contactsCount,
                                 primaryPhone: client.primaryPhone,
                                 primaryEmail: client.primaryEmail,
+                                emails: client.emails,
+                                phones: client.phones,
                                 notes: client.notes,
                                 interactions: client.interactions.map((i) => ({
                                     id: i.id,

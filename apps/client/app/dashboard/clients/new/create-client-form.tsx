@@ -38,12 +38,12 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
 
     const [form, setForm] = React.useState<FormState>({
         name: "",
-        ownerId: currentUserId,
+        ownerIds: [currentUserId].filter(Boolean),
         status: "PROSPECT",
         segment: "OTHER",
         location: "",
-        primaryEmail: "",
-        primaryPhone: "",
+        emails: [""],
+        phones: [""],
         notes: "",
         contacts: [createEmptyContact()],
     });
@@ -82,7 +82,7 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
         setForm((prev) => ({ ...prev, [key]: value }));
     }
 
-    function updateContact(id: string, key: keyof Omit<ContactState, "id">, value: string) {
+    function updateContact(id: string, key: keyof Omit<ContactState, "id">, value: string | string[]) {
         setForm((prev) => ({
             ...prev,
             contacts: prev.contacts.map((contact) =>
@@ -120,14 +120,41 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
         setPending(true);
         try {
             const contactsPayload = buildContactsPayload(form.contacts);
+            const emails = normalizeEmailList(form.emails);
+            const phones = normalizePhoneList(form.phones);
+            if (emails.some((email) => !isValidEmail(email))) {
+                toast.error("Un email client est invalide.");
+                return;
+            }
+            if (phones.some((phone) => !isValidPhone(phone))) {
+                toast.error("Un téléphone client est invalide.");
+                return;
+            }
+            const invalidContactEmail = form.contacts.find((contact) =>
+                normalizeEmailList(contact.emails).some((email) => !isValidEmail(email)),
+            );
+            if (invalidContactEmail) {
+                toast.error("Un email de contact est invalide.");
+                return;
+            }
+            const invalidContactPhone = form.contacts.find((contact) =>
+                normalizePhoneList(contact.phones).some((phone) => !isValidPhone(phone)),
+            );
+            if (invalidContactPhone) {
+                toast.error("Un téléphone de contact est invalide.");
+                return;
+            }
             const payload = {
                 name: form.name.trim(),
-                ownerId: form.ownerId,
+                ownerIds: form.ownerIds,
+                ownerId: form.ownerIds[0] ?? null,
                 status: form.status,
                 segment: form.segment,
                 location: clean(form.location),
-                primaryEmail: clean(form.primaryEmail),
-                primaryPhone: clean(form.primaryPhone),
+                emails: emails.length ? emails : undefined,
+                phones: phones.length ? phones : undefined,
+                primaryEmail: emails[0] ?? null,
+                primaryPhone: phones[0] ?? null,
                 notes: clean(form.notes),
                 contacts: contactsPayload.length ? contactsPayload : undefined,
             };
@@ -162,7 +189,7 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
                         <span className="h-2 w-2 rounded-full bg-emerald-500" />
                         Assigné à :{" "}
                         <span className="font-medium text-foreground">
-                            {owners.find((o) => o.id === form.ownerId)?.label ?? "Moi"}
+                            {owners.find((o) => o.id === form.ownerIds[0])?.label ?? "Moi"}
                         </span>
                     </div>
                     <div className="text-xs md:text-sm">
@@ -205,8 +232,8 @@ function createEmptyContact(): ContactState {
         id: crypto.randomUUID ? crypto.randomUUID() : `contact-${Date.now()}`,
         firstName: "",
         lastName: "",
-        email: "",
-        phone: "",
+        emails: [""],
+        phones: [""],
         role: "",
     };
 }
@@ -221,8 +248,10 @@ function buildContactsPayload(contacts: ContactState[]) {
         .map((contact) => ({
             firstName: clean(contact.firstName),
             lastName: clean(contact.lastName),
-            email: clean(contact.email),
-            phone: clean(contact.phone),
+            emails: normalizeEmailList(contact.emails),
+            phones: normalizePhoneList(contact.phones),
+            email: normalizeEmailList(contact.emails)[0] ?? null,
+            phone: normalizePhoneList(contact.phones)[0] ?? null,
             role: clean(contact.role),
         }))
         .filter(
@@ -231,6 +260,32 @@ function buildContactsPayload(contacts: ContactState[]) {
                 contact.lastName ||
                 contact.email ||
                 contact.phone ||
+                (contact.emails && contact.emails.length > 0) ||
+                (contact.phones && contact.phones.length > 0) ||
                 contact.role,
         );
+}
+
+function normalizeEmailList(values: string[]) {
+    return values.map(normalizeEmail).filter(Boolean);
+}
+
+function normalizePhoneList(values: string[]) {
+    return values.map(normalizePhone).filter(Boolean);
+}
+
+function normalizeEmail(value: string) {
+    return value.trim().toLowerCase();
+}
+
+function normalizePhone(value: string) {
+    return value.replace(/\s+/g, "").replace(/[\-().]/g, "").trim();
+}
+
+function isValidEmail(value: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isValidPhone(value: string) {
+    return /^[+]?[\d]{6,}$/.test(value.replace(/[^\d+]/g, ""));
 }

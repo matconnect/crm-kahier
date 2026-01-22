@@ -2,6 +2,17 @@ import { prisma } from "@kahier/db";
 import { ClientSegment, ClientStatus, type Prisma } from "@prisma/client";
 import type { ClientWithRelations, ListItem, ListParams, ListResponse } from "./clients.types";
 
+function normalizeStringArray(value: unknown): string[] {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value
+            .filter((item): item is string => typeof item === "string")
+            .map((item) => item.trim())
+            .filter(Boolean);
+    }
+    return [];
+}
+
 export async function list(params: ListParams): Promise<ListResponse> {
     const { q = "", status, segment, location, page, pageSize, companyId } = params;
     const skip = (page - 1) * pageSize;
@@ -57,7 +68,10 @@ export async function list(params: ListParams): Promise<ListResponse> {
     ]);
 
     // Shape front-friendly
-    const formatted: ListItem[] = items.map((c) => ({
+    const formatted: ListItem[] = items.map((c) => {
+        const emails = normalizeStringArray(c.emails);
+        const phones = normalizeStringArray(c.phones);
+        return {
         id: c.id,
         name: c.name,
         status: c.status,
@@ -66,10 +80,13 @@ export async function list(params: ListParams): Promise<ListResponse> {
         notes: c.notes ?? null,
         contactsCount: c._count.contacts,
         owner: c.owner ? { firstName: c.owner.firstName, lastName: c.owner.lastName, email: c.owner.email } : null,
-        primaryEmail: c.primaryEmail ?? c.contacts[0]?.email ?? null,
-        primaryPhone: c.primaryPhone ?? c.contacts[0]?.phone ?? null,
+        primaryEmail: c.primaryEmail ?? emails[0] ?? c.contacts[0]?.email ?? null,
+        primaryPhone: c.primaryPhone ?? phones[0] ?? c.contacts[0]?.phone ?? null,
+        emails,
+        phones,
         interactions: c.interactions,
-    }));
+        };
+    });
 
     return { items: formatted, total, page, pageSize };
 }
@@ -257,7 +274,15 @@ export async function deleteInteraction(interactionId: string, companyId: string
 export async function addContact(
     clientId: string,
     companyId: string,
-    input: { firstName?: string | null; lastName?: string | null; email?: string | null; phone?: string | null; role?: string | null },
+    input: {
+        firstName?: string | null;
+        lastName?: string | null;
+        email?: string | null;
+        phone?: string | null;
+        emails?: string[] | null;
+        phones?: string[] | null;
+        role?: string | null;
+    },
 ) {
     await prisma.client.findFirstOrThrow({ where: { id: clientId, companyId } });
     const firstName = input.firstName?.trim() || "";
@@ -265,6 +290,8 @@ export async function addContact(
     const email = input.email?.trim() || null;
     const phone = input.phone?.trim() || null;
     const role = input.role?.trim() || null;
+    const emails = input.emails ?? null;
+    const phones = input.phones ?? null;
 
     return prisma.clientContact.create({
         data: {
@@ -273,6 +300,8 @@ export async function addContact(
             lastName,
             email,
             phone,
+            emails: emails ?? undefined,
+            phones: phones ?? undefined,
             role,
         },
     });

@@ -10,19 +10,19 @@ export type ContactState = {
     id: string;
     firstName: string;
     lastName: string;
-    email: string;
-    phone: string;
+    emails: string[];
+    phones: string[];
     role: string;
 };
 
 export type FormState = {
     name: string;
-    ownerId: string;
+    ownerIds: string[];
     status: ClientStatus;
     segment: ClientSegment;
     location: string;
-    primaryEmail: string;
-    primaryPhone: string;
+    emails: string[];
+    phones: string[];
     notes: string;
     contacts: ContactState[];
 };
