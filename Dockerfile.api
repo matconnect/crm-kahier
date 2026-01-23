@@ -24,4 +24,5 @@ COPY apps/api ./apps/api
 EXPOSE 3011
 
 # Start the API (expects DATABASE_URL, PORT, URL_DEV/URL_PROD env vars)
-CMD ["pnpm", "--filter", "@kahier/api", "exec", "tsx", "app/src/server.ts"]
+# Run migrations + generate on each container start
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && pnpm exec prisma generate && pnpm --filter @kahier/api exec tsx app/src/server.ts"]

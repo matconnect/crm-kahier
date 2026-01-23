@@ -62,7 +62,11 @@ RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S nextjs -G nodejs
 COPY --from=build --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
 COPY --from=build --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
+COPY --from=deps --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 USER nextjs
 EXPOSE 3010
-CMD ["node", "apps/client/server.js"]
+# Run migrations + regenerate Prisma client on each container start
+CMD ["sh", "-c", "node /app/node_modules/prisma/build/index.js migrate deploy --schema /app/prisma/schema.prisma && node /app/node_modules/prisma/build/index.js generate --schema /app/prisma/schema.prisma && node apps/client/server.js"]

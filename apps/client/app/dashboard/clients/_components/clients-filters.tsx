@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Filter, MapPin, Search, SlidersHorizontal, Tag } from "lucide-react";
-import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 import { CLIENT_SEGMENT_OPTIONS, CLIENT_STATUS_OPTIONS } from "@/lib/client-enums";
 
 import { Badge } from "@/components/ui/badge";
