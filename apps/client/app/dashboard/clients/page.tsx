@@ -26,6 +26,7 @@ export default async function ClientsPage({ searchParams }: PageProps) {
     const session = await requireAuth();
     const sp = await searchParams;
     const currentUserId = session.user?.id ?? "";
+    const currentUserRole = session.user?.role ?? "USER";
 
     return (
         <div className="min-h-screen bg-background">
@@ -66,7 +67,7 @@ export default async function ClientsPage({ searchParams }: PageProps) {
 
                 <ClientsSummary currentUserId={currentUserId} />
                 <ClientsFilters searchParams={sp} />
-                <ClientsList searchParams={sp} currentUserId={currentUserId} />
+                <ClientsList searchParams={sp} currentUserId={currentUserId} currentUserRole={currentUserRole} />
             </div>
         </div>
     );

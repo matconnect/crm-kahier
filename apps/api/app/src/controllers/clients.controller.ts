@@ -1,19 +1,61 @@
 import type { Request, Response } from "express";
-import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { prisma } from "@kahier/db";
 import * as service from "../services/clients.service";
 import { s3 } from "../lib/s3";
 
-async function getCompanyIdFromUser(req: Request): Promise<string | null> {
-    const userId = (req.headers["x-user-id"] as string | undefined)?.trim();
+type CurrentUser = { id: string; companyId: string; role: "USER" | "MANAGER" | "ADMIN" };
+
+function getHeaderValue(req: Request, key: string) {
+    const value = req.headers[key];
+    if (Array.isArray(value)) return value[0];
+    if (typeof value === "string") return value;
+    return null;
+}
+
+function getParamValue(req: Request, key: string) {
+    const value = (req.params as Record<string, string | string[] | undefined>)[key];
+    if (!value) return null;
+    return Array.isArray(value) ? value[0] : value;
+}
+
+async function getCurrentUser(req: Request): Promise<CurrentUser | null> {
+    const userId = getHeaderValue(req, "x-user-id")?.trim();
     if (!userId) return null;
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { companyId: true },
+        select: { id: true, companyId: true, role: true },
     });
-    return user?.companyId ?? null;
+    if (!user?.companyId) return null;
+    return { id: user.id, companyId: user.companyId, role: user.role as CurrentUser["role"] };
+}
+
+async function isAssignedToClient(clientId: string, companyId: string, userId: string) {
+    const client = await prisma.client.findFirst({
+        where: {
+            id: clientId,
+            companyId,
+            OR: [{ ownerId: userId }, { owners: { some: { userId } } }],
+        },
+        select: { id: true },
+    });
+    return Boolean(client);
+}
+
+async function ensureCanViewClient(clientId: string, currentUser: CurrentUser) {
+    if (currentUser.role === "USER") {
+        const assigned = await isAssignedToClient(clientId, currentUser.companyId, currentUser.id);
+        if (!assigned) return false;
+    }
+    return true;
+}
+
+async function ensureCanEditClient(clientId: string, currentUser: CurrentUser) {
+    if (currentUser.role === "ADMIN") return true;
+    const assigned = await isAssignedToClient(clientId, currentUser.companyId, currentUser.id);
+    return assigned;
 }
 
 function normalizeContacts(contacts: unknown) {
@@ -71,8 +113,8 @@ function normalizeStringArray(value: unknown): string[] {
 }
 
 export async function list(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     const result = await service.list({
         q: (req.query.q as string) ?? "",
         status: (req.query.status as string) ?? undefined,
@@ -80,20 +122,21 @@ export async function list(req: Request, res: Response) {
         location: (req.query.location as string) ?? undefined,
         page: Number(req.query.page ?? 1),
         pageSize: Number(req.query.pageSize ?? 20),
-        companyId,
+        companyId: currentUser.companyId,
+        ...(currentUser.role === "USER" ? { assignedUserId: currentUser.id } : {}),
     });
     res.json(result);
 }
 
 export async function summary(_req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(_req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    res.json(await service.summary(companyId));
+    const currentUser = await getCurrentUser(_req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    res.json(await service.summary(currentUser.companyId));
 }
 
 export async function create(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
     const { contacts, ...rest } = req.body ?? {};
     const normalizedContacts = normalizeContacts(contacts);
     const body = (req.body ?? {}) as {
@@ -107,10 +150,14 @@ export async function create(req: Request, res: Response) {
     const phones = normalizeStringArray(body.phones);
     const ownerIds = Array.isArray(body.ownerIds)
         ? (body.ownerIds as unknown[])
-              .filter((id) => typeof id === "string")
-              .map((id) => (id as string).trim())
-              .filter(Boolean)
+            .filter((id) => typeof id === "string")
+            .map((id) => (id as string).trim())
+            .filter(Boolean)
         : [];
+    const uniqueOwnerIds = Array.from(new Set(ownerIds));
+    if (currentUser.role !== "ADMIN" && !uniqueOwnerIds.includes(currentUser.id)) {
+        uniqueOwnerIds.push(currentUser.id);
+    }
     const primaryEmail = typeof body.primaryEmail === "string"
         ? body.primaryEmail?.trim()
         : undefined;
@@ -119,13 +166,15 @@ export async function create(req: Request, res: Response) {
         : undefined;
     const payload = {
         ...rest,
-        companyId,
+        companyId: currentUser.companyId,
         emails: emails.length ? emails : undefined,
         phones: phones.length ? phones : undefined,
         primaryEmail: primaryEmail || emails[0] || null,
         primaryPhone: primaryPhone || phones[0] || null,
-        ownerId: ownerIds[0] ?? (rest as { ownerId?: string | null }).ownerId ?? null,
-        owners: ownerIds.length ? { create: ownerIds.map((id) => ({ userId: id })) } : undefined,
+        ownerId: uniqueOwnerIds[0] ?? (rest as { ownerId?: string | null }).ownerId ?? null,
+        owners: uniqueOwnerIds.length
+            ? { create: uniqueOwnerIds.map((id) => ({ userId: id })) }
+            : undefined,
     };
     if (normalizedContacts) {
         (payload as typeof payload & { contacts: typeof normalizedContacts }).contacts = normalizedContacts;
@@ -134,21 +183,29 @@ export async function create(req: Request, res: Response) {
 }
 
 export async function getById(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    if (!req.params.id) {
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
+    if (!clientId) {
         res.status(400).json({ error: "ID is required" });
         return;
     }
-    res.json(await service.getById(req.params.id, companyId));
+    if (!(await ensureCanViewClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
+    }
+    res.json(await service.getById(clientId, currentUser.companyId));
 }
 
 export async function update(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    if (!req.params.id) {
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
+    if (!clientId) {
         res.status(400).json({ error: "ID is required" });
         return;
+    }
+    if (!(await ensureCanEditClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
     }
     const body = (req.body ?? {}) as {
         emails?: unknown;
@@ -167,12 +224,15 @@ export async function update(req: Request, res: Response) {
         : undefined;
     const ownerIds = Array.isArray(body.ownerIds)
         ? (body.ownerIds as unknown[])
-              .filter((id) => typeof id === "string")
-              .map((id) => (id as string).trim())
-              .filter(Boolean)
+            .filter((id) => typeof id === "string")
+            .map((id) => (id as string).trim())
+            .filter(Boolean)
         : [];
+    const uniqueOwnerIds = Array.from(new Set(ownerIds));
+    const rest = { ...(req.body ?? {}) } as Record<string, unknown>;
+    delete rest.ownerIds;
     const payload = {
-        ...req.body,
+        ...rest,
         ...("emails" in body ? { emails: emails.length ? emails : [] } : {}),
         ...("phones" in body ? { phones: phones.length ? phones : [] } : {}),
         ...(primaryEmail !== undefined || "emails" in body
@@ -183,32 +243,44 @@ export async function update(req: Request, res: Response) {
             : {}),
         ...("ownerIds" in body
             ? {
-                  ownerId: ownerIds[0] ?? null,
-                  owners: ownerIds.length ? { set: ownerIds.map((id) => ({ userId: id })) } : { set: [] },
-              }
+                ownerId: uniqueOwnerIds[0] ?? null,
+                owners: uniqueOwnerIds.length
+                    ? {
+                        deleteMany: {},
+                        create: uniqueOwnerIds.map((id) => ({ userId: id })),
+                    }
+                    : { deleteMany: {} },
+            }
             : {}),
     };
-    res.json(await service.update(req.params.id, companyId, payload));
+    res.json(await service.update(clientId, currentUser.companyId, payload));
 }
 
 export async function remove(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    if (!req.params.id) {
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
+    if (!clientId) {
         res.status(400).json({ error: "ID is required" });
         return;
     }
-    await service.remove(req.params.id, companyId);
+    if (!(await ensureCanEditClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
+    }
+    await service.remove(clientId, currentUser.companyId);
     res.status(204).send();
 }
 
 export async function logInteraction(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const clientId = req.params.id;
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
     if (!clientId) {
         res.status(400).json({ error: "ID is required" });
         return;
+    }
+    if (!(await ensureCanEditClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
     }
 
     const type = typeof req.body?.type === "string" ? req.body.type.trim() : "";
@@ -244,7 +316,7 @@ export async function logInteraction(req: Request, res: Response) {
     }
 
     try {
-        const interaction = await service.addInteraction(clientId, companyId, {
+        const interaction = await service.addInteraction(clientId, currentUser.companyId, {
             type,
             summary,
             occurredAt,
@@ -261,12 +333,15 @@ export async function logInteraction(req: Request, res: Response) {
 }
 
 export async function addContact(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const clientId = req.params.id;
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
     if (!clientId) {
         res.status(400).json({ error: "ID is required" });
         return;
+    }
+    if (!(await ensureCanEditClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
     }
 
     const firstName = typeof req.body?.firstName === "string" ? req.body.firstName : undefined;
@@ -283,7 +358,7 @@ export async function addContact(req: Request, res: Response) {
     }
 
     try {
-        const contact = await service.addContact(clientId, companyId, {
+        const contact = await service.addContact(clientId, currentUser.companyId, {
             firstName,
             lastName,
             email: email ?? emails[0] ?? null,
@@ -300,16 +375,19 @@ export async function addContact(req: Request, res: Response) {
 }
 
 export async function listDocuments(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const clientId = req.params.id;
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
     if (!clientId) {
         res.status(400).json({ error: "ID is required" });
         return;
     }
 
     try {
-        const documents = await service.listDocuments(clientId, companyId);
+        if (!(await ensureCanViewClient(clientId, currentUser))) {
+            return res.status(403).json({ error: "Accès refusé" });
+        }
+        const documents = await service.listDocuments(clientId, currentUser.companyId);
         res.json({ documents });
     } catch (error) {
         console.error("listDocuments", error);
@@ -318,12 +396,15 @@ export async function listDocuments(req: Request, res: Response) {
 }
 
 export async function presignDocument(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const clientId = req.params.id;
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
     if (!clientId) {
         res.status(400).json({ error: "ID is required" });
         return;
+    }
+    if (!(await ensureCanEditClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
     }
 
     const fileName = typeof req.body?.fileName === "string" ? req.body.fileName.trim() : "";
@@ -354,11 +435,10 @@ export async function presignDocument(req: Request, res: Response) {
     const key = `clients/${clientId}/${Date.now()}-${crypto.randomUUID()}-${safeName || "document"}`;
 
     try {
-        await service.getById(clientId, companyId);
+        await service.getById(clientId, currentUser.companyId);
         const command = new PutObjectCommand({
             Bucket: bucket,
             Key: key,
-            ContentType: contentType || "application/octet-stream",
         });
         const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
         res.json({
@@ -374,12 +454,15 @@ export async function presignDocument(req: Request, res: Response) {
 }
 
 export async function createDocument(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const clientId = req.params.id;
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
     if (!clientId) {
         res.status(400).json({ error: "ID is required" });
         return;
+    }
+    if (!(await ensureCanEditClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
     }
 
     const fileName = typeof req.body?.fileName === "string" ? req.body.fileName.trim() : "";
@@ -397,8 +480,8 @@ export async function createDocument(req: Request, res: Response) {
     }
 
     try {
-        const uploaderId = (req.headers["x-user-id"] as string | undefined)?.trim();
-        const document = await service.createDocument(clientId, companyId, {
+        const uploaderId = getHeaderValue(req, "x-user-id")?.trim();
+        const document = await service.createDocument(clientId, currentUser.companyId, {
             uploaderId,
             fileName,
             s3Key,
@@ -413,13 +496,16 @@ export async function createDocument(req: Request, res: Response) {
 }
 
 export async function getDocumentDownload(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const clientId = req.params.id;
-    const documentId = req.params.documentId;
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
+    const documentId = getParamValue(req, "documentId");
     if (!clientId || !documentId) {
         res.status(400).json({ error: "ID is required" });
         return;
+    }
+    if (!(await ensureCanViewClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
     }
 
     const bucket = process.env.AWS_S3_BUCKET_NAME;
@@ -429,11 +515,12 @@ export async function getDocumentDownload(req: Request, res: Response) {
     }
 
     try {
-        const doc = await service.getDocumentForDownload(documentId, clientId, companyId);
+        const doc = await service.getDocumentForDownload(documentId, clientId, currentUser.companyId);
         const command = new GetObjectCommand({
             Bucket: bucket,
             Key: doc.s3Key,
             ResponseContentType: doc.mimeType ?? undefined,
+            ResponseContentDisposition: `attachment; filename="${encodeURIComponent(doc.fileName)}"`,
         });
         const url = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
         res.json({ url });
@@ -443,13 +530,82 @@ export async function getDocumentDownload(req: Request, res: Response) {
     }
 }
 
+export async function updateDocument(req: Request, res: Response) {
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
+    const documentId = getParamValue(req, "documentId");
+    if (!clientId || !documentId) {
+        res.status(400).json({ error: "ID is required" });
+        return;
+    }
+    if (!(await ensureCanEditClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
+    }
+
+    const fileName = typeof req.body?.fileName === "string" ? req.body.fileName.trim() : "";
+    if (!fileName) {
+        res.status(400).json({ error: "Nom de fichier requis" });
+        return;
+    }
+
+    try {
+        const document = await service.updateDocumentName(documentId, clientId, currentUser.companyId, fileName);
+        res.json({ document });
+    } catch (error) {
+        console.error("updateDocument", error);
+        res.status(500).json({ error: "Impossible de renommer le document" });
+    }
+}
+
+export async function deleteDocument(req: Request, res: Response) {
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const clientId = getParamValue(req, "id");
+    const documentId = getParamValue(req, "documentId");
+    if (!clientId || !documentId) {
+        res.status(400).json({ error: "ID is required" });
+        return;
+    }
+    if (!(await ensureCanEditClient(clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
+    }
+
+    const bucket = process.env.AWS_S3_BUCKET_NAME;
+    if (!bucket) {
+        res.status(500).json({ error: "Bucket S3 non configuré" });
+        return;
+    }
+
+    try {
+        const s3Key = await service.deleteDocument(documentId, clientId, currentUser.companyId);
+        await s3.send(
+            new DeleteObjectCommand({
+                Bucket: bucket,
+                Key: s3Key,
+            }),
+        );
+        res.status(204).send();
+    } catch (error) {
+        console.error("deleteDocument", error);
+        res.status(500).json({ error: "Impossible de supprimer le document" });
+    }
+}
+
 export async function updateInteraction(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const interactionId = req.params.interactionId;
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const interactionId = getParamValue(req, "interactionId");
     if (!interactionId) {
         res.status(400).json({ error: "interactionId is required" });
         return;
+    }
+    const interaction = await prisma.clientInteraction.findUnique({
+        where: { id: interactionId },
+        select: { clientId: true },
+    });
+    if (!interaction || !(await ensureCanEditClient(interaction.clientId, currentUser))) {
+        return res.status(403).json({ error: "Accès refusé" });
     }
 
     const type = typeof req.body?.type === "string" ? req.body.type.trim() : undefined;
@@ -479,7 +635,7 @@ export async function updateInteraction(req: Request, res: Response) {
     }
 
     try {
-        const interaction = await service.updateInteraction(interactionId, companyId, {
+        const interaction = await service.updateInteraction(interactionId, currentUser.companyId, {
             type,
             summary,
             occurredAt,
@@ -496,16 +652,23 @@ export async function updateInteraction(req: Request, res: Response) {
 }
 
 export async function deleteInteraction(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const interactionId = req.params.interactionId;
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const interactionId = getParamValue(req, "interactionId");
     if (!interactionId) {
         res.status(400).json({ error: "interactionId is required" });
         return;
     }
 
     try {
-        await service.deleteInteraction(interactionId, companyId);
+        const interaction = await prisma.clientInteraction.findUnique({
+            where: { id: interactionId },
+            select: { clientId: true },
+        });
+        if (!interaction || !(await ensureCanEditClient(interaction.clientId, currentUser))) {
+            return res.status(403).json({ error: "Accès refusé" });
+        }
+        await service.deleteInteraction(interactionId, currentUser.companyId);
         res.status(204).send();
     } catch (error) {
         console.error("deleteInteraction", error);
@@ -514,16 +677,23 @@ export async function deleteInteraction(req: Request, res: Response) {
 }
 
 export async function deleteContact(req: Request, res: Response) {
-    const companyId = await getCompanyIdFromUser(req);
-    if (!companyId) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const contactId = req.params.contactId;
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    const contactId = getParamValue(req, "contactId");
     if (!contactId) {
         res.status(400).json({ error: "contactId is required" });
         return;
     }
 
     try {
-        await service.deleteContact(contactId, companyId);
+        const contact = await prisma.clientContact.findUnique({
+            where: { id: contactId },
+            select: { clientId: true },
+        });
+        if (!contact || !(await ensureCanEditClient(contact.clientId, currentUser))) {
+            return res.status(403).json({ error: "Accès refusé" });
+        }
+        await service.deleteContact(contactId, currentUser.companyId);
         res.status(204).send();
     } catch (error) {
         console.error("deleteContact", error);

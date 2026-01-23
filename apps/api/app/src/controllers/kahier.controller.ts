@@ -10,8 +10,14 @@ import {
 } from "../services/kahier.service";
 import type { KahierTaskPayload } from "../types/kahier.types";
 
+function getParamValue(req: Request, key: string) {
+    const value = (req.params as Record<string, string | string[] | undefined>)[key];
+    if (!value) return null;
+    return Array.isArray(value) ? value[0] : value;
+}
+
 export async function getZone(req: Request, res: Response) {
-    const { zoneId } = req.params;
+    const zoneId = getParamValue(req, "zoneId");
     if (!zoneId) {
         return res.status(400).json({ error: "zoneId requis" });
     }
@@ -73,7 +79,7 @@ export async function getPlanningsController(_req: Request, res: Response) {
 }
 
 export async function getPlanningLegendsController(req: Request, res: Response) {
-    const { planningId } = req.params;
+    const planningId = getParamValue(req, "planningId");
     const mode = typeof req.query.mode === "string" ? req.query.mode : "classic";
     if (!planningId) {
         return res.status(400).json({ error: "planningId requis" });

@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiInput } from "@/components/ui/multi-input";
+import { UserPicker, type PickerOption } from "@/components/ui/user-picker";
 
 type Props = {
     clientId: string;
@@ -31,9 +32,12 @@ type Props = {
     emails?: string[];
     phones?: string[];
     notes: string | null;
+    ownerIds?: string[];
     triggerClassName?: string;
     currentUserId: string;
 };
+
+type OwnerOption = { id: string; label: string; email?: string | null };
 
 const statusOptions: { value: ClientStatus; label: string }[] = [
     { value: "PROSPECT", label: "Prospect" },
@@ -46,7 +50,7 @@ const segmentOptions: { value: ClientSegment; label: string }[] = [
     { value: "PME", label: "PME" },
     { value: "ETI", label: "ETI" },
     { value: "GE", label: "Grand compte" },
-    { value: "OTHER", label: "Autre" },
+    { value: "OTHER", label: "AUTRE" },
 ];
 
 export function EditClientDialog(props: Props) {
@@ -64,6 +68,32 @@ export function EditClientDialog(props: Props) {
         props.phones?.length ? props.phones : [props.primaryPhone ?? ""],
     );
     const [notes, setNotes] = React.useState(props.notes ?? "");
+    const [ownersOpen, setOwnersOpen] = React.useState(false);
+    const [ownersQuery, setOwnersQuery] = React.useState("");
+    const [ownerIds, setOwnerIds] = React.useState<string[]>(props.ownerIds ?? []);
+    const [owners, setOwners] = React.useState<OwnerOption[]>([]);
+
+    React.useEffect(() => {
+        let active = true;
+        async function loadOwners() {
+            try {
+                if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
+                const res = await fetch(`${apiBase}/users`, {
+                    headers: props.currentUserId ? { "x-user-id": props.currentUserId } : undefined,
+                });
+                const data = (await res.json()) as { users?: OwnerOption[]; error?: string };
+                if (!res.ok) throw new Error(data.error ?? "Impossible de charger les utilisateurs.");
+                if (!active || !data.users) return;
+                setOwners(data.users);
+            } catch (error) {
+                console.error("Failed to fetch users", error);
+            }
+        }
+        void loadOwners();
+        return () => {
+            active = false;
+        };
+    }, [apiBase, props.currentUserId]);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -107,6 +137,7 @@ export function EditClientDialog(props: Props) {
                     primaryEmail: cleanEmails[0] ?? null,
                     primaryPhone: cleanPhones[0] ?? null,
                     notes: notes.trim() || null,
+                    ownerIds,
                 }),
             });
             const data = await res.json().catch(() => null);
@@ -137,7 +168,7 @@ export function EditClientDialog(props: Props) {
                 <form className="space-y-3" onSubmit={onSubmit}>
                     <div className="space-y-2">
                         <Label>Nom</Label>
-                        <Input value={name} onChange={(e) => setName(e.target.value)} required />
+                        <Input placeholder="Nom du client" value={name} onChange={(e) => setName(e.target.value)} required />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-2">
@@ -174,17 +205,19 @@ export function EditClientDialog(props: Props) {
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label>Localisation</Label>
-                            <Input value={location} onChange={(e) => setLocation(e.target.value)} />
+                            <Input placeholder="Ville, pays" value={location} onChange={(e) => setLocation(e.target.value)} />
                         </div>
                         <MultiInput
                             label="Emails"
                             type="email"
+                            placeholder="contact@client.com"
                             values={emails}
                             onChange={setEmails}
                             disabled={pending}
                         />
                         <MultiInput
                             label="Téléphones"
+                            placeholder="+33 6 12 34 56 78"
                             values={phones}
                             onChange={setPhones}
                             disabled={pending}
@@ -192,8 +225,25 @@ export function EditClientDialog(props: Props) {
                     </div>
                     <div className="space-y-2">
                         <Label>Notes</Label>
-                        <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+                        <Input placeholder="Notes internes" value={notes} onChange={(e) => setNotes(e.target.value)} />
                     </div>
+                    <UserPicker
+                        label="Gestionnaires"
+                        options={owners.map((owner) => ({
+                            id: owner.id,
+                            label: owner.label,
+                            email: owner.email,
+                        })) as PickerOption[]}
+                        selectedIds={ownerIds}
+                        onChange={setOwnerIds}
+                        placeholder="Sélectionne des gestionnaires"
+                        open={ownersOpen}
+                        onOpenChange={setOwnersOpen}
+                        query={ownersQuery}
+                        onQueryChange={setOwnersQuery}
+                        emptyMessage="Aucun gestionnaire disponible."
+                        searchPlaceholder="Rechercher un gestionnaire..."
+                    />
                     <DialogFooter>
                         <Button type="submit" disabled={pending} className="gap-2">
                             <Save className="h-4 w-4" />

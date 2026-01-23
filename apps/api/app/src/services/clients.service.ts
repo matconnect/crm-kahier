@@ -14,7 +14,7 @@ function normalizeStringArray(value: unknown): string[] {
 }
 
 export async function list(params: ListParams): Promise<ListResponse> {
-    const { q = "", status, segment, location, page, pageSize, companyId } = params;
+    const { q = "", status, segment, location, page, pageSize, companyId, assignedUserId } = params;
     const skip = (page - 1) * pageSize;
 
     const statusFilter = isClientStatus(status) ? status : undefined;
@@ -22,6 +22,14 @@ export async function list(params: ListParams): Promise<ListResponse> {
 
     const where: Prisma.ClientWhereInput = {
         companyId,
+        ...(assignedUserId
+            ? {
+                  OR: [
+                      { ownerId: assignedUserId },
+                      { owners: { some: { userId: assignedUserId } } },
+                  ],
+              }
+            : {}),
         ...(statusFilter ? { status: statusFilter } : {}),
         ...(segmentFilter ? { segment: segmentFilter } : {}),
         ...(location ? { location } : {}),
@@ -175,6 +183,7 @@ export async function getById(id: string, companyId: string): Promise<ClientWith
         include: {
             contacts: true,
             owner: { select: { firstName: true, lastName: true, email: true } },
+            owners: { select: { userId: true, user: { select: { firstName: true, lastName: true, email: true } } } },
             interactions: {
                 orderBy: { occurredAt: "desc" },
                 include: {
@@ -322,6 +331,41 @@ export async function getDocumentForDownload(
             mimeType: true,
         },
     });
+}
+
+export async function updateDocumentName(
+    documentId: string,
+    clientId: string,
+    companyId: string,
+    fileName: string,
+) {
+    await assertClientAccess(clientId, companyId);
+    return prisma.clientDocument.update({
+        where: { id: documentId, clientId },
+        data: { fileName },
+        select: {
+            id: true,
+            fileName: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+            uploader: { select: { firstName: true, lastName: true, email: true } },
+        },
+    });
+}
+
+export async function deleteDocument(
+    documentId: string,
+    clientId: string,
+    companyId: string,
+) {
+    await assertClientAccess(clientId, companyId);
+    const doc = await prisma.clientDocument.findFirstOrThrow({
+        where: { id: documentId, clientId },
+        select: { id: true, s3Key: true },
+    });
+    await prisma.clientDocument.delete({ where: { id: doc.id } });
+    return doc.s3Key;
 }
 
 export async function deleteInteraction(interactionId: string, companyId: string) {

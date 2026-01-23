@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
 import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 import { requireAuth } from "@/lib/authz";
+import type { Role } from "@/lib/roles";
 import { DashboardTopBar } from "@/components/dashboard/top-bar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +29,13 @@ type ClientDetail = {
     location: string | null;
     primaryEmail: string | null;
     primaryPhone: string | null;
+    ownerId: string | null;
+    ownerIds?: string[] | null;
     emails?: string[] | null;
     phones?: string[] | null;
     notes: string | null;
     owner: { firstName: string | null; lastName: string | null; email: string | null } | null;
+    owners: { userId: string; user?: { firstName: string | null; lastName: string | null; email: string | null } | null }[];
     contacts: {
         id: string;
         firstName: string;
@@ -82,6 +86,7 @@ async function fetchClient(id: string, currentUserId: string): Promise<ClientDet
 export default async function ClientDetailPage({ params }: DetailPageProps) {
     const session = await requireAuth();
     const currentUserId = session.user?.id ?? "";
+    const currentUserRole = (session.user?.role ?? "USER") as Role;
 
     const { id } = await params;
     if (!id) {
@@ -94,6 +99,13 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
 
     const ownerFullName = `${client.owner?.firstName ?? ""} ${client.owner?.lastName ?? ""}`.trim();
     const ownerDisplay = ownerFullName || client.owner?.email || "Non assigné";
+    const managerNames = (client.owners ?? [])
+        .filter((o) => o.userId !== client.ownerId)
+        .map((o) => {
+            const fullName = `${o.user?.firstName ?? ""} ${o.user?.lastName ?? ""}`.trim();
+            return fullName || o.user?.email || "";
+        })
+        .filter(Boolean);
     const clientEmails = (client.emails ?? []).filter(Boolean);
     const clientPhones = (client.phones ?? []).filter(Boolean);
     const statusLabel =
@@ -119,6 +131,11 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
         })
         .sort((a, b) => new Date(a.upcomingAt).getTime() - new Date(b.upcomingAt).getTime());
     const nextInteraction = upcomingInteractions[0];
+    const assignedUserIds = new Set([
+        ...(client.ownerId ? [client.ownerId] : []),
+        ...(client.owners ?? []).map((o) => o.userId),
+    ]);
+    const canEdit = currentUserRole === "ADMIN" || assignedUserIds.has(currentUserId);
 
     return (
         <div className="min-h-screen bg-background">
@@ -137,7 +154,8 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                         <div className="text-xs text-muted-foreground uppercase tracking-wide">{client.segment}</div>
                         <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{client.name}</h1>
                         <p className="text-sm text-muted-foreground">
-                            Statut : {statusLabel} · Gestionnaire : {ownerDisplay}
+                            Statut : {statusLabel} · Gestionnaire principal : {ownerDisplay}
+                            {managerNames.length > 0 ? ` · Assignés : ${managerNames.join(", ")}` : ""}
                         </p>
                         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                             {client.location && (
@@ -218,22 +236,28 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                         <ArrowLeft className="h-4 w-4" />
                         Retour liste
                     </Link>
-                    <div className="flex flex-wrap gap-2">
-                        <EditClientDialog
-                            clientId={client.id}
-                            name={client.name}
-                            status={client.status}
-                            segment={client.segment}
-                            location={client.location}
-                            primaryEmail={client.primaryEmail}
-                            primaryPhone={client.primaryPhone}
-                            emails={client.emails ?? []}
-                            phones={client.phones ?? []}
-                            notes={client.notes}
-                            currentUserId={currentUserId}
-                        />
-                        <AddContactDialog clientId={client.id} currentUserId={currentUserId} />
-                    </div>
+                    {canEdit && (
+                        <div className="flex flex-wrap gap-2">
+                            <EditClientDialog
+                                clientId={client.id}
+                                name={client.name}
+                                status={client.status}
+                                segment={client.segment}
+                                location={client.location}
+                                primaryEmail={client.primaryEmail}
+                                primaryPhone={client.primaryPhone}
+                                emails={client.emails ?? []}
+                                phones={client.phones ?? []}
+                                notes={client.notes}
+                                ownerIds={[
+                                    ...(client.ownerId ? [client.ownerId] : []),
+                                    ...(client.owners ?? []).map((o) => o.userId),
+                                ]}
+                                currentUserId={currentUserId}
+                            />
+                            <AddContactDialog clientId={client.id} currentUserId={currentUserId} />
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-3">
@@ -256,6 +280,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                     interactions={client.interactions}
                                     clientId={client.id}
                                     currentUserId={currentUserId}
+                                    canEdit={canEdit}
                                 />
                             </div>
                         </CardContent>
@@ -298,19 +323,25 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                             </span>
                                         ))}
                                     </div>
-                                    <div className="pt-2 flex flex-wrap gap-2 justify-end">
-                                        <EditContactDialog clientId={client.id} contact={contact} currentUserId={currentUserId} />
-                                        <DeleteContactDialog clientId={client.id} contactId={contact.id} currentUserId={currentUserId} />
-                                    </div>
+                                    {canEdit && (
+                                        <div className="pt-2 flex flex-wrap gap-2 justify-end">
+                                            <EditContactDialog clientId={client.id} contact={contact} currentUserId={currentUserId} />
+                                            <DeleteContactDialog clientId={client.id} contactId={contact.id} currentUserId={currentUserId} />
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </CardContent>
                     </Card>
                 </div>
 
-                <ClientDocumentsCard clientId={client.id} currentUserId={currentUserId} />
+                <ClientDocumentsCard
+                    clientId={client.id}
+                    currentUserId={currentUserId}
+                    canEdit={canEdit}
+                />
 
-                <LogInteraction clientId={client.id} currentUserId={currentUserId} />
+                {canEdit && <LogInteraction clientId={client.id} currentUserId={currentUserId} />}
             </div>
         </div>
     );

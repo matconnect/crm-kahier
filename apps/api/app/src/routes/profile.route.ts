@@ -4,8 +4,15 @@ import { prisma } from "@kahier/db";
 
 const router: ExpressRouter = Router();
 
+const getHeaderValue = (req: { headers: Record<string, string | string[] | undefined> }, key: string) => {
+  const value = req.headers[key];
+  if (Array.isArray(value)) return value[0];
+  if (typeof value === "string") return value;
+  return undefined;
+};
+
 router.use((req, res, next) => {
-  const userId = (req.headers["x-user-id"] as string | undefined)?.trim();
+  const userId = getHeaderValue(req, "x-user-id")?.trim();
   if (!userId) return res.status(401).json({ error: "x-user-id requis" });
   (req as unknown as { userId: string }).userId = userId;
   next();
@@ -26,13 +33,19 @@ router.patch("/", async (req, res) => {
   const { firstName, lastName, password, email } = req.body ?? {};
 
   const data: {
-    firstName?: string | null;
-    lastName?: string | null;
+    firstName?: string;
+    lastName?: string;
     password?: string;
     email?: string;
   } = {};
-  if (typeof firstName === "string") data.firstName = firstName.trim();
-  if (typeof lastName === "string") data.lastName = lastName.trim();
+  if (typeof firstName === "string") {
+    const trimmed = firstName.trim();
+    if (trimmed) data.firstName = trimmed;
+  }
+  if (typeof lastName === "string") {
+    const trimmed = lastName.trim();
+    if (trimmed) data.lastName = trimmed;
+  }
   if (typeof email === "string") {
     const cleaned = email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -14,6 +14,8 @@ router.get("/:id/documents", controller.listDocuments);
 router.post("/:id/documents/presign", controller.presignDocument);
 router.post("/:id/documents", controller.createDocument);
 router.get("/:id/documents/:documentId/download", controller.getDocumentDownload);
+router.patch("/:id/documents/:documentId", controller.updateDocument);
+router.delete("/:id/documents/:documentId", controller.deleteDocument);
 router.patch("/:id/interactions/:interactionId", controller.updateInteraction);
 router.delete("/:id/interactions/:interactionId", controller.deleteInteraction);
 router.delete("/:id/contacts/:contactId", controller.deleteContact);

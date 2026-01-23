@@ -29,11 +29,12 @@ type Props = {
     interactions: Interaction[];
     clientId: string;
     currentUserId: string;
+    canEdit: boolean;
 };
 
 const PER_PAGE = 5;
 
-export function InteractionsList({ interactions, clientId, currentUserId }: Props) {
+export function InteractionsList({ interactions, clientId, currentUserId, canEdit }: Props) {
     const [page, setPage] = useState(1);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingSummary, setEditingSummary] = useState<string>("");
@@ -151,32 +152,34 @@ export function InteractionsList({ interactions, clientId, currentUserId }: Prop
                                 ) : null}
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setEditingId(interaction.id);
-                                    setEditingSummary(interaction.summary ?? "");
-                                }}
-                            >
-                                <Pencil className="mr-1 h-3 w-3" />
-                                Éditer
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setDeleteId(interaction.id);
-                                    setDeleteOpen(true);
-                                }}
-                            >
-                                <Trash2 className="mr-1 h-3 w-3" />
-                                Supprimer
-                            </Button>
-                        </div>
+                        {canEdit && (
+                            <div className="flex items-center gap-2 text-xs">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setEditingId(interaction.id);
+                                        setEditingSummary(interaction.summary ?? "");
+                                    }}
+                                >
+                                    <Pencil className="mr-1 h-3 w-3" />
+                                    Éditer
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setDeleteId(interaction.id);
+                                        setDeleteOpen(true);
+                                    }}
+                                >
+                                    <Trash2 className="mr-1 h-3 w-3" />
+                                    Supprimer
+                                </Button>
+                            </div>
+                        )}
                     </div>
-                    {editingId === interaction.id ? (
+                    {canEdit && editingId === interaction.id ? (
                         <div className="mt-2 space-y-2">
                             <textarea
                                 className="w-full rounded-md border bg-background p-2 text-sm"

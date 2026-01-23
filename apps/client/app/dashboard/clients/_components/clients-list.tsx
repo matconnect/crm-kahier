@@ -45,9 +45,10 @@ type ListProps = {
         pageSize?: string;
     };
     currentUserId: string;
+    currentUserRole: "USER" | "MANAGER" | "ADMIN";
 };
 
-export async function ClientsList({ searchParams, currentUserId }: ListProps) {
+export async function ClientsList({ searchParams, currentUserId, currentUserRole }: ListProps) {
     const page = Number(searchParams.page ?? "1") || 1;
     const pageSize = Number(searchParams.pageSize ?? "20") || 20;
 
@@ -104,7 +105,9 @@ export async function ClientsList({ searchParams, currentUserId }: ListProps) {
 
             {clients.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-muted/60 bg-muted/50 p-6 text-sm text-muted-foreground">
-                    Aucun client ne correspond à ces filtres pour le moment.
+                    {currentUserRole === "USER"
+                        ? "Aucun client accessible pour le moment."
+                        : "Aucun client ne correspond à ces filtres pour le moment."}
                 </div>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2">

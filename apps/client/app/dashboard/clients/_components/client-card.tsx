@@ -57,6 +57,7 @@ type ClientCardProps = {
 export function ClientCard({ client, currentUserId }: ClientCardProps) {
     const ownerFullName = `${client.owner?.firstName ?? ""} ${client.owner?.lastName ?? ""}`.trim();
     const ownerDisplay = ownerFullName || client.owner?.email || "Non assigné";
+    const segmentLabel = client.segment === "OTHER" ? "AUTRE" : client.segment;
     const statusLabel =
         client.status === "ACTIVE"
             ? "Client actif"
@@ -85,7 +86,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                 <div className="flex items-start justify-between">
                     <div className="space-y-1">
                         <div className="inline-flex items-center gap-2">
-                            <Badge variant="outline">{client.segment}</Badge>
+                            <Badge variant="outline">{segmentLabel}</Badge>
                             <Badge variant="secondary">{statusLabel}</Badge>
                         </div>
                         <CardTitle className="text-lg">

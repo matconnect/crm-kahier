@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Download, FileText, Upload } from "lucide-react";
+import { Check, Download, Eye, FileText, Pencil, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 type DocumentItem = {
@@ -20,14 +21,24 @@ type DocumentItem = {
 type Props = {
     clientId: string;
     currentUserId: string;
+    canEdit: boolean;
 };
 
-export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
+export function ClientDocumentsCard({ clientId, currentUserId, canEdit }: Props) {
     const [documents, setDocuments] = React.useState<DocumentItem[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [uploading, setUploading] = React.useState(false);
     const [inputKey, setInputKey] = React.useState(0);
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const [previewDoc, setPreviewDoc] = React.useState<DocumentItem | null>(null);
+    const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+    const [previewLoading, setPreviewLoading] = React.useState(false);
+    const [uploadName, setUploadName] = React.useState("");
+    const [pendingFile, setPendingFile] = React.useState<File | null>(null);
+    const [renamingId, setRenamingId] = React.useState<string | null>(null);
+    const [renameValue, setRenameValue] = React.useState("");
+    const [deletingId, setDeletingId] = React.useState<string | null>(null);
+    const [deleteTarget, setDeleteTarget] = React.useState<DocumentItem | null>(null);
 
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
 
@@ -61,6 +72,7 @@ export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
         }
         setUploading(true);
         try {
+            const desiredName = uploadName.trim() || file.name;
             const presignRes = await fetch(`${apiBase}/clients/${clientId}/documents/presign`, {
                 method: "POST",
                 headers: {
@@ -68,7 +80,7 @@ export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
                     ...(currentUserId ? { "x-user-id": currentUserId } : {}),
                 },
                 body: JSON.stringify({
-                    fileName: file.name,
+                    fileName: desiredName,
                     contentType: file.type,
                     size: file.size,
                 }),
@@ -86,9 +98,6 @@ export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
 
             const uploadRes = await fetch(presignData.uploadUrl, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": presignData.contentType ?? (file.type || "application/octet-stream"),
-                },
                 body: file,
             });
             if (!uploadRes.ok) {
@@ -103,7 +112,7 @@ export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
                 },
                 body: JSON.stringify({
                     key: presignData.key,
-                    fileName: presignData.fileName ?? file.name,
+                    fileName: presignData.fileName ?? desiredName,
                     contentType: presignData.contentType ?? file.type,
                     size: file.size,
                 }),
@@ -115,6 +124,8 @@ export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
 
             toast.success("Document ajouté.");
             setInputKey((prev) => prev + 1);
+            setUploadName("");
+            setPendingFile(null);
             await loadDocuments();
         } catch (error) {
             const message = error instanceof Error ? error.message : "Erreur lors de l'upload.";
@@ -124,7 +135,7 @@ export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
         }
     }
 
-    async function handleDownload(documentId: string) {
+    async function handleDownload(documentId: string, fileName?: string) {
         if (!apiBase) {
             toast.error("Configuration API manquante.");
             return;
@@ -137,10 +148,111 @@ export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
             if (!res.ok || !data.url) {
                 throw new Error(data.error ?? "Impossible de récupérer le lien.");
             }
-            window.open(data.url, "_blank", "noopener,noreferrer");
+            const fileRes = await fetch(data.url);
+            if (!fileRes.ok) {
+                throw new Error("Impossible de télécharger le fichier.");
+            }
+            const blob = await fileRes.blob();
+            const objectUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = objectUrl;
+            if (fileName) {
+                link.download = fileName;
+            }
+            link.rel = "noopener noreferrer";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(objectUrl);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Erreur lors du téléchargement.";
             toast.error(message);
+        }
+    }
+
+    async function handlePreview(doc: DocumentItem) {
+        if (!apiBase) {
+            toast.error("Configuration API manquante.");
+            return;
+        }
+        try {
+            setPreviewLoading(true);
+            const res = await fetch(`${apiBase}/clients/${clientId}/documents/${doc.id}/download`, {
+                headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
+            });
+            const data = (await res.json()) as { url?: string; error?: string };
+            if (!res.ok || !data.url) {
+                throw new Error(data.error ?? "Impossible de récupérer le lien.");
+            }
+            setPreviewDoc(doc);
+            setPreviewUrl(data.url);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erreur lors de l'ouverture.";
+            toast.error(message);
+            setPreviewLoading(false);
+        }
+    }
+
+    function isPreviewable(doc: DocumentItem) {
+        if (!doc.mimeType) return false;
+        return doc.mimeType.startsWith("image/") || doc.mimeType === "application/pdf";
+    }
+
+    async function handleRenameSave(doc: DocumentItem) {
+        if (!apiBase) {
+            toast.error("Configuration API manquante.");
+            return;
+        }
+        const nextName = renameValue.trim();
+        if (!nextName) {
+            toast.error("Nom de document requis.");
+            return;
+        }
+        try {
+            const res = await fetch(`${apiBase}/clients/${clientId}/documents/${doc.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(currentUserId ? { "x-user-id": currentUserId } : {}),
+                },
+                body: JSON.stringify({ fileName: nextName }),
+            });
+            const data = (await res.json()) as { document?: DocumentItem; error?: string };
+            if (!res.ok) {
+                throw new Error(data.error ?? "Impossible de renommer le document.");
+            }
+            toast.success("Nom du document mis à jour.");
+            setRenamingId(null);
+            setRenameValue("");
+            await loadDocuments();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erreur lors du renommage.";
+            toast.error(message);
+        }
+    }
+
+    async function handleDelete(doc: DocumentItem) {
+        if (!apiBase) {
+            toast.error("Configuration API manquante.");
+            return;
+        }
+        try {
+            setDeletingId(doc.id);
+            const res = await fetch(`${apiBase}/clients/${clientId}/documents/${doc.id}`, {
+                method: "DELETE",
+                headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
+            });
+            const data = (await res.json().catch(() => null)) as { error?: string } | null;
+            if (!res.ok) {
+                throw new Error(data?.error ?? "Impossible de supprimer le document.");
+            }
+            toast.success("Document supprimé.");
+            await loadDocuments();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erreur lors de la suppression.";
+            toast.error(message);
+        } finally {
+            setDeletingId(null);
         }
     }
 
@@ -151,31 +263,53 @@ export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
                 <CardDescription>Ajoute et conserve les fichiers liés à ce client.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex flex-wrap items-center gap-3">
-                    <Input
-                        key={inputKey}
-                        type="file"
-                        ref={inputRef}
-                        onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (file) {
-                                void uploadFile(file);
-                            }
-                        }}
-                        disabled={uploading}
-                        className="hidden"
-                    />
-                    <Button
-                        type="button"
-                        variant="outline"
-                        disabled={uploading}
-                        className="gap-2"
-                        onClick={() => inputRef.current?.click()}
-                    >
-                        <Upload className="h-4 w-4" />
-                        {uploading ? "Upload en cours..." : "Ajouter un document"}
-                    </Button>
-                </div>
+                {canEdit && (
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Input
+                            key={inputKey}
+                            type="file"
+                            ref={inputRef}
+                            onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) {
+                                    setPendingFile(file);
+                                    setUploadName(file.name);
+                                }
+                            }}
+                            disabled={uploading}
+                            className="hidden"
+                        />
+                        {pendingFile && (
+                            <Input
+                                value={uploadName}
+                                onChange={(event) => setUploadName(event.target.value)}
+                                placeholder="Nom du document"
+                                className="max-w-sm"
+                                disabled={uploading}
+                            />
+                        )}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={uploading}
+                            className="gap-2"
+                            onClick={() => {
+                                if (pendingFile) {
+                                    void uploadFile(pendingFile);
+                                    return;
+                                }
+                                inputRef.current?.click();
+                            }}
+                        >
+                            <Upload className="h-4 w-4" />
+                            {uploading
+                                ? "Upload en cours..."
+                                : pendingFile
+                                  ? "Envoyer le document"
+                                  : "Ajouter un document"}
+                        </Button>
+                    </div>
+                )}
 
                 {loading ? (
                     <p className="text-sm text-muted-foreground">Chargement des documents...</p>
@@ -191,28 +325,179 @@ export function ClientDocumentsCard({ clientId, currentUserId }: Props) {
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2 text-sm font-medium">
                                         <FileText className="h-4 w-4 text-muted-foreground" />
-                                        <span className="truncate">{doc.fileName}</span>
+                                        {renamingId === doc.id ? (
+                                            <Input
+                                                value={renameValue}
+                                                onChange={(event) => setRenameValue(event.target.value)}
+                                                className="h-8 max-w-xs"
+                                            />
+                                        ) : (
+                                            <span className="truncate">{doc.fileName}</span>
+                                        )}
                                     </div>
                                     <div className="text-xs text-muted-foreground">
                                         {new Date(doc.createdAt).toLocaleString("fr-FR")}
                                         {doc.size ? ` · ${formatSize(doc.size)}` : ""}
                                     </div>
                                 </div>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="gap-2"
-                                    onClick={() => handleDownload(doc.id)}
-                                >
-                                    <Download className="h-4 w-4" />
-                                    Télécharger
-                                </Button>
+                                <div className="flex items-center gap-1 sm:ml-auto">
+                                    {canEdit && renamingId === doc.id ? (
+                                        <>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                aria-label="Enregistrer"
+                                                onClick={() => handleRenameSave(doc)}
+                                            >
+                                                <Check className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                aria-label="Annuler"
+                                                onClick={() => {
+                                                    setRenamingId(null);
+                                                    setRenameValue("");
+                                                }}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </>
+                                    ) : canEdit ? (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            aria-label="Renommer"
+                                            onClick={() => {
+                                                setRenamingId(doc.id);
+                                                setRenameValue(doc.fileName);
+                                            }}
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    ) : null}
+                                    {canEdit && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            aria-label="Supprimer"
+                                            disabled={deletingId === doc.id}
+                                            onClick={() => setDeleteTarget(doc)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        aria-label="Télécharger"
+                                        onClick={() => handleDownload(doc.id, doc.fileName)}
+                                    >
+                                        <Download className="h-4 w-4" />
+                                    </Button>
+                                    {isPreviewable(doc) && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            aria-label="Voir"
+                                            onClick={() => handlePreview(doc)}
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
                 )}
             </CardContent>
+            <Dialog
+                open={Boolean(previewUrl && previewDoc)}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPreviewDoc(null);
+                        setPreviewUrl(null);
+                        setPreviewLoading(false);
+                    }
+                }}
+            >
+                <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle>{previewDoc?.fileName ?? "Document"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="relative rounded-md border border-dashed border-muted p-2">
+                        {previewLoading && (
+                            <div className="absolute inset-0 flex items-center justify-center rounded-md bg-background/80 text-sm text-muted-foreground">
+                                Chargement du document...
+                            </div>
+                        )}
+                        {previewUrl && previewDoc?.mimeType?.startsWith("image/") && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={previewUrl}
+                                alt={previewDoc.fileName}
+                                className="max-h-[70vh] w-full object-contain"
+                                onLoad={() => setPreviewLoading(false)}
+                                onError={() => setPreviewLoading(false)}
+                            />
+                        )}
+                        {previewUrl && previewDoc?.mimeType === "application/pdf" && (
+                            <iframe
+                                src={previewUrl}
+                                title={previewDoc.fileName}
+                                className="h-[70vh] w-full"
+                                onLoad={() => setPreviewLoading(false)}
+                            />
+                        )}
+                        {previewUrl && !previewDoc?.mimeType?.startsWith("image/") && previewDoc?.mimeType !== "application/pdf" && (
+                            <p className="text-sm text-muted-foreground">
+                                Ce format ne peut pas être prévisualisé.
+                            </p>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+            <Dialog
+                open={Boolean(deleteTarget)}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleteTarget(null);
+                    }
+                }}
+            >
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Supprimer le document ?</DialogTitle>
+                    </DialogHeader>
+                    <div className="text-sm text-muted-foreground">
+                        Cette action est définitive.{" "}
+                        <span className="font-medium text-foreground">{deleteTarget?.fileName}</span> sera supprimé.
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="outline" onClick={() => setDeleteTarget(null)}>
+                            Annuler
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            disabled={deleteTarget ? deletingId === deleteTarget.id : false}
+                            onClick={async () => {
+                                if (!deleteTarget) return;
+                                await handleDelete(deleteTarget);
+                                setDeleteTarget(null);
+                            }}
+                        >
+                            Supprimer
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }

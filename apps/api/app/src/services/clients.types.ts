@@ -5,6 +5,7 @@ export type ListParams = {
     status?: ClientStatus | string;
     segment?: ClientSegment | string;
     location?: string;
+    assignedUserId?: string;
     companyId: string;
     page: number;
     pageSize: number;
@@ -46,6 +47,7 @@ export type ClientWithRelations = Prisma.ClientGetPayload<{
     include: {
         contacts: true;
         owner: { select: { firstName: true; lastName: true; email: true } };
+        owners: { select: { userId: true; user: { select: { firstName: true; lastName: true; email: true } } } };
         interactions: {
             orderBy: { occurredAt: "desc" };
             include: {
