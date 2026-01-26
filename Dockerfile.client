@@ -9,6 +9,8 @@
 FROM node:22-alpine AS base
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
+ARG DATABASE_URL="mysql://kahier_bdd:K*E83czpIWY4h(An@phpmyadmin-mysql-1:3306/crm-kahier"
+ENV DATABASE_URL=${DATABASE_URL}
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -43,6 +45,9 @@ COPY --from=deps /app/apps/client ./apps/client
 
 # Copier le reste du repo (code)
 COPY . .
+
+# Génère le client Prisma pour @prisma/client
+RUN pnpm exec prisma generate
 
 # Build via turbo (comme toi)
 RUN pnpm dlx turbo@latest run build --filter=./apps/client...
