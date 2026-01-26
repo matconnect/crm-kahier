@@ -3,53 +3,49 @@
 # ---------- Base
 FROM node:22-alpine AS base
 RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-WORKDIR /app
+
 RUN corepack enable && corepack prepare pnpm@10.27.0 --activate
 
-# Prisma generate a besoin d'une DATABASE_URL au build (dummy OK)
-ARG DATABASE_URL="mysql://user:pass@localhost:3306/dummy"
-ENV DATABASE_URL=${DATABASE_URL}
-
-# ---------- Dependencies
+# ---------- Dependencies (install uniquement le workspace client + ses deps)
 FROM base AS deps
-COPY package.json pnpm-lock.yaml turbo.json pnpm-workspace.yaml prisma.config.ts ./
 
-# Prisma + packages partagés (où vit souvent le schema / le client prisma)
-COPY prisma ./prisma
+# Fichiers nécessaires pour résoudre le workspace
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+
+# IMPORTANT :
+# - On copie les workspaces (packages) car le client peut en dépendre
+# - On copie uniquement le package.json du client pour que pnpm calcule le graph
 COPY packages ./packages
-
-# Package du client (pour que pnpm calcule correctement le graph workspace)
 COPY apps/client/package.json ./apps/client/package.json
 
-# Install deps
-RUN pnpm install --frozen-lockfile
-
-# Génère Prisma (important: crée node_modules/.prisma/client)
-RUN pnpm exec prisma generate
-
+# Installe uniquement ce qui est nécessaire au client (et ses dépendances workspace)
+# (le "..." inclut les deps du workspace ciblé)
+RUN pnpm install --frozen-lockfile --filter @kahier/client...
 
 # ---------- Build
 FROM base AS build
-WORKDIR /app
 
-# Réutiliser les deps installées
+# Reprendre les deps déjà installées
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/client/node_modules ./apps/client/node_modules
+COPY --from=deps /app/packages ./packages
 
-# Copier le repo complet pour build
+# Copier le code (monorepo)
 COPY . .
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build du client via turbo (comme votre exemple)
+# Build du client (via turbo)
 RUN pnpm dlx turbo@latest run build --filter=./apps/client...
 
-
-# ---------- Final
-FROM base AS final
+# ---------- Runtime (standalone)
+FROM node:22-alpine AS final
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -59,6 +55,7 @@ ENV HOSTNAME=0.0.0.0
 
 RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S nextjs -G nodejs
 
+# Next standalone (monorepo) : conserve la structure générée
 COPY --from=build --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
 COPY --from=build --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
@@ -68,5 +65,6 @@ COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/
 
 USER nextjs
 EXPOSE 3010
-# Run migrations + regenerate Prisma client on each container start
-CMD ["sh", "-c", "node /app/node_modules/prisma/build/index.js migrate deploy --schema /app/prisma/schema.prisma && node /app/node_modules/prisma/build/index.js generate --schema /app/prisma/schema.prisma && node apps/client/server.js"]
+
+# Dans un monorepo, le standalone contient souvent apps/client/server.js
+CMD ["node", "apps/client/server.js"]

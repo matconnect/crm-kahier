@@ -14,15 +14,13 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-net"
 
-      # Service
-      - "traefik.http.services.kahier-api.loadbalancer.server.port=3011"
+      - "traefik.http.services.crm-kahier-api.loadbalancer.server.port=3011"
 
-      # HTTPS router only
-      - "traefik.http.routers.kahier-api.rule=Host(`api.crm.kahier.com`)"
-      - "traefik.http.routers.kahier-api.entrypoints=websecure"
-      - "traefik.http.routers.kahier-api.tls=true"
-      - "traefik.http.routers.kahier-api.tls.certresolver=myresolver"
-      - "traefik.http.routers.kahier-api.service=kahier-api"
+      - "traefik.http.routers.crm-kahier-api.rule=Host(`api.crm.kahier.com`)"
+      - "traefik.http.routers.crm-kahier-api.entrypoints=websecure"
+      - "traefik.http.routers.crm-kahier-api.tls=true"
+      - "traefik.http.routers.crm-kahier-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.crm-kahier-api.service=crm-kahier-api"
 
   client:
     build:
