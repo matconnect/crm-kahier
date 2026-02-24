@@ -1,0 +1,17 @@
+# Copie ce fichier vers vault.yml puis chiffre-le:
+# ansible-vault encrypt ansible/group_vars/all/vault.yml
+
+vault_node_env: production
+vault_database_url: "mysql://user:password@db:3306/crm-kahier"
+vault_url_dev: "http://localhost:3010,http://localhost:3011"
+vault_url_prod: "https://crm.kahier.com,https://api.crm.kahier.com"
+vault_next_public_api_url: "https://api.crm.kahier.com"
+vault_next_public_kahier_zone_id: "33"
+
+vault_kahier_api_base: "https://kahier.example.com"
+vault_kahier_api_key: "change-me"
+
+vault_aws_region: "eu-west-3"
+vault_aws_access_key_id: "change-me"
+vault_aws_secret_access_key: "change-me"
+vault_aws_s3_bucket_name: "crm-kahier-docs"

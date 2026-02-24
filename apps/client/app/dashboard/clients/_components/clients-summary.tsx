@@ -1,5 +1,6 @@
 import { Mail, Phone, ShieldCheck, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getServerApiBase } from "@/lib/api-base";
 
 type SummaryCardProps = {
     label: string;
@@ -25,24 +26,34 @@ function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
 }
 
 export async function ClientsSummary({ currentUserId }: { currentUserId: string }) {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiBase) {
-        throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer la note clients");
-    }
+    const apiBase = getServerApiBase();
+    let active = 0;
+    let prospects = 0;
+    let inactive = 0;
+    let interactions = 0;
 
-    const res = await fetch(`${apiBase}/clients/summary`, {
-        cache: "no-store",
-        headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
-    });
-    if (!res.ok) {
-        throw new Error("Impossible de récupérer la note clients");
+    if (apiBase) {
+        try {
+            const res = await fetch(`${apiBase}/clients/summary`, {
+                cache: "no-store",
+                headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
+            });
+            if (res.ok) {
+                const payload = (await res.json()) as {
+                    active: number;
+                    prospects: number;
+                    inactive: number;
+                    interactions: number;
+                };
+                active = payload.active;
+                prospects = payload.prospects;
+                inactive = payload.inactive;
+                interactions = payload.interactions;
+            }
+        } catch {
+            // Keep default values when API is unavailable.
+        }
     }
-    const { active, prospects, inactive, interactions } = (await res.json()) as {
-        active: number;
-        prospects: number;
-        inactive: number;
-        interactions: number;
-    };
 
     const cards: SummaryCardProps[] = [
         { label: "Clients actifs", value: String(active), icon: ShieldCheck },

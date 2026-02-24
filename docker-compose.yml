@@ -1,46 +1,94 @@
 services:
-  api:
+  api-gateway:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_FILTER: "@kahier/api-gateway"
     env_file:
+      - ./apps/api-gateway/.env
       - .env
     environment:
       PORT: "3011"
+      CRM_SERVICE_URL: "http://crm-service:3021"
+      COMPANY_SERVICE_URL: "http://company-service:3022"
+      KAHIER_SERVICE_URL: "http://kahier-service:3023"
+    depends_on:
+      - crm-service
+      - company-service
+      - kahier-service
     networks:
       - traefik-net
       - app-net
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-net"
-
       - "traefik.http.services.crm-kahier-api.loadbalancer.server.port=3011"
-
       - "traefik.http.routers.crm-kahier-api.rule=Host(`api.crm.kahier.com`)"
       - "traefik.http.routers.crm-kahier-api.entrypoints=websecure"
       - "traefik.http.routers.crm-kahier-api.tls=true"
       - "traefik.http.routers.crm-kahier-api.tls.certresolver=myresolver"
       - "traefik.http.routers.crm-kahier-api.service=crm-kahier-api"
 
+  crm-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_FILTER: "@kahier/crm-service"
+    env_file:
+      - ./apps/crm-service/.env
+      - .env
+    environment:
+      PORT: "3021"
+    networks:
+      - app-net
+
+  company-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_FILTER: "@kahier/company-service"
+    env_file:
+      - ./apps/company-service/.env
+      - .env
+    environment:
+      PORT: "3022"
+    networks:
+      - app-net
+
+  kahier-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_FILTER: "@kahier/kahier-service"
+    env_file:
+      - ./apps/kahier-service/.env
+      - .env
+    environment:
+      PORT: "3023"
+    networks:
+      - app-net
+
   client:
     build:
       context: .
       dockerfile: Dockerfile.client
     env_file:
+      - ./apps/client/.env
       - .env
     environment:
       PORT: "3010"
+      API_INTERNAL_URL: "http://api-gateway:3011"
     networks:
       - traefik-net
       - app-net
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-net"
-
-      # Service
       - "traefik.http.services.kahier-crm.loadbalancer.server.port=3010"
-
-      # HTTPS router only
       - "traefik.http.routers.kahier-crm.rule=Host(`crm.kahier.com`)"
       - "traefik.http.routers.kahier-crm.entrypoints=websecure"
       - "traefik.http.routers.kahier-crm.tls=true"

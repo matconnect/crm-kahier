@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
+import { getServerApiBase } from "@/lib/api-base";
 
 type Interaction = {
     id: string;
@@ -21,19 +22,42 @@ type ApiListResponse = {
 };
 
 export async function ActivitySection({ currentUserId }: { currentUserId: string }) {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getServerApiBase();
     if (!apiBase) {
-        throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer les activités");
+        return (
+            <section id="activity" className="space-y-3 scroll-mt-26">
+                <div>
+                    <h2 className="text-lg font-semibold">Activités</h2>
+                    <p className="text-sm text-muted-foreground">API indisponible pour le moment.</p>
+                </div>
+                <Card className="border-muted/60">
+                    <CardContent className="p-4 text-sm text-muted-foreground">Aucune activité récente.</CardContent>
+                </Card>
+            </section>
+        );
     }
 
-    const res = await fetch(`${apiBase}/clients?page=1&pageSize=10`, {
-        cache: "no-store",
-        headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
-    });
-    if (!res.ok) {
-        throw new Error("Impossible de récupérer les activités");
+    let data: ApiListResponse;
+    try {
+        const res = await fetch(`${apiBase}/clients?page=1&pageSize=10`, {
+            cache: "no-store",
+            headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
+        });
+        if (!res.ok) throw new Error("bad status");
+        data = (await res.json()) as ApiListResponse;
+    } catch {
+        return (
+            <section id="activity" className="space-y-3 scroll-mt-26">
+                <div>
+                    <h2 className="text-lg font-semibold">Activités</h2>
+                    <p className="text-sm text-muted-foreground">API indisponible pour le moment.</p>
+                </div>
+                <Card className="border-muted/60">
+                    <CardContent className="p-4 text-sm text-muted-foreground">Aucune activité récente.</CardContent>
+                </Card>
+            </section>
+        );
     }
-    const data = (await res.json()) as ApiListResponse;
 
     const interactions = data.items
         .flatMap((client) =>

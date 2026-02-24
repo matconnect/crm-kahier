@@ -1,4 +1,5 @@
 import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import { getServerApiBase } from "@/lib/api-base";
 
 import { Badge } from "@/components/ui/badge";
 import { ClientCard } from "./client-card";
@@ -57,7 +58,7 @@ export async function ClientsList({ searchParams, currentUserId, currentUserRole
     const location = searchParams.location?.trim();
     const q = searchParams.q?.trim();
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getServerApiBase();
     if (!apiBase) {
         throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer les clients");
     }
@@ -70,14 +71,21 @@ export async function ClientsList({ searchParams, currentUserId, currentUserRole
     if (location) params.set("location", location);
     if (q) params.set("q", q);
 
-    const res = await fetch(`${apiBase}/clients?${params.toString()}`, {
-        cache: "no-store",
-        headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
-    });
-    if (!res.ok) {
-        throw new Error("Impossible de récupérer les clients");
+    let data: ApiListResponse = { items: [], total: 0, page, pageSize };
+    let hasApiError = false;
+    try {
+        const res = await fetch(`${apiBase}/clients?${params.toString()}`, {
+            cache: "no-store",
+            headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
+        });
+        if (!res.ok) {
+            hasApiError = true;
+        } else {
+            data = (await res.json()) as ApiListResponse;
+        }
+    } catch {
+        hasApiError = true;
     }
-    const data = (await res.json()) as ApiListResponse;
 
     const clients = data.items.map((client) => ({
         ...client,
@@ -105,7 +113,9 @@ export async function ClientsList({ searchParams, currentUserId, currentUserRole
 
             {clients.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-muted/60 bg-muted/50 p-6 text-sm text-muted-foreground">
-                    {currentUserRole === "USER"
+                    {hasApiError
+                        ? "Le service clients est momentanément indisponible."
+                        : currentUserRole === "USER"
                         ? "Aucun client accessible pour le moment."
                         : "Aucun client ne correspond à ces filtres pour le moment."}
                 </div>

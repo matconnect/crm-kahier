@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
 import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import { getServerApiBase } from "@/lib/api-base";
 import { requireAuth } from "@/lib/authz";
 import type { Role } from "@/lib/roles";
 import { DashboardTopBar } from "@/components/dashboard/top-bar";
@@ -59,7 +60,7 @@ type ClientDetail = {
 };
 
 async function fetchClient(id: string, currentUserId: string): Promise<ClientDetail | null> {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getServerApiBase();
     if (!apiBase) {
         throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer le client");
     }
