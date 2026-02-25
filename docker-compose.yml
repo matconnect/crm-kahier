@@ -41,6 +41,12 @@ services:
       - .env
     environment:
       PORT: "3021"
+      DATABASE_URL: "mysql://root:root@crm-db:3306/crm-kahier-crm"
+      COMPANY_SERVICE_URL: "http://company-service:3022"
+      INTERNAL_SERVICE_TOKEN: "change-me-internal-token"
+    depends_on:
+      - crm-db
+      - company-service
     networks:
       - app-net
 
@@ -55,6 +61,10 @@ services:
       - .env
     environment:
       PORT: "3022"
+      DATABASE_URL: "mysql://root:root@company-db:3306/crm-kahier-company"
+      INTERNAL_SERVICE_TOKEN: "change-me-internal-token"
+    depends_on:
+      - company-db
     networks:
       - app-net
 
@@ -82,6 +92,9 @@ services:
     environment:
       PORT: "3010"
       API_INTERNAL_URL: "http://api-gateway:3011"
+      DATABASE_URL: "mysql://root:root@company-db:3306/crm-kahier-company"
+    depends_on:
+      - company-db
     networks:
       - traefik-net
       - app-net
@@ -95,8 +108,32 @@ services:
       - "traefik.http.routers.kahier-crm.tls.certresolver=myresolver"
       - "traefik.http.routers.kahier-crm.service=kahier-crm"
 
+  company-db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: "root"
+      MARIADB_DATABASE: "crm-kahier-company"
+    volumes:
+      - company-db-data:/var/lib/mysql
+    networks:
+      - app-net
+
+  crm-db:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: "root"
+      MARIADB_DATABASE: "crm-kahier-crm"
+    volumes:
+      - crm-db-data:/var/lib/mysql
+    networks:
+      - app-net
+
 networks:
   traefik-net:
     external: true
   app-net:
     external: true
+
+volumes:
+  company-db-data:
+  crm-db-data:

@@ -73,6 +73,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
     const primaryPhone = client.primaryPhone ?? null;
     const primaryEmail = client.primaryEmail ?? null;
     const [page, setPage] = useState(1);
+    const [interactionDialogOpen, setInteractionDialogOpen] = useState(false);
     const perPage = 5;
     const totalPages = useMemo(() => Math.max(1, Math.ceil(client.interactions.length / perPage)), [client.interactions.length]);
     const pagedInteractions = useMemo(
@@ -121,7 +122,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                     emails={client.emails}
                     phones={client.phones}
                 />
-                <Dialog>
+                <Dialog open={interactionDialogOpen} onOpenChange={setInteractionDialogOpen}>
                     <DialogTrigger asChild>
                         <Button variant="outline" size="sm" className="gap-2 w-full">
                             <History className="h-4 w-4" />
@@ -206,9 +207,11 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                     </div>
                                 )}
                             </div>
-                            <div className="max-h-[40vh] overflow-y-auto pr-1 pt-1">
-                                <LogInteraction clientId={client.id} currentUserId={currentUserId} />
-                            </div>
+                            {interactionDialogOpen ? (
+                                <div className="max-h-[40vh] overflow-y-auto pr-1 pt-1">
+                                    <LogInteraction clientId={client.id} currentUserId={currentUserId} enabled={interactionDialogOpen} />
+                                </div>
+                            ) : null}
                         </div>
                     </DialogContent>
                 </Dialog>

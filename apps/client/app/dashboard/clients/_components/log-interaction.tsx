@@ -28,6 +28,7 @@ const typeOptions = [
 type Props = {
     clientId: string;
     currentUserId: string;
+    enabled?: boolean;
 };
 
 type CollaboratorOption = {
@@ -87,7 +88,7 @@ type KahierLegend = {
 };
 
 
-export function LogInteraction({ clientId, currentUserId }: Props) {
+export function LogInteraction({ clientId, currentUserId, enabled = true }: Props) {
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     const kahierZoneId = Number(process.env.NEXT_PUBLIC_KAHIER_ZONE_ID ?? 33);
     const router = useRouter();
@@ -147,6 +148,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
     const [planningDescription, setPlanningDescription] = React.useState("");
 
     React.useEffect(() => {
+        if (!enabled) return;
         let active = true;
         async function loadCollaborators() {
             if (!apiBase || !currentUserId) return;
@@ -165,7 +167,7 @@ export function LogInteraction({ clientId, currentUserId }: Props) {
         return () => {
             active = false;
         };
-    }, [apiBase, currentUserId]);
+    }, [apiBase, currentUserId, enabled]);
 
     React.useEffect(() => {
         let active = true;

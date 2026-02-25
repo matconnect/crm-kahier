@@ -1,9 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import { prisma } from "@kahier/db";
 import type { JWT } from "next-auth/jwt";
 import type { Session, User } from "next-auth";
+import { getServerApiBase } from "@/lib/api-base";
 
 const authConfig: Parameters<typeof NextAuth>[0] = {
     trustHost: true,
@@ -25,20 +24,35 @@ const authConfig: Parameters<typeof NextAuth>[0] = {
                     typeof credentials?.password === "string" ? credentials.password : null;
 
                 if (!email || !password) return null;
+                const apiBase = getServerApiBase();
+                if (!apiBase) return null;
 
-                const dbUser = await prisma.user.findUnique({ where: { email } });
-                if (!dbUser) return null;
-
-                const ok = await bcrypt.compare(password, dbUser.password);
-                if (!ok) return null;
+                const res = await fetch(`${apiBase}/auth/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password }),
+                });
+                const data = (await res.json().catch(() => null)) as
+                    | {
+                        user?: {
+                            id: string;
+                            email: string;
+                            firstName: string;
+                            lastName: string;
+                            role: string;
+                            companyId: string | null;
+                        };
+                    }
+                    | null;
+                if (!res.ok || !data?.user) return null;
 
                 return {
-                    id: dbUser.id,
-                    email: dbUser.email,
-                    firstName: dbUser.firstName,
-                    lastName: dbUser.lastName,
-                    role: dbUser.role,
-                    companyId: dbUser.companyId ?? null,
+                    id: data.user.id,
+                    email: data.user.email,
+                    firstName: data.user.firstName,
+                    lastName: data.user.lastName,
+                    role: data.user.role,
+                    companyId: data.user.companyId ?? null,
                 } as unknown as User;
             },
         }),

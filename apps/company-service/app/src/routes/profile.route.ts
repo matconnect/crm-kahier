@@ -1,6 +1,6 @@
 import { Router, type Router as ExpressRouter } from "express";
 import bcrypt from "bcryptjs";
-import { prisma } from "@kahier/db";
+import { prisma } from "@kahier/db-company";
 
 const router: ExpressRouter = Router();
 

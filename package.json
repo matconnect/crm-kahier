@@ -7,7 +7,11 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "postinstall": "prisma generate"
+    "db:generate:company": "pnpm --dir apps/company-service exec prisma generate",
+    "db:generate:crm": "pnpm --dir apps/crm-service exec prisma generate",
+    "db:generate": "pnpm db:generate:company && pnpm db:generate:crm",
+    "postinstall": "pnpm db:generate",
+    "db:split-services": "node scripts/split-service-dbs.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",

@@ -1,5 +1,5 @@
-import { prisma } from "@kahier/db";
-import { ClientSegment, ClientStatus, type Prisma } from "@prisma/client";
+import { prisma } from "@kahier/db-crm";
+import { ClientSegment, ClientStatus, type Prisma } from "@kahier/db-crm";
 import type { ClientWithRelations, ListItem, ListParams, ListResponse } from "./clients.types";
 
 function normalizeStringArray(value: unknown): string[] {

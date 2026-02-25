@@ -70,9 +70,6 @@ importers:
 
   apps/client:
     dependencies:
-      '@kahier/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -103,9 +100,6 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.18
         version: 4.1.18
-      bcryptjs:
-        specifier: ^3.0.3
-        version: 3.0.3
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -176,12 +170,9 @@ importers:
 
   apps/company-service:
     dependencies:
-      '@kahier/db':
+      '@kahier/db-company':
         specifier: workspace:^
-        version: link:../../packages/db
-      '@prisma/client':
-        specifier: ^7.4.1
-        version: 7.4.1(prisma@7.4.1(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2))(typescript@5.9.2)
+        version: link:../../packages/db-company
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
@@ -222,9 +213,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.972.0
         version: 3.972.0
-      '@kahier/db':
+      '@kahier/db-crm':
         specifier: workspace:^
-        version: link:../../packages/db
+        version: link:../../packages/db-crm
       cors:
         specifier: ^2.8.5
         version: 2.8.5
@@ -287,6 +278,24 @@ importers:
 
   packages/db:
     dependencies:
+      '@prisma/client':
+        specifier: ^7.4.1
+        version: 7.4.1(prisma@7.4.1(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2))(typescript@5.9.2)
+
+  packages/db-company:
+    dependencies:
+      '@prisma/adapter-mariadb':
+        specifier: ^7.4.1
+        version: 7.4.1
+      '@prisma/client':
+        specifier: ^7.4.1
+        version: 7.4.1(prisma@7.4.1(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2))(typescript@5.9.2)
+
+  packages/db-crm:
+    dependencies:
+      '@prisma/adapter-mariadb':
+        specifier: ^7.4.1
+        version: 7.4.1
       '@prisma/client':
         specifier: ^7.4.1
         version: 7.4.1(prisma@7.4.1(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.2))(typescript@5.9.2)

@@ -16,18 +16,26 @@ export class KahierServiceError extends Error {
     }
 }
 
+const requireEnv = (name: string): string => {
+    const value = process.env[name];
+    if (!value) {
+        throw new Error(`Missing required environment variable: ${name}`);
+    }
+    return value;
+};
+
 function buildHeaders(includeJson = false) {
     const headers: HeadersInit = { Accept: "application/json" };
     if (includeJson) {
         headers["Content-Type"] = "application/json";
     }
-    const apiKey = process.env.KAHIER_API_KEY ?? "0608ef3821906f5163d56f83ddf58b43ac48d45ac78b2ad924ca95a897b5de7b";
+    const apiKey = requireEnv("KAHIER_API_KEY");
     headers["x-api-key"] = apiKey;
     return headers;
 }
 
 export async function getZoneData(zoneId: string) {
-    const baseUrl = process.env.KAHIER_API_BASE;
+    const baseUrl = requireEnv("KAHIER_API_BASE");
     const headers = buildHeaders();
 
     const tabsRes = await fetch(`${baseUrl}/periodes/zone/?zoneId=${zoneId}`, { headers });
@@ -53,7 +61,7 @@ export async function getZoneData(zoneId: string) {
 }
 
 export async function createTask(payload: KahierTaskPayload) {
-    const baseUrl = process.env.KAHIER_API_BASE;
+    const baseUrl = requireEnv("KAHIER_API_BASE");
     const headers = buildHeaders(true);
     const res = await fetch(`${baseUrl}/tasks`, {
         method: "POST",
@@ -69,7 +77,7 @@ export async function createTask(payload: KahierTaskPayload) {
 }
 
 export async function getEstablishmentUsers() {
-    const baseUrl = process.env.KAHIER_API_BASE;
+    const baseUrl = requireEnv("KAHIER_API_BASE");
     const headers = buildHeaders();
     const res = await fetch(`${baseUrl}/establishments/users`, { headers });
 
@@ -81,7 +89,7 @@ export async function getEstablishmentUsers() {
 }
 
 export async function getPlannings() {
-    const baseUrl = process.env.KAHIER_API_BASE;
+    const baseUrl = requireEnv("KAHIER_API_BASE");
     const headers = buildHeaders();
     const res = await fetch(`${baseUrl}/plannings`, { headers });
 
@@ -93,7 +101,7 @@ export async function getPlannings() {
 }
 
 export async function getPlanningLegends(planningId: string, mode: string) {
-    const baseUrl = process.env.KAHIER_API_BASE;
+    const baseUrl = requireEnv("KAHIER_API_BASE");
     const headers = buildHeaders();
     const res = await fetch(`${baseUrl}/plannings/${planningId}/legends?mode=${encodeURIComponent(mode)}`, {
         headers,
@@ -107,7 +115,7 @@ export async function getPlanningLegends(planningId: string, mode: string) {
 }
 
 export async function createPlanningEvent(payload: Record<string, unknown>) {
-    const baseUrl = process.env.KAHIER_API_BASE;
+    const baseUrl = requireEnv("KAHIER_API_BASE");
     const headers = buildHeaders(true);
     const res = await fetch(`${baseUrl}/planning`, {
         method: "POST",

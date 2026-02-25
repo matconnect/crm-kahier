@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { prisma } from "@kahier/db";
+import { prisma } from "@kahier/db-crm";
 import * as service from "../services/clients.service";
 import { s3 } from "../lib/s3";
+import { fetchCompanyContext, fetchCompanyUsers, syncCompanySnapshot } from "../lib/company-sync";
 
 type CurrentUser = { id: string; companyId: string; role: "USER" | "MANAGER" | "ADMIN" };
 
@@ -24,12 +25,30 @@ async function getCurrentUser(req: Request): Promise<CurrentUser | null> {
     const userId = getHeaderValue(req, "x-user-id")?.trim();
     if (!userId) return null;
 
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, companyId: true, role: true },
-    });
-    if (!user?.companyId) return null;
-    return { id: user.id, companyId: user.companyId, role: user.role as CurrentUser["role"] };
+    try {
+        const context = await fetchCompanyContext(userId);
+        if (!context.user?.companyId) return null;
+        const users = await fetchCompanyUsers(context.user.companyId);
+        await syncCompanySnapshot(context, users);
+
+        return {
+            id: context.user.id,
+            companyId: context.user.companyId,
+            role: context.user.role as CurrentUser["role"],
+        };
+    } catch (error) {
+        console.error("getCurrentUser sync", error);
+        const localUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, companyId: true, role: true },
+        });
+        if (!localUser?.companyId) return null;
+        return {
+            id: localUser.id,
+            companyId: localUser.companyId,
+            role: localUser.role as CurrentUser["role"],
+        };
+    }
 }
 
 async function isAssignedToClient(clientId: string, companyId: string, userId: string) {
@@ -137,7 +156,7 @@ export async function summary(_req: Request, res: Response) {
 export async function create(req: Request, res: Response) {
     const currentUser = await getCurrentUser(req);
     if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
-    const { contacts, ...rest } = req.body ?? {};
+    const { contacts, ownerIds: _ignoredOwnerIds, ...rest } = req.body ?? {};
     const normalizedContacts = normalizeContacts(contacts);
     const body = (req.body ?? {}) as {
         emails?: unknown;
@@ -179,7 +198,12 @@ export async function create(req: Request, res: Response) {
     if (normalizedContacts) {
         (payload as typeof payload & { contacts: typeof normalizedContacts }).contacts = normalizedContacts;
     }
-    res.status(201).json(await service.create(payload));
+    try {
+        res.status(201).json(await service.create(payload));
+    } catch (error) {
+        console.error("createClient", error);
+        res.status(500).json({ error: "Impossible de créer le client" });
+    }
 }
 
 export async function getById(req: Request, res: Response) {

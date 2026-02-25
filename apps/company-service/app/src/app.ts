@@ -3,6 +3,8 @@ import cors from "cors";
 import companyRouter from "./routes/company.route";
 import usersRouter from "./routes/users.route";
 import profileRouter from "./routes/profile.route";
+import internalRouter from "./routes/internal.route";
+import authRouter from "./routes/auth.route";
 
 const splitUrls = (csv?: string) =>
   (csv ?? "")
@@ -24,5 +26,7 @@ app.get("/health", (_req, res) => res.json({ ok: true, service: "company-service
 app.use("/company", companyRouter);
 app.use("/users", usersRouter);
 app.use("/profile", profileRouter);
+app.use("/internal", internalRouter);
+app.use("/auth", authRouter);
 
 export default app;

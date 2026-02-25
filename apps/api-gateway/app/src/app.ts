@@ -2,6 +2,14 @@ import express from "express";
 import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
 
+const requireEnv = (name: string): string => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+};
+
 const splitUrls = (csv?: string) =>
   (csv ?? "")
     .split(",")
@@ -13,9 +21,9 @@ const urlDev = splitUrls(process.env.URL_DEV);
 const urlProd = splitUrls(process.env.URL_PROD);
 const origins = process.env.NODE_ENV === "production" ? urlProd : urlDev;
 
-const crmServiceUrl = process.env.CRM_SERVICE_URL ?? "http://crm-service:3021";
-const companyServiceUrl = process.env.COMPANY_SERVICE_URL ?? "http://company-service:3022";
-const kahierServiceUrl = process.env.KAHIER_SERVICE_URL ?? "http://kahier-service:3023";
+const crmServiceUrl = requireEnv("CRM_SERVICE_URL");
+const companyServiceUrl = requireEnv("COMPANY_SERVICE_URL");
+const kahierServiceUrl = requireEnv("KAHIER_SERVICE_URL");
 
 const app: express.Express = express();
 
@@ -73,6 +81,7 @@ mountServiceProxy("/clients", crmServiceUrl);
 mountServiceProxy("/company", companyServiceUrl);
 mountServiceProxy("/users", companyServiceUrl);
 mountServiceProxy("/profile", companyServiceUrl);
+mountServiceProxy("/auth", companyServiceUrl);
 mountServiceProxy("/kahier", kahierServiceUrl);
 
 export default app;

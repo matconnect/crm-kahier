@@ -14,7 +14,14 @@ for (const envPath of candidateEnvPaths) {
 
 dotenv.config();
 
-const port = Number(process.env.PORT ?? 3023);
+const portRaw = process.env.PORT;
+if (!portRaw) {
+  throw new Error("Missing required environment variable: PORT");
+}
+const port = Number(portRaw);
+if (!Number.isFinite(port)) {
+  throw new Error(`Invalid PORT value: ${portRaw}`);
+}
 
 app.listen(port, () => {
   console.log(`[kahier-service] listening on :${port}`);

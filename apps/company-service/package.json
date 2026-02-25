@@ -7,13 +7,12 @@
     "dev": "tsx watch app/src/server.ts"
   },
   "dependencies": {
-    "@kahier/db": "workspace:^",
+    "@kahier/db-company": "workspace:^",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "tsx": "^4.21.0",
-    "@prisma/client": "^7.4.1"
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

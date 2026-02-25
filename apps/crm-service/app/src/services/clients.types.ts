@@ -1,4 +1,4 @@
-import type { ClientSegment, ClientStatus, Prisma } from "@prisma/client";
+import type { ClientSegment, ClientStatus, Prisma } from "@kahier/db-crm";
 
 export type ListParams = {
     q?: string;

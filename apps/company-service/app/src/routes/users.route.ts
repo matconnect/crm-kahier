@@ -1,5 +1,5 @@
 import { Router, type Router as ExpressRouter } from "express";
-import { prisma } from "@kahier/db";
+import { prisma } from "@kahier/db-company";
 
 const router: ExpressRouter = Router();
 

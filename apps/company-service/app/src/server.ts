@@ -15,7 +15,14 @@ dotenv.config();
 
 const { default: app } = await import("./app");
 
-const port = Number(process.env.PORT ?? 3022);
+const portRaw = process.env.PORT;
+if (!portRaw) {
+  throw new Error("Missing required environment variable: PORT");
+}
+const port = Number(portRaw);
+if (!Number.isFinite(port)) {
+  throw new Error(`Invalid PORT value: ${portRaw}`);
+}
 
 app.listen(port, () => {
   console.log(`[company-service] listening on :${port}`);
