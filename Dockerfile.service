@@ -12,7 +12,7 @@ FROM base AS depsdev
 ARG SERVICE_NAME
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json prisma.config.ts ./
-COPY apps/api/${SERVICE_NAME} ./apps/api/${SERVICE_NAME}
+COPY apps/${SERVICE_NAME} ./apps/${SERVICE_NAME}
 COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
@@ -22,7 +22,7 @@ FROM base AS depsprod
 ARG SERVICE_NAME
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json prisma.config.ts ./
-COPY apps/api/${SERVICE_NAME} ./apps/api/${SERVICE_NAME}
+COPY apps/${SERVICE_NAME} ./apps/${SERVICE_NAME}
 COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
@@ -41,8 +41,8 @@ ARG SERVICE_NAME
 
 COPY --from=depsprod /app/node_modules ./node_modules
 COPY --from=depsprod /app/packages ./packages
-COPY --from=depsprod /app/apps/api/${SERVICE_NAME}/node_modules ./apps/api/${SERVICE_NAME}/node_modules
-COPY --from=build /app/apps/api/${SERVICE_NAME}/dist ./apps/api/${SERVICE_NAME}/dist
+COPY --from=depsprod /app/apps/${SERVICE_NAME}/node_modules ./apps/${SERVICE_NAME}/node_modules
+COPY --from=build /app/apps/${SERVICE_NAME}/dist ./apps/${SERVICE_NAME}/dist
 
-WORKDIR /app/apps/api/${SERVICE_NAME}
+WORKDIR /app/apps/${SERVICE_NAME}
 CMD ["dist/server.js"]

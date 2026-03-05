@@ -34,7 +34,84 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
 
-  apps/api-gateway:
+  apps/api/company:
+    dependencies:
+      '@kahier/db-company':
+        specifier: workspace:^
+        version: link:../../../packages/db-company
+      bcryptjs:
+        specifier: ^3.0.3
+        version: 3.0.3
+      cors:
+        specifier: ^2.8.5
+        version: 2.8.5
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../../packages/typescript-config
+      '@types/cors':
+        specifier: ^2.8.19
+        version: 2.8.19
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.19.7
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
+  apps/api/crm:
+    dependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.972.0
+        version: 3.972.0
+      '@aws-sdk/s3-request-presigner':
+        specifier: ^3.972.0
+        version: 3.972.0
+      '@kahier/db-crm':
+        specifier: workspace:^
+        version: link:../../../packages/db-crm
+      cors:
+        specifier: ^2.8.5
+        version: 2.8.5
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../../packages/typescript-config
+      '@types/cors':
+        specifier: ^2.8.19
+        version: 2.8.19
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.19.7
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
+  apps/api/gateway:
     dependencies:
       cors:
         specifier: ^2.8.5
@@ -54,7 +131,38 @@ importers:
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
-        version: link:../../packages/typescript-config
+        version: link:../../../packages/typescript-config
+      '@types/cors':
+        specifier: ^2.8.19
+        version: 2.8.19
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.19.7
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
+  apps/api/kahier:
+    dependencies:
+      cors:
+        specifier: ^2.8.5
+        version: 2.8.5
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../../packages/typescript-config
       '@types/cors':
         specifier: ^2.8.19
         version: 2.8.19
@@ -164,114 +272,6 @@ importers:
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
-      typescript:
-        specifier: 5.9.2
-        version: 5.9.2
-
-  apps/company-service:
-    dependencies:
-      '@kahier/db-company':
-        specifier: workspace:^
-        version: link:../../packages/db-company
-      bcryptjs:
-        specifier: ^3.0.3
-        version: 3.0.3
-      cors:
-        specifier: ^2.8.5
-        version: 2.8.5
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
-      express:
-        specifier: ^5.2.1
-        version: 5.2.1
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
-      '@types/cors':
-        specifier: ^2.8.19
-        version: 2.8.19
-      '@types/express':
-        specifier: ^5.0.6
-        version: 5.0.6
-      '@types/node':
-        specifier: ^22.15.3
-        version: 22.19.7
-      typescript:
-        specifier: 5.9.2
-        version: 5.9.2
-
-  apps/crm-service:
-    dependencies:
-      '@aws-sdk/client-s3':
-        specifier: ^3.972.0
-        version: 3.972.0
-      '@aws-sdk/s3-request-presigner':
-        specifier: ^3.972.0
-        version: 3.972.0
-      '@kahier/db-crm':
-        specifier: workspace:^
-        version: link:../../packages/db-crm
-      cors:
-        specifier: ^2.8.5
-        version: 2.8.5
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
-      express:
-        specifier: ^5.2.1
-        version: 5.2.1
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
-      '@types/cors':
-        specifier: ^2.8.19
-        version: 2.8.19
-      '@types/express':
-        specifier: ^5.0.6
-        version: 5.0.6
-      '@types/node':
-        specifier: ^22.15.3
-        version: 22.19.7
-      typescript:
-        specifier: 5.9.2
-        version: 5.9.2
-
-  apps/kahier-service:
-    dependencies:
-      cors:
-        specifier: ^2.8.5
-        version: 2.8.5
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
-      express:
-        specifier: ^5.2.1
-        version: 5.2.1
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
-      '@types/cors':
-        specifier: ^2.8.19
-        version: 2.8.19
-      '@types/express':
-        specifier: ^5.0.6
-        version: 5.0.6
-      '@types/node':
-        specifier: ^22.15.3
-        version: 22.19.7
       typescript:
         specifier: 5.9.2
         version: 5.9.2

@@ -4,8 +4,8 @@ services:
     build:
       dockerfile: Dockerfile.service
       args:
-        SERVICE_NAME: "gateway"
-        SERVICE_FILTER: "@kahier/gateway"
+        SERVICE_NAME: "api/gateway"
+        SERVICE_FILTER: "@kahier/api-gateway"
     ports:
       - "3011:3011"
     environment:
@@ -25,8 +25,8 @@ services:
     build:
       dockerfile: Dockerfile.service
       args:
-        SERVICE_NAME: "crm"
-        SERVICE_FILTER: "@kahier/crm"
+        SERVICE_NAME: "api/crm"
+        SERVICE_FILTER: "@kahier/crm-service"
     ports:
       - "3021:3021"
     environment:
@@ -64,8 +64,8 @@ services:
     build:
       dockerfile: Dockerfile.service
       args:
-        SERVICE_NAME: "company"
-        SERVICE_FILTER: "@kahier/company"
+        SERVICE_NAME: "api/company"
+        SERVICE_FILTER: "@kahier/company-service"
     ports:
       - "3022:3022"
     environment:
@@ -95,8 +95,8 @@ services:
     build:
       dockerfile: Dockerfile.service
       args:
-        SERVICE_NAME: "kahier"
-        SERVICE_FILTER: "@kahier/kahier"
+        SERVICE_NAME: "api/kahier"
+        SERVICE_FILTER: "@kahier/kahier-service"
     ports:
       - "3023:3023"
     environment:

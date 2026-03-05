@@ -10,7 +10,7 @@ services:
     environment:
       NODE_ENV: development
       URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
-    command: ["pnpm", "--filter", "@kahier/gateway", "dev"]
+    command: ["pnpm", "--filter", "@kahier/api-gateway", "dev"]
 
   crm:
     build:
@@ -23,7 +23,7 @@ services:
     environment:
       NODE_ENV: development
       URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
-    command: ["pnpm", "--filter", "@kahier/crm", "dev"]
+    command: ["pnpm", "--filter", "@kahier/crm-service", "dev"]
 
   company:
     build:
@@ -36,7 +36,7 @@ services:
     environment:
       NODE_ENV: development
       URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
-    command: ["pnpm", "--filter", "@kahier/company", "dev"]
+    command: ["pnpm", "--filter", "@kahier/company-service", "dev"]
 
   kahier:
     build:
@@ -49,7 +49,7 @@ services:
     environment:
       NODE_ENV: development
       URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
-    command: ["pnpm", "--filter", "@kahier/kahier", "dev"]
+    command: ["pnpm", "--filter", "@kahier/kahier-service", "dev"]
 
   client:
     build:
