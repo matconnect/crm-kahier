@@ -1,139 +1,187 @@
 services:
-  api-gateway:
+  gateway:
+    restart: unless-stopped
     build:
-      context: .
       dockerfile: Dockerfile.service
       args:
-        SERVICE_FILTER: "@kahier/api-gateway"
-    env_file:
-      - ./apps/api-gateway/.env
-      - .env
+        SERVICE_NAME: "gateway"
+        SERVICE_FILTER: "@kahier/gateway"
+    ports:
+      - "3011:3011"
     environment:
-      PORT: "3011"
-      CRM_SERVICE_URL: "http://crm-service:3021"
-      COMPANY_SERVICE_URL: "http://company-service:3022"
-      KAHIER_SERVICE_URL: "http://kahier-service:3023"
-    depends_on:
-      - crm-service
-      - company-service
-      - kahier-service
-    networks:
-      - traefik-net
-      - app-net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik-net"
-      - "traefik.http.services.crm-kahier-api.loadbalancer.server.port=3011"
-      - "traefik.http.routers.crm-kahier-api.rule=Host(`api.crm.kahier.com`)"
-      - "traefik.http.routers.crm-kahier-api.entrypoints=websecure"
-      - "traefik.http.routers.crm-kahier-api.tls=true"
-      - "traefik.http.routers.crm-kahier-api.tls.certresolver=myresolver"
-      - "traefik.http.routers.crm-kahier-api.service=crm-kahier-api"
+      NODE_ENV: production
+      PORT_FILE: "/run/secrets/port_gateway"
+      CRM_SERVICE_URL_FILE: "/run/secrets/crm_service_url"
+      COMPANY_SERVICE_URL_FILE: "/run/secrets/company_service_url"
+      KAHIER_SERVICE_URL_FILE: "/run/secrets/kahier_service_url"
+    secrets:
+      - port_gateway
+      - crm_service_url
+      - company_service_url
+      - kahier_service_url
 
-  crm-service:
+  crm:
+    restart: unless-stopped
     build:
-      context: .
       dockerfile: Dockerfile.service
       args:
-        SERVICE_FILTER: "@kahier/crm-service"
-    env_file:
-      - ./apps/crm-service/.env
-      - .env
+        SERVICE_NAME: "crm"
+        SERVICE_FILTER: "@kahier/crm"
+    ports:
+      - "3021:3021"
     environment:
-      PORT: "3021"
-      DATABASE_URL: "mysql://root:root@crm-db:3306/crm-kahier-crm"
-      COMPANY_SERVICE_URL: "http://company-service:3022"
-      INTERNAL_SERVICE_TOKEN: "change-me-internal-token"
-    depends_on:
-      - crm-db
-      - company-service
-    networks:
-      - app-net
+      NODE_ENV: production
+      PORT_FILE: "/run/secrets/port_crm"
+      INTERNAL_SERVICE_TOKEN_FILE: "/run/secrets/internal_service_token"
+      COMPANY_SERVICE_URL_FILE: "/run/secrets/company_service_url"
+      DB_PROTOCOL_FILE: "/run/secrets/db_protocol"
+      DB_HOST_FILE: "/run/secrets/db_host"
+      DB_PORT_FILE: "/run/secrets/db_port"
+      DB_USER_FILE: "/run/secrets/db_crm_user"
+      DB_PASSWORD_FILE: "/run/secrets/db_crm_password"
+      DB_NAME_FILE: "/run/secrets/db_crm_name"
+      AWS_ACCESS_KEY_ID_FILE: "/run/secrets/aws_access_key_id"
+      AWS_ACCESS_KEY_FILE: "/run/secrets/aws_access_key"
+      AWS_REGION_FILE: "/run/secrets/aws_region"
+      AWS_S3_BUCKET_NAME_FILE: "/run/secrets/aws_s3_bucket_name"
+    secrets:
+      - db_host
+      - db_protocol
+      - db_port
+      - db_crm_password
+      - db_crm_user
+      - db_crm_name
+      - internal_service_token
+      - company_service_url
+      - port_crm
+      - aws_access_key_id
+      - aws_access_key
+      - aws_region
+      - aws_s3_bucket_name
 
-  company-service:
+  company:
+    restart: unless-stopped
     build:
-      context: .
       dockerfile: Dockerfile.service
       args:
-        SERVICE_FILTER: "@kahier/company-service"
-    env_file:
-      - ./apps/company-service/.env
-      - .env
+        SERVICE_NAME: "company"
+        SERVICE_FILTER: "@kahier/company"
+    ports:
+      - "3022:3022"
     environment:
-      PORT: "3022"
-      DATABASE_URL: "mysql://root:root@company-db:3306/crm-kahier-company"
-      INTERNAL_SERVICE_TOKEN: "change-me-internal-token"
-    depends_on:
-      - company-db
-    networks:
-      - app-net
+      NODE_ENV: production
+      PORT_FILE: "/run/secrets/port_company"
+      INTERNAL_SERVICE_TOKEN_FILE: "/run/secrets/internal_service_token"
+      DB_PROTOCOL_FILE: "/run/secrets/db_protocol"
+      DB_HOST_FILE: "/run/secrets/db_host"
+      DB_PORT_FILE: "/run/secrets/db_port"
+      DB_USER_FILE: "/run/secrets/db_company_user"
+      DB_PASSWORD_FILE: "/run/secrets/db_company_password"
+      DB_NAME_FILE: "/run/secrets/db_company_name"
+      BETTER_AUTH_FILE: "/run/secrets/better_auth"
+    secrets:
+      - db_host
+      - db_protocol
+      - db_port
+      - db_company_password
+      - db_company_user
+      - db_company_name
+      - internal_service_token
+      - port_company
+      - better_auth
 
-  kahier-service:
+  kahier:
+    restart: unless-stopped
     build:
-      context: .
       dockerfile: Dockerfile.service
       args:
-        SERVICE_FILTER: "@kahier/kahier-service"
-    env_file:
-      - ./apps/kahier-service/.env
-      - .env
+        SERVICE_NAME: "kahier"
+        SERVICE_FILTER: "@kahier/kahier"
+    ports:
+      - "3023:3023"
     environment:
-      PORT: "3023"
-    networks:
-      - app-net
+      NODE_ENV: production
+      PORT_FILE: "/run/secrets/port_kahier"
+    secrets:
+      - port_kahier
 
   client:
+    restart: unless-stopped
     build:
-      context: .
       dockerfile: Dockerfile.client
-    env_file:
-      - ./apps/client/.env
-      - .env
+    ports:
+      - "3000:3000"
     environment:
-      PORT: "3010"
-      API_INTERNAL_URL: "http://api-gateway:3011"
-      DATABASE_URL: "mysql://root:root@company-db:3306/crm-kahier-company"
-    depends_on:
-      - company-db
-    networks:
-      - traefik-net
-      - app-net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik-net"
-      - "traefik.http.services.kahier-crm.loadbalancer.server.port=3010"
-      - "traefik.http.routers.kahier-crm.rule=Host(`crm.kahier.com`)"
-      - "traefik.http.routers.kahier-crm.entrypoints=websecure"
-      - "traefik.http.routers.kahier-crm.tls=true"
-      - "traefik.http.routers.kahier-crm.tls.certresolver=myresolver"
-      - "traefik.http.routers.kahier-crm.service=kahier-crm"
+      NODE_ENV: production
+      BETTER_AUTH_FILE: "/run/secrets/better_auth"
+      API_INTERNAL_URL: "http://gateway:3011"
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:3011}"
+    secrets:
+      - better_auth
 
-  company-db:
-    image: mariadb:11
+  mariadb:
+    restart: unless-stopped
+    image: mariadb:12.3.1-ubi10-rc
     environment:
-      MARIADB_ROOT_PASSWORD: "root"
-      MARIADB_DATABASE: "crm-kahier-company"
+      MARIADB_PASSWORD_FILE: /run/secrets/db_company_password
+      MARIADB_USER_FILE: /run/secrets/db_company_user
+      MARIADB_DATABASE_FILE: /run/secrets/db_company_name
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_company_root_password
+    secrets:
+      - db_company_password
+      - db_company_root_password
+      - db_company_user
+      - db_company_name
     volumes:
-      - company-db-data:/var/lib/mysql
-    networks:
-      - app-net
-
-  crm-db:
-    image: mariadb:11
-    environment:
-      MARIADB_ROOT_PASSWORD: "root"
-      MARIADB_DATABASE: "crm-kahier-crm"
-    volumes:
-      - crm-db-data:/var/lib/mysql
-    networks:
-      - app-net
-
-networks:
-  traefik-net:
-    external: true
-  app-net:
-    external: true
+      - mariadb-data:/var/lib/mysql
 
 volumes:
-  company-db-data:
-  crm-db-data:
+  mariadb-data:
+
+secrets:
+  db_host:
+    file: ./secrets/root/db_host.txt
+  db_protocol:
+    file: ./secrets/root/db_protocol.txt
+  db_port:
+    file: ./secrets/root/db_port.txt
+  db_company_password:
+    file: ./secrets/company/mariadb_company_password.txt
+  db_company_root_password:
+    file: ./secrets/company/mariadb_company_root_password.txt
+  db_company_user:
+    file: ./secrets/company/mariadb_company_user.txt
+  db_company_name:
+    file: ./secrets/company/mariadb_company_name.txt
+  db_crm_password:
+    file: ./secrets/crm/mariadb_crm_password.txt
+  db_crm_user:
+    file: ./secrets/crm/mariadb_crm_user.txt
+  db_crm_name:
+    file: ./secrets/crm/mariadb_crm_name.txt
+  internal_service_token:
+    file: ./secrets/root/internal_service_token.txt
+  port_company:
+    file: ./secrets/company/port.txt
+  port_crm:
+    file: ./secrets/crm/port.txt
+  port_kahier:
+    file: ./secrets/kahier/port.txt
+  port_gateway:
+    file: ./secrets/gateway/port.txt
+  company_service_url:
+    file: ./secrets/gateway/company_service_url.txt
+  crm_service_url:
+    file: ./secrets/gateway/crm_service_url.txt
+  kahier_service_url:
+    file: ./secrets/gateway/kahier_service_url.txt
+  better_auth:
+    file: ./secrets/root/better_auth.txt
+  aws_access_key_id:
+    file: ./secrets/root/aws_access_key_id.txt
+  aws_access_key:
+    file: ./secrets/root/aws_access_key.txt
+  aws_region:
+    file: ./secrets/root/aws_region.txt
+  aws_s3_bucket_name:
+    file: ./secrets/root/aws_s3_bucket_name.txt
