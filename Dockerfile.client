@@ -1,70 +1,36 @@
-# syntax=docker/dockerfile:1
+FROM node:24-alpine3.22 AS base
 
-# ---------- Base
-FROM node:22-alpine AS base
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-
-RUN corepack enable && corepack prepare pnpm@10.27.0 --activate
-
-# ---------- Dependencies (install uniquement le workspace client + ses deps)
-FROM base AS deps
-
-# Fichiers nécessaires pour résoudre le workspace
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
-
-# IMPORTANT :
-# - On copie les workspaces (packages) car le client peut en dépendre
-# - On copie uniquement le package.json du client pour que pnpm calcule le graph
-COPY packages ./packages
-COPY apps/client/package.json ./apps/client/package.json
-
-# Installe uniquement ce qui est nécessaire au client (et ses dépendances workspace)
-# (le "..." inclut les deps du workspace ciblé)
-RUN pnpm install --frozen-lockfile --filter @kahier/client...
-
-# ---------- Build
-FROM base AS build
-
-# Reprendre les deps déjà installées
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/client/node_modules ./apps/client/node_modules
-COPY --from=deps /app/packages ./packages
-
-# Copier le code (monorepo)
-COPY . .
-
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build du client (via turbo)
-RUN pnpm dlx turbo@latest run build --filter=./apps/client...
+RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
 
-# ---------- Runtime (standalone)
-FROM node:22-alpine AS final
-RUN apk add --no-cache libc6-compat
+FROM base AS depsdev
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/client ./apps/client
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+FROM base AS depsprod
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/client ./apps/client
+
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
+
+FROM depsprod AS build
+
+RUN pnpm run build
+
+FROM gcr.io/distroless/nodejs24-debian12 AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3010
-ENV HOSTNAME=0.0.0.0
+COPY --from=build --chown=node:node /app/apps/client/public ./apps/client/public
+COPY --from=build --chown=node:node /app/apps/client/.next/standalone ./
+COPY --from=build --chown=node:node /app/apps/client/.next/static ./apps/client/.next/static
 
-RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S nextjs -G nodejs
-
-# Next standalone (monorepo) : conserve la structure générée
-COPY --from=build --chown=nextjs:nodejs /app/apps/client/.next/standalone ./
-COPY --from=build --chown=nextjs:nodejs /app/apps/client/.next/static ./apps/client/.next/static
-COPY --from=build --chown=nextjs:nodejs /app/apps/client/public ./apps/client/public
-COPY --from=deps --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-
-USER nextjs
-EXPOSE 3010
-
-# Dans un monorepo, le standalone contient souvent apps/client/server.js
-CMD ["node", "apps/client/server.js"]
+CMD ["apps/client/server.js"]
