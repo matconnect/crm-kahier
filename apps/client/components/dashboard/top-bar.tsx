@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Home, ListChecks, NotebookText, Settings, Users } from "lucide-react";
 
 import { requireAuth } from "@/lib/authz";
+import { getServerApiBase } from "@/lib/api-base";
 import { Button } from "@/components/ui/button";
 import { LogoutButton } from "@/components/LogoutButton";
 import { UpcomingInteractionsNotice } from "@/components/dashboard/upcoming-interactions-notice";
@@ -41,43 +42,46 @@ const DEFAULT_DETAIL_LINKS: DetailLink[] = [
 ];
 
 async function fetchUpcomingNotice(currentUserId: string) {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getServerApiBase();
     if (!apiBase || !currentUserId) return null;
+    try {
+        const params = new URLSearchParams({ page: "1", pageSize: "50" });
+        const res = await fetch(`${apiBase}/clients?${params.toString()}`, {
+            cache: "no-store",
+            headers: { "x-user-id": currentUserId },
+        });
+        if (!res.ok) return null;
 
-    const params = new URLSearchParams({ page: "1", pageSize: "50" });
-    const res = await fetch(`${apiBase}/clients?${params.toString()}`, {
-        cache: "no-store",
-        headers: { "x-user-id": currentUserId },
-    });
-    if (!res.ok) return null;
+        const data = (await res.json()) as ApiListResponse;
+        const now = Date.now();
+        const alertWindowDays = 7;
+        const alertWindowMs = alertWindowDays * 24 * 60 * 60 * 1000;
 
-    const data = (await res.json()) as ApiListResponse;
-    const now = Date.now();
-    const alertWindowDays = 7;
-    const alertWindowMs = alertWindowDays * 24 * 60 * 60 * 1000;
+        const upcoming = data.items
+            .flatMap((client) =>
+                client.interactions.map((interaction) => ({
+                    clientId: client.id,
+                    clientName: client.name,
+                    type: interaction.type,
+                    upcomingAt: interaction.meetingStart ?? interaction.occurredAt,
+                })),
+            )
+            .filter((interaction) => {
+                if (!interaction.upcomingAt) return false;
+                const time = new Date(interaction.upcomingAt).getTime();
+                return Number.isFinite(time) && time >= now && time <= now + alertWindowMs;
+            })
+            .sort((a, b) => new Date(a.upcomingAt).getTime() - new Date(b.upcomingAt).getTime());
 
-    const upcoming = data.items
-        .flatMap((client) =>
-            client.interactions.map((interaction) => ({
-                clientId: client.id,
-                clientName: client.name,
-                type: interaction.type,
-                upcomingAt: interaction.meetingStart ?? interaction.occurredAt,
-            })),
-        )
-        .filter((interaction) => {
-            if (!interaction.upcomingAt) return false;
-            const time = new Date(interaction.upcomingAt).getTime();
-            return Number.isFinite(time) && time >= now && time <= now + alertWindowMs;
-        })
-        .sort((a, b) => new Date(a.upcomingAt).getTime() - new Date(b.upcomingAt).getTime());
+        if (upcoming.length === 0) return null;
 
-    if (upcoming.length === 0) return null;
-
-    return {
-        upcoming,
-        alertWindowDays,
-    };
+        return {
+            upcoming,
+            alertWindowDays,
+        };
+    } catch {
+        return null;
+    }
 }
 
 export async function DashboardTopBar({

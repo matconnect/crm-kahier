@@ -72,8 +72,10 @@ export function EditClientDialog(props: Props) {
     const [ownersQuery, setOwnersQuery] = React.useState("");
     const [ownerIds, setOwnerIds] = React.useState<string[]>(props.ownerIds ?? []);
     const [owners, setOwners] = React.useState<OwnerOption[]>([]);
+    const [ownersLoaded, setOwnersLoaded] = React.useState(false);
 
     React.useEffect(() => {
+        if (!open || ownersLoaded) return;
         let active = true;
         async function loadOwners() {
             try {
@@ -85,6 +87,7 @@ export function EditClientDialog(props: Props) {
                 if (!res.ok) throw new Error(data.error ?? "Impossible de charger les utilisateurs.");
                 if (!active || !data.users) return;
                 setOwners(data.users);
+                setOwnersLoaded(true);
             } catch (error) {
                 console.error("Failed to fetch users", error);
             }
@@ -93,7 +96,7 @@ export function EditClientDialog(props: Props) {
         return () => {
             active = false;
         };
-    }, [apiBase, props.currentUserId]);
+    }, [apiBase, open, ownersLoaded, props.currentUserId]);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();

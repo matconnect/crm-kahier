@@ -1,20 +1,46 @@
 import { StatsGrid } from "./stats-grid";
+import { getServerApiBase } from "@/lib/api-base";
 
 export async function StatsSection({ currentUserId }: { currentUserId: string }) {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getServerApiBase();
+    const emptyPeriods = {
+        "7j": {
+            label: "7 derniers jours",
+            clients: 0,
+            prevClients: 0,
+            prospects: 0,
+            prevProspects: 0,
+            interactions: 0,
+            prevInteractions: 0,
+        },
+        "30j": {
+            label: "30 derniers jours",
+            clients: 0,
+            prevClients: 0,
+            prospects: 0,
+            prevProspects: 0,
+            interactions: 0,
+            prevInteractions: 0,
+        },
+    };
+
     if (!apiBase) {
-        throw new Error("NEXT_PUBLIC_API_URL manquant pour récupérer les statistiques");
+        return (
+            <section id="stats" className="space-y-3 scroll-mt-26">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-lg font-semibold">Vue d’ensemble</h2>
+                        <p className="text-sm text-muted-foreground">
+                            API indisponible pour le moment.
+                        </p>
+                    </div>
+                </div>
+                <StatsGrid periods={emptyPeriods} />
+            </section>
+        );
     }
 
-    const res = await fetch(`${apiBase}/clients/summary`, {
-        cache: "no-store",
-        headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
-    });
-    if (!res.ok) {
-        throw new Error("Impossible de récupérer les statistiques clients");
-    }
-
-    const summary = (await res.json()) as {
+    let summary: {
         total: number;
         active: number;
         inactive: number;
@@ -33,6 +59,28 @@ export async function StatsSection({ currentUserId }: { currentUserId: string })
         prospectsMonth: number;
         prospectsPrevMonth: number;
     };
+    try {
+        const res = await fetch(`${apiBase}/clients/summary`, {
+            cache: "no-store",
+            headers: currentUserId ? { "x-user-id": currentUserId } : undefined,
+        });
+        if (!res.ok) throw new Error("bad status");
+        summary = (await res.json()) as typeof summary;
+    } catch {
+        return (
+            <section id="stats" className="space-y-3 scroll-mt-26">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-lg font-semibold">Vue d’ensemble</h2>
+                        <p className="text-sm text-muted-foreground">
+                            API indisponible pour le moment.
+                        </p>
+                    </div>
+                </div>
+                <StatsGrid periods={emptyPeriods} />
+            </section>
+        );
+    }
 
     const periods = {
         "7j": {

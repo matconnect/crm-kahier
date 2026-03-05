@@ -1,0 +1,165 @@
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../packages/db-crm/generated/client"
+}
+
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users   User[]
+  clients Client[]
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+}
+
+enum ClientSegment {
+  TPE
+  PME
+  ETI
+  GE
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      Role     @default(USER)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clientsOwned              Client[]            @relation("UserToClientOwner")
+  clientAssignments         ClientOwner[]
+  clientInteractions        ClientInteraction[]
+  collaboratingInteractions ClientInteraction[] @relation("InteractionCollaborators")
+  uploadedClientDocuments   ClientDocument[]
+}
+
+model Client {
+  id           String        @id @default(cuid())
+  name         String
+  status       ClientStatus  @default(PROSPECT)
+  segment      ClientSegment @default(OTHER)
+  location     String?
+  companyId    String?
+  ownerId      String?
+  notes        String?
+  primaryEmail String?
+  primaryPhone String?
+  emails       Json?
+  phones       Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner        User?               @relation("UserToClientOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  company      Company?            @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  owners       ClientOwner[]
+  contacts     ClientContact[]
+  interactions ClientInteraction[]
+  documents    ClientDocument[]
+
+  @@index([status])
+  @@index([segment])
+  @@index([location])
+  @@index([ownerId])
+  @@index([companyId])
+  @@index([name])
+  @@index([primaryEmail])
+  @@index([primaryPhone])
+}
+
+model ClientOwner {
+  id       String @id @default(cuid())
+  clientId String
+  userId   String
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, userId])
+  @@index([clientId])
+  @@index([userId])
+}
+
+model ClientContact {
+  id        String  @id @default(cuid())
+  clientId  String
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  emails    Json?
+  phones    Json?
+  role      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([email])
+}
+
+model ClientInteraction {
+  id           String    @id @default(cuid())
+  clientId     String
+  userId       String?
+  type         String
+  summary      String?
+  occurredAt   DateTime  @default(now())
+  meetingStart DateTime?
+  meetingEnd   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client        Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user          User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  collaborators User[] @relation("InteractionCollaborators")
+
+  @@index([clientId, occurredAt])
+  @@index([userId])
+}
+
+model ClientDocument {
+  id         String  @id @default(cuid())
+  clientId   String
+  uploaderId String?
+  fileName   String
+  s3Key      String
+  mimeType   String?
+  size       Int?
+
+  createdAt DateTime @default(now())
+
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  uploader User?  @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@index([uploaderId])
+}

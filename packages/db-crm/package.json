@@ -1,0 +1,12 @@
+{
+  "name": "@kahier/db-crm",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "dependencies": {
+    "@prisma/adapter-mariadb": "^7.4.1",
+    "@prisma/client": "^7.4.1"
+  }
+}

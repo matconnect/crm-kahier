@@ -1,0 +1,8 @@
+project_name: crm-kahier
+project_root: /opt/crm-kahier
+compose_filename: docker-compose.yml
+env_filename: .env
+
+docker_networks:
+  - traefik-net
+  - app-net

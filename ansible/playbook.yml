@@ -1,0 +1,60 @@
+- name: Deploy CRM Kahier stack
+  hosts: crm_hosts
+  become: true
+
+  vars_files:
+    - group_vars/all/main.yml
+    - group_vars/all/vault.yml
+
+  pre_tasks:
+    - name: Ensure project directory exists
+      ansible.builtin.file:
+        path: "{{ project_root }}"
+        state: directory
+        mode: "0755"
+
+    - name: Ensure docker networks exist
+      community.docker.docker_network:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ docker_networks }}"
+
+  tasks:
+    - name: Sync project files
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../"
+        dest: "{{ project_root }}/"
+        delete: false
+        recursive: true
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=node_modules"
+          - "--exclude=.turbo"
+
+    - name: Render application env file from vault
+      ansible.builtin.template:
+        src: templates/crm-kahier.env.j2
+        dest: "{{ project_root }}/{{ env_filename }}"
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Build and start docker compose stack
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_root }}"
+        files:
+          - "{{ compose_filename }}"
+        pull: policy
+        build: always
+        state: present
+
+    - name: Show running services
+      ansible.builtin.command: docker compose ps
+      args:
+        chdir: "{{ project_root }}"
+      register: compose_ps
+      changed_when: false
+
+    - name: Print compose status
+      ansible.builtin.debug:
+        var: compose_ps.stdout_lines

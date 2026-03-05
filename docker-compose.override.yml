@@ -1,0 +1,77 @@
+services:
+  gateway:
+    build:
+      target: depsdev
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/gateway/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
+    command: ["pnpm", "--filter", "@kahier/gateway", "dev"]
+
+  crm:
+    build:
+      target: depsdev
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/crm/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
+    command: ["pnpm", "--filter", "@kahier/crm", "dev"]
+
+  company:
+    build:
+      target: depsdev
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/company/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
+    command: ["pnpm", "--filter", "@kahier/company", "dev"]
+
+  kahier:
+    build:
+      target: depsdev
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/kahier/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
+    command: ["pnpm", "--filter", "@kahier/kahier", "dev"]
+
+  client:
+    build:
+      target: depsdev
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/client/node_modules
+      - pnpm-store:/pnpm
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: "http://localhost:3011"
+      
+    command: ["pnpm", "--filter", "client", "dev", "--hostname", "0.0.0.0", "--port", "3000"]
+
+  mariadb:
+    ports:
+      - "3306:3306"
+
+volumes:
+  pnpm-store:
