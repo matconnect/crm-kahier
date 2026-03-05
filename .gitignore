@@ -40,3 +40,5 @@ yarn-error.log*
 /generated/prisma
 /packages/db-company/generated
 /packages/db-crm/generated
+
+/secrets/
