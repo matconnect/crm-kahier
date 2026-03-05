@@ -23,7 +23,10 @@ services:
     environment:
       NODE_ENV: development
       URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
-    command: ["pnpm", "--filter", "@kahier/crm-service", "dev"]
+    command:
+      - /bin/sh
+      - -lc
+      - pnpm db:generate:crm && pnpm --filter @kahier/crm-service dev
 
   company:
     build:
@@ -36,7 +39,10 @@ services:
     environment:
       NODE_ENV: development
       URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
-    command: ["pnpm", "--filter", "@kahier/company-service", "dev"]
+    command:
+      - /bin/sh
+      - -lc
+      - pnpm db:generate:company && pnpm --filter @kahier/company-service dev
 
   kahier:
     build:
