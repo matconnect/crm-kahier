@@ -1,10 +1,11 @@
 import path from "node:path";
 import dotenv from "dotenv";
+import app from "./app";
 
 const candidateEnvPaths = [
   path.resolve(process.cwd(), ".env"),
   path.resolve(process.cwd(), "../../.env"),
-  path.resolve(process.cwd(), "apps/crm-service/.env"),
+  path.resolve(process.cwd(), "apps/api/kahier/.env"),
 ];
 
 for (const envPath of candidateEnvPaths) {
@@ -12,8 +13,6 @@ for (const envPath of candidateEnvPaths) {
 }
 
 dotenv.config();
-
-const { default: app } = await import("./app");
 
 const portRaw = process.env.PORT;
 if (!portRaw) {
@@ -25,5 +24,5 @@ if (!Number.isFinite(port)) {
 }
 
 app.listen(port, () => {
-  console.log(`[crm-service] listening on :${port}`);
+  console.log(`[kahier-service] listening on :${port}`);
 });

@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 const candidateEnvPaths = [
   path.resolve(process.cwd(), ".env"),
   path.resolve(process.cwd(), "../../.env"),
-  path.resolve(process.cwd(), "apps/company-service/.env"),
+  path.resolve(process.cwd(), "apps/api/gateway/.env"),
 ];
 
 for (const envPath of candidateEnvPaths) {
@@ -12,8 +12,6 @@ for (const envPath of candidateEnvPaths) {
 }
 
 dotenv.config();
-
-const { default: app } = await import("./app");
 
 const portRaw = process.env.PORT;
 if (!portRaw) {
@@ -23,7 +21,8 @@ const port = Number(portRaw);
 if (!Number.isFinite(port)) {
   throw new Error(`Invalid PORT value: ${portRaw}`);
 }
+const { default: app } = await import("./app");
 
 app.listen(port, () => {
-  console.log(`[company-service] listening on :${port}`);
+  console.log(`[api-gateway] listening on :${port}`);
 });
