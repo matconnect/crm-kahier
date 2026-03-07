@@ -54,14 +54,30 @@ const app: express.Express = express();
 
 const isDev = process.env.NODE_ENV !== "production";
 
+const isPrivateIpv4 = (host: string): boolean => {
+  const parts = host.split(".").map((part) => Number.parseInt(part, 10));
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) {
+    return false;
+  }
+  const first = parts[0]!;
+  const second = parts[1]!;
+  if (first === 10) return true;
+  if (first === 192 && second === 168) return true;
+  if (first === 172 && second >= 16 && second <= 31) return true;
+  return false;
+};
+
 const isAllowedOrigin = (origin?: string): boolean => {
   if (!origin) return true;
   if (origins.includes(origin)) return true;
   if (!isDev) return false;
   try {
     const parsed = new URL(origin);
-    const isLocalHost = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
-    return isLocalHost;
+    const host = parsed.hostname;
+    const isLocalHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+    if (isLocalHost) return true;
+    if (host.endsWith(".local")) return true;
+    return isPrivateIpv4(host);
   } catch {
     return false;
   }

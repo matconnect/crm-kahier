@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { CLIENT_SEGMENT_OPTIONS, CLIENT_STATUS_OPTIONS } from "@/lib/client-enums";
+import { getBrowserApiBase } from "@/lib/public-api-base";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,7 +32,7 @@ type Props = {
 export function CreateClientForm({ currentUserId, currentUserLabel, currentUserEmail }: Props) {
     const router = useRouter();
     const [pending, setPending] = React.useState(false);
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getBrowserApiBase();
     const [owners, setOwners] = React.useState<OwnerOption[]>([
         { id: currentUserId, label: currentUserLabel, email: currentUserEmail },
     ]);

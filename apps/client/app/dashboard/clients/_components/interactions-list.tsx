@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { getBrowserApiBase } from "@/lib/public-api-base";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +53,7 @@ export function InteractionsList({ interactions, clientId, currentUserId, canEdi
     }
 
     async function updateInteraction(id: string) {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL;
+        const apiBase = getBrowserApiBase();
         if (!apiBase) {
             toast.error("NEXT_PUBLIC_API_URL manquant");
             return;
@@ -85,7 +86,7 @@ export function InteractionsList({ interactions, clientId, currentUserId, canEdi
     }
 
     async function deleteInteraction(id: string) {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL;
+        const apiBase = getBrowserApiBase();
         if (!apiBase) {
             toast.error("NEXT_PUBLIC_API_URL manquant");
             return;

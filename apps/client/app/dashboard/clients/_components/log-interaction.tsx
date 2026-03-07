@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Calendar, ChevronDown, Mail, MessageSquare, PhoneCall, Send } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { getBrowserApiBase } from "@/lib/public-api-base";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,7 +90,7 @@ type KahierLegend = {
 
 
 export function LogInteraction({ clientId, currentUserId, enabled = true }: Props) {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getBrowserApiBase();
     const kahierZoneId = Number(process.env.NEXT_PUBLIC_KAHIER_ZONE_ID ?? 33);
     const router = useRouter();
     const [pending, setPending] = React.useState(false);

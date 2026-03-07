@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import { getBrowserApiBase } from "@/lib/public-api-base";
 import { Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,7 +55,7 @@ const segmentOptions: { value: ClientSegment; label: string }[] = [
 ];
 
 export function EditClientDialog(props: Props) {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getBrowserApiBase();
     const [open, setOpen] = React.useState(false);
     const [pending, setPending] = React.useState(false);
     const [name, setName] = React.useState(props.name);

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Check, Download, Eye, FileText, Pencil, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { getBrowserApiBase } from "@/lib/public-api-base";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +41,7 @@ export function ClientDocumentsCard({ clientId, currentUserId, canEdit }: Props)
     const [deletingId, setDeletingId] = React.useState<string | null>(null);
     const [deleteTarget, setDeleteTarget] = React.useState<DocumentItem | null>(null);
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getBrowserApiBase();
 
     const loadDocuments = React.useCallback(async () => {
         if (!apiBase) return;

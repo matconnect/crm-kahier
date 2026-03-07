@@ -3,6 +3,7 @@
 import * as React from "react";
 import { UserPlus, Save } from "lucide-react";
 import { toast } from "sonner";
+import { getBrowserApiBase } from "@/lib/public-api-base";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +25,7 @@ type Props = {
 };
 
 export function AddContactDialog({ clientId, currentUserId }: Props) {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = getBrowserApiBase();
     const [open, setOpen] = React.useState(false);
     const [pending, setPending] = React.useState(false);
 

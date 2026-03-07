@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Loader2, User } from "lucide-react";
 import { toast } from "sonner";
+import { getBrowserApiBase } from "@/lib/public-api-base";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,7 @@ export function ProfileSection({ userId, email: initialEmail }: Props) {
         let active = true;
         async function load() {
             try {
-                const apiBase = process.env.NEXT_PUBLIC_API_URL;
+                const apiBase = getBrowserApiBase();
                 if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
                 const res = await fetch(`${apiBase}/profile`, { headers: { "x-user-id": userId } });
                 const data = (await res.json()) as ProfileResponse;
@@ -66,7 +67,7 @@ export function ProfileSection({ userId, email: initialEmail }: Props) {
         }
         setSaving(true);
         try {
-            const apiBase = process.env.NEXT_PUBLIC_API_URL;
+            const apiBase = getBrowserApiBase();
             if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
             const res = await fetch(`${apiBase}/profile`, {
                 method: "PATCH",

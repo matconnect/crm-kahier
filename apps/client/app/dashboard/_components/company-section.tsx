@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { getBrowserApiBase } from "@/lib/public-api-base";
 
 type CompanyUser = {
     id: string;
@@ -40,7 +41,7 @@ export function CompanySection({ userId }: Props) {
         let active = true;
         async function load() {
             try {
-                const apiBase = process.env.NEXT_PUBLIC_API_URL;
+                const apiBase = getBrowserApiBase();
                 if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
                 const res = await fetch(`${apiBase}/company`, {
                     cache: "no-store",
@@ -123,7 +124,7 @@ export function CompanySection({ userId }: Props) {
                                                 disabled={isCreator}
                                                 onValueChange={async (nextRole) => {
                                                     try {
-                                                        const apiBase = process.env.NEXT_PUBLIC_API_URL;
+                                                        const apiBase = getBrowserApiBase();
                                                         if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
                                                         const res = await fetch(`${apiBase}/company`, {
                                                             method: "PATCH",
