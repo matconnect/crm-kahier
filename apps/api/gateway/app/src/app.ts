@@ -1,13 +1,38 @@
 import express from "express";
 import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import { readFileSync } from "node:fs";
 
-const requireEnv = (name: string): string => {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
+const readSecret = (path: string): string => readFileSync(path, "utf8").trim();
+
+const fromEnvOrFile = (name: string): string | undefined => {
+  const direct = process.env[name];
+  if (direct && direct.trim()) return direct.trim();
+
+  const filePath = process.env[`${name}_FILE`];
+  if (filePath && filePath.trim()) return readSecret(filePath.trim());
+
+  return undefined;
+};
+
+const requireEnvOrFile = (name: string): string => {
+  const value = fromEnvOrFile(name);
+  if (!value) throw new Error(`Missing required env: ${name} or ${name}_FILE`);
   return value;
+};
+
+const requireHttpUrl = (name: string): string => {
+  const value = requireEnvOrFile(name);
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`Invalid URL for ${name}: "${value}"`);
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`Invalid URL protocol for ${name}: "${parsed.protocol}"`);
+  }
+  return parsed.toString().replace(/\/$/, "");
 };
 
 const splitUrls = (csv?: string) =>
@@ -21,9 +46,9 @@ const urlDev = splitUrls(process.env.URL_DEV);
 const urlProd = splitUrls(process.env.URL_PROD);
 const origins = process.env.NODE_ENV === "production" ? urlProd : urlDev;
 
-const crmServiceUrl = requireEnv("CRM_SERVICE_URL_FILE");
-const companyServiceUrl = requireEnv("COMPANY_SERVICE_URL_FILE");
-const kahierServiceUrl = requireEnv("KAHIER_SERVICE_URL_FILE");
+const crmServiceUrl = requireHttpUrl("CRM_SERVICE_URL");
+const companyServiceUrl = requireHttpUrl("COMPANY_SERVICE_URL");
+const kahierServiceUrl = requireHttpUrl("KAHIER_SERVICE_URL");
 
 const app: express.Express = express();
 
