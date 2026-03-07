@@ -1,10 +1,23 @@
 import { Router, type Router as ExpressRouter } from "express";
 import { prisma } from "@kahier/db-company";
+import { readFileSync } from "node:fs";
 
 const router: ExpressRouter = Router();
 
+function fromEnvOrFile(name: string): string | undefined {
+    const direct = process.env[name];
+    if (direct && direct.trim()) return direct.trim();
+
+    const filePath = process.env[`${name}_FILE`];
+    if (filePath && filePath.trim()) {
+        return readFileSync(filePath.trim(), "utf8").trim();
+    }
+
+    return undefined;
+}
+
 function isAuthorized(reqToken: string | undefined): boolean {
-    const internalToken = process.env.INTERNAL_SERVICE_TOKEN;
+    const internalToken = fromEnvOrFile("INTERNAL_SERVICE_TOKEN");
     return Boolean(internalToken) && reqToken === internalToken;
 }
 
