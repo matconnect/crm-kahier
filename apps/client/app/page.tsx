@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth } from "@/lib/session";
 import { Separator } from "@/components/ui/separator";
 
 import { CtaSection } from "@/components/home/cta-section";

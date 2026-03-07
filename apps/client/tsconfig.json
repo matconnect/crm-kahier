@@ -5,12 +5,6 @@
     "paths": {
       "@/*": [
         "./*"
-      ],
-      "next-auth": [
-        "./node_modules/next-auth"
-      ],
-      "next-auth/*": [
-        "./node_modules/next-auth/*"
       ]
     },
     "plugins": [

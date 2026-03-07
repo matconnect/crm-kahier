@@ -1,3 +1,3 @@
-import type { Session } from "next-auth";
+import type { SessionData as AuthSessionData } from "@/lib/session";
 
-export type SessionData = Session | null;
+export type SessionData = AuthSessionData | null;

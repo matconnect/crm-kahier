@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import type { Session } from "next-auth";
+import type { SessionData } from "@/lib/session";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 type DashboardHeaderProps = {
-    session: Session;
+    session: SessionData;
 };
 
 export function DashboardHeader({ session }: DashboardHeaderProps) {

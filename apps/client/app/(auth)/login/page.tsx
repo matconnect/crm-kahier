@@ -3,10 +3,10 @@
 import * as React from "react";
 import { Suspense } from "react";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { loginAction } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,32 +55,24 @@ function LoginForm() {
         e.preventDefault();
         setPending(true);
 
-        const res = await signIn("credentials", {
-            email,
-            password,
-            redirect: false,
-            callbackUrl,
-        });
+        try {
+            const result = await loginAction({ email, password });
+            setPending(false);
 
-        setPending(false);
+            if (!result.ok) {
+                toast.error(result.error ?? "Email ou mot de passe incorrect.");
+                return;
+            }
 
-        if (!res) {
+            toast.success("Connecté avec succès ! Redirection en cours...");
+            const safeUrl = toRelativeUrl(callbackUrl) ?? "/dashboard";
+            router.push(safeUrl);
+            router.refresh();
+        } catch {
+            setPending(false);
             toast.error("Une erreur est survenue. Veuillez réessayer plus tard.");
             return;
         }
-
-        if (res.error === "CredentialsSignin") {
-            toast.error("Email ou mot de passe incorrect.");
-            return;
-        }
-
-        if (res.url) {
-            toast.success("Connecté avec succès ! Redirection en cours...");
-        }
-
-        const safeUrl = toRelativeUrl(res.url) ?? toRelativeUrl(callbackUrl) ?? "/dashboard";
-        router.push(safeUrl);
-        router.refresh();
     }
     //!SECTION - Fin fonction de connexion
 

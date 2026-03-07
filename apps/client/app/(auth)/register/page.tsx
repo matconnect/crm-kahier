@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signIn } from "next-auth/react";
+import { loginAction, registerAction } from "../actions";
 import { toast } from "sonner";
 
 function RegisterForm() {
@@ -75,44 +75,33 @@ function RegisterForm() {
         setPending(true);
 
         try {
-            const res = await fetch("/api/auth/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    firstName,
-                    lastName,
-                    email,
-                    password,
-                    ...(mode === "join"
-                        ? { companyCode: companyCode.trim() }
-                        : { companyName: companyName.trim() || undefined }),
-                }),
+            const registerRes = await registerAction({
+                firstName,
+                lastName,
+                email,
+                password,
+                ...(mode === "join"
+                    ? { companyCode: companyCode.trim() }
+                    : { companyName: companyName.trim() || undefined }),
             });
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                toast.error(data.error);
+            if (!registerRes.ok) {
+                toast.error(registerRes.error ?? "Impossible de créer le compte.");
                 setPending(false);
                 return;
             }
 
-            const loginRes = await signIn("credentials", {
-                email,
-                password,
-                redirect: false,
-                callbackUrl,
-            });
+            const loginRes = await loginAction({ email, password });
 
             setPending(false);
 
-            if (!loginRes || loginRes.error) {
+            if (!loginRes.ok) {
                 toast.success("Compte créé avec succès ! Redirection en cours...");
                 router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
                 return;
             }
 
-            const safeUrl = toRelativeUrl(loginRes.url) ?? toRelativeUrl(callbackUrl) ?? "/dashboard";
+            const safeUrl = toRelativeUrl(callbackUrl) ?? "/dashboard";
             router.push(safeUrl);
             router.refresh();
         } catch {
