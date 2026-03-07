@@ -1,4 +1,5 @@
 import { prisma } from "@kahier/db-crm";
+import { readFileSync } from "node:fs";
 
 type CompanyContextUser = {
     id: string;
@@ -27,17 +28,29 @@ type CompanyUser = {
     companyId: string;
 };
 
-function requireEnv(name: string): string {
-    const value = process.env[name];
+function fromEnvOrFile(name: string): string | undefined {
+    const direct = process.env[name];
+    if (direct && direct.trim()) return direct.trim();
+
+    const filePath = process.env[`${name}_FILE`];
+    if (filePath && filePath.trim()) {
+        return readFileSync(filePath.trim(), "utf8").trim();
+    }
+
+    return undefined;
+}
+
+function requireEnvOrFile(name: string): string {
+    const value = fromEnvOrFile(name);
     if (!value) {
-        throw new Error(`Missing required environment variable: ${name}`);
+        throw new Error(`Missing required environment variable: ${name} or ${name}_FILE`);
     }
     return value;
 }
 
 async function fetchFromCompanyService<T>(path: string): Promise<T> {
-    const baseUrl = requireEnv("COMPANY_SERVICE_URL").replace(/\/$/, "");
-    const internalToken = requireEnv("INTERNAL_SERVICE_TOKEN");
+    const baseUrl = requireEnvOrFile("COMPANY_SERVICE_URL").replace(/\/$/, "");
+    const internalToken = requireEnvOrFile("INTERNAL_SERVICE_TOKEN");
 
     const res = await fetch(`${baseUrl}${path}`, {
         headers: { "x-internal-token": internalToken },
