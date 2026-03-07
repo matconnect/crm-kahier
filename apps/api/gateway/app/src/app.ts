@@ -21,9 +21,9 @@ const urlDev = splitUrls(process.env.URL_DEV);
 const urlProd = splitUrls(process.env.URL_PROD);
 const origins = process.env.NODE_ENV === "production" ? urlProd : urlDev;
 
-const crmServiceUrl = requireEnv("CRM_SERVICE_URL");
-const companyServiceUrl = requireEnv("COMPANY_SERVICE_URL");
-const kahierServiceUrl = requireEnv("KAHIER_SERVICE_URL");
+const crmServiceUrl = requireEnv("CRM_SERVICE_URL_FILE");
+const companyServiceUrl = requireEnv("COMPANY_SERVICE_URL_FILE");
+const kahierServiceUrl = requireEnv("KAHIER_SERVICE_URL_FILE");
 
 const app: express.Express = express();
 
