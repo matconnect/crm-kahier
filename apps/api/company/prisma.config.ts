@@ -1,4 +1,4 @@
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 import "dotenv/config";
 import { readFileSync } from "node:fs";
 
@@ -28,6 +28,6 @@ const databaseUrl =
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    url: databaseUrl ?? env("DATABASE_URL"),
+    url: databaseUrl ?? process.env.DATABASE_URL ?? "mysql://placeholder:placeholder@localhost:3306/placeholder",
   },
 });

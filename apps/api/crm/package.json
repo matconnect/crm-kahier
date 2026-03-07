@@ -4,6 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "db:generate": "prisma generate",
+    "predev": "pnpm run db:generate",
     "dev": "tsx watch app/src/server.ts"
   },
   "dependencies": {
