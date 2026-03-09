@@ -16,6 +16,7 @@ import { EditClientDialog } from "../_components/edit-client-dialog";
 import { AddContactDialog } from "../_components/add-contact-dialog";
 import { EditContactDialog } from "../_components/edit-contact-dialog";
 import { DeleteContactDialog } from "../_components/delete-contact-dialog";
+import { DeleteClientDialog } from "../_components/delete-client-dialog";
 import { ClientDocumentsCard } from "../_components/client-documents-card";
 
 type DetailPageProps = {
@@ -257,6 +258,13 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                 currentUserId={currentUserId}
                             />
                             <AddContactDialog clientId={client.id} currentUserId={currentUserId} />
+                            <DeleteClientDialog
+                                clientId={client.id}
+                                clientName={client.name}
+                                currentUserId={currentUserId}
+                                redirectTo="/dashboard/clients"
+                                triggerClassName="gap-2"
+                            />
                         </div>
                     )}
                 </div>

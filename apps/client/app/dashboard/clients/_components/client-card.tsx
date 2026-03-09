@@ -22,6 +22,7 @@ import {
 import { ContactFlash } from "./contact-flash";
 import { LogInteraction } from "./log-interaction";
 import { EditClientDialog } from "./edit-client-dialog";
+import { DeleteClientDialog } from "./delete-client-dialog";
 import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
 
 type Interaction = {
@@ -215,7 +216,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                         </div>
                     </DialogContent>
                 </Dialog>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <EditClientDialog
                         clientId={client.id}
                         name={client.name}
@@ -229,6 +230,12 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                         notes={client.notes}
                         triggerClassName="w-full justify-center"
                         currentUserId={currentUserId}
+                    />
+                    <DeleteClientDialog
+                        clientId={client.id}
+                        clientName={client.name}
+                        currentUserId={currentUserId}
+                        triggerClassName="w-full justify-center gap-2"
                     />
                     <Button asChild variant="outline" size="sm" className="gap-2 w-full">
                         <Link href={`/dashboard/clients/${client.id}`} className="text-black">
