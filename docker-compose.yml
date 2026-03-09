@@ -118,6 +118,7 @@ services:
       NODE_ENV: production
       HOSTNAME: "0.0.0.0"
       PORT: "3000"
+      AUTH_SECRET: "/run/secrets/better_auth"
       BETTER_AUTH_FILE: "/run/secrets/better_auth"
       API_INTERNAL_URL: "http://gateway:3011"
       NEXT_PUBLIC_API_URL: "https://crm.kahier.com"
