@@ -23,6 +23,9 @@ services:
     environment:
       NODE_ENV: development
       URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
+      DB_NAME_FILE: "/run/secrets/db_crm_name_dev"
+    secrets:
+      - db_crm_name_dev
     command:
       - /bin/sh
       - -lc
@@ -39,6 +42,9 @@ services:
     environment:
       NODE_ENV: development
       URL_DEV: "http://localhost:3000,http://127.0.0.1:3000"
+      DB_NAME_FILE: "/run/secrets/db_company_name_dev"
+    secrets:
+      - db_company_name_dev
     command:
       - /bin/sh
       - -lc
@@ -86,3 +92,9 @@ services:
 
 volumes:
   pnpm-store:
+
+secrets:
+  db_company_name_dev:
+    file: ./secrets/company/mariadb_company_name_dev.txt
+  db_crm_name_dev:
+    file: ./secrets/crm/mariadb_crm_name_dev.txt
