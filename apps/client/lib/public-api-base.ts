@@ -27,9 +27,7 @@ export function getBrowserApiBase(): string | null {
     }
 
     try {
-        const apiUrl = new URL(window.location.origin);
-        apiUrl.port = process.env.NEXT_PUBLIC_API_PORT?.trim() || "3011";
-        return apiUrl.toString().replace(/\/$/, "");
+        return window.location.origin.replace(/\/$/, "");
     } catch {
         return null;
     }
