@@ -27,9 +27,19 @@ COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-FROM depsprod AS build
+FROM depsdev AS build
 
 ARG SERVICE_FILTER
+ARG SERVICE_NAME
+
+RUN case "${SERVICE_NAME}" in \
+    "api/crm") \
+      DATABASE_URL="mysql://user:password@localhost:3306/crm" pnpm --dir apps/api/crm exec prisma generate ;; \
+    "api/company") \
+      DATABASE_URL="mysql://user:password@localhost:3306/company" pnpm --dir apps/api/company exec prisma generate ;; \
+    *) \
+      echo "No prisma generation required for ${SERVICE_NAME}" ;; \
+  esac
 
 RUN pnpm --filter ${SERVICE_FILTER} run build
 
@@ -40,7 +50,7 @@ WORKDIR /app
 ARG SERVICE_NAME
 
 COPY --from=depsprod /app/node_modules ./node_modules
-COPY --from=depsprod /app/packages ./packages
+COPY --from=build /app/packages ./packages
 COPY --from=depsprod /app/apps/${SERVICE_NAME}/node_modules ./apps/${SERVICE_NAME}/node_modules
 COPY --from=build /app/apps/${SERVICE_NAME}/dist ./apps/${SERVICE_NAME}/dist
 

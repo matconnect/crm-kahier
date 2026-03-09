@@ -3,10 +3,17 @@
   "version": "0.0.1",
   "type": "module",
   "private": true,
-  "main": "index.ts",
-  "types": "index.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.4.1",
-    "@prisma/client": "^7.4.1"
+    "@prisma/client": "^7.4.1",
+    "@prisma/client-runtime-utils": "^7.4.1"
   }
 }

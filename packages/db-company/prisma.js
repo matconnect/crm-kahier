@@ -1,11 +1,11 @@
-import { PrismaClient } from "./generated/client";
+import { PrismaClient } from "./generated/client/index.js";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { readFileSync } from "node:fs";
 
-const globalForPrisma = globalThis as unknown as { prismaCrm?: PrismaClient };
+const globalForPrisma = globalThis;
 
-const readSecret = (path: string) => readFileSync(path, "utf8").trim();
-const fromEnvOrFile = (name: string): string | undefined => {
+const readSecret = (path) => readFileSync(path, "utf8").trim();
+const fromEnvOrFile = (name) => {
   const direct = process.env[name];
   if (direct) return direct;
   const filePath = process.env[`${name}_FILE`];
@@ -25,13 +25,14 @@ const databaseUrl =
     if (!protocol || !user || !password || !host || !port || !dbName) return undefined;
     return `${protocol}://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${dbName}`;
   })();
+
 if (!databaseUrl) throw new Error("DATABASE_URL or DB_* / DB_*_FILE variables are missing.");
 
 export const prisma =
-  globalForPrisma.prismaCrm ??
+  globalForPrisma.prismaCompany ??
   new PrismaClient({
     adapter: new PrismaMariaDb(databaseUrl),
     log: ["query", "info", "warn", "error"],
   });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prismaCrm = prisma;
+if (process.env.NODE_ENV !== "production") globalForPrisma.prismaCompany = prisma;
