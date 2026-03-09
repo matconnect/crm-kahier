@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "app/src",
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
@@ -14,11 +16,9 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2022",
-    "allowJs": true,
-    "jsx": "preserve",
-    "noEmit": true,
-    "plugins": [{ "name": "next" }]
+    "allowJs": false,
+    "noEmit": false
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["app/src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }
