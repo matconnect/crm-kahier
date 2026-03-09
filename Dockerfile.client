@@ -1,8 +1,6 @@
 FROM node:24-alpine3.22 AS base
 
 WORKDIR /app
-ARG DATABASE_URL="mysql://kahier_bdd:K*E83czpIWY4h(An@phpmyadmin-mysql-1:3306/crm-kahier"
-ENV DATABASE_URL=${DATABASE_URL}
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
