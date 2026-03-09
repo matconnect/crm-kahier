@@ -66,10 +66,6 @@ importers:
       typescript:
         specifier: 5.9.2
         version: 5.9.2
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../../packages/typescript-config
 
   apps/api/crm:
     dependencies:
@@ -106,10 +102,6 @@ importers:
       typescript:
         specifier: 5.9.2
         version: 5.9.2
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../../packages/typescript-config
 
   apps/api/gateway:
     dependencies:
@@ -140,10 +132,6 @@ importers:
       typescript:
         specifier: 5.9.2
         version: 5.9.2
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../../packages/typescript-config
 
   apps/api/kahier:
     dependencies:
@@ -174,10 +162,6 @@ importers:
       typescript:
         specifier: 5.9.2
         version: 5.9.2
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../../packages/typescript-config
 
   apps/client:
     dependencies:
@@ -254,9 +238,6 @@ importers:
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       '@types/node':
         specifier: ^22.19.7
         version: 22.19.7
@@ -350,9 +331,6 @@ importers:
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       '@types/node':
         specifier: ^22.15.3
         version: 22.19.7
