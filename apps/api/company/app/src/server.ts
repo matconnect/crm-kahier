@@ -14,7 +14,7 @@ for (const envPath of candidateEnvPaths) {
 
 dotenv.config();
 
-const { default: app } = await import("./app");
+const { default: app } = await import("./app.js");
 
 const portFile = process.env.PORT_FILE;
 const portFromFile = portFile ? readFileSync(portFile, "utf8").trim() : undefined;

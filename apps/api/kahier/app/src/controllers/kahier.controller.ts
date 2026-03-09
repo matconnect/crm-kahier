@@ -7,8 +7,8 @@ import {
     getPlannings,
     getPlanningLegends,
     getZoneData,
-} from "../services/kahier.service";
-import type { KahierTaskPayload } from "../types/kahier.types";
+} from "../services/kahier.service.js";
+import type { KahierTaskPayload } from "../types/kahier.types.js";
 
 function getParamValue(req: Request, key: string) {
     const value = (req.params as Record<string, string | string[] | undefined>)[key];

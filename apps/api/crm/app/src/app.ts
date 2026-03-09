@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import clientsRouter from "./routes/clients.route";
+import clientsRouter from "./routes/clients.route.js";
 
 const splitUrls = (csv?: string) =>
   (csv ?? "")

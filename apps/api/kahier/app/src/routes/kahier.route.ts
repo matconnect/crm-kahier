@@ -1,5 +1,5 @@
 import { Router, type Router as ExpressRouter } from "express";
-import * as controller from "../controllers/kahier.controller";
+import * as controller from "../controllers/kahier.controller.js";
 
 const router: ExpressRouter = Router();
 

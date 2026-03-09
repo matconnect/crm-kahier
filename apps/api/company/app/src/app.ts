@@ -1,10 +1,10 @@
 import express from "express";
 import cors from "cors";
-import companyRouter from "./routes/company.route";
-import usersRouter from "./routes/users.route";
-import profileRouter from "./routes/profile.route";
-import internalRouter from "./routes/internal.route";
-import authRouter from "./routes/auth.route";
+import companyRouter from "./routes/company.route.js";
+import usersRouter from "./routes/users.route.js";
+import profileRouter from "./routes/profile.route.js";
+import internalRouter from "./routes/internal.route.js";
+import authRouter from "./routes/auth.route.js";
 
 const splitUrls = (csv?: string) =>
   (csv ?? "")

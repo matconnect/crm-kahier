@@ -5,7 +5,7 @@ import type {
     KahierUser,
     KahierPlanning,
     KahierLegend,
-} from "../types/kahier.types";
+} from "../types/kahier.types.js";
 
 export class KahierServiceError extends Error {
     status: number;

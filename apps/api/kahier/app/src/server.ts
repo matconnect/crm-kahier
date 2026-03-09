@@ -1,7 +1,7 @@
 import path from "node:path";
 import { readFileSync } from "node:fs";
 import dotenv from "dotenv";
-import app from "./app";
+import app from "./app.js";
 
 const candidateEnvPaths = [
   path.resolve(process.cwd(), ".env"),

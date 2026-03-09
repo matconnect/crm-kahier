@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import kahierRouter from "./routes/kahier.route";
+import kahierRouter from "./routes/kahier.route.js";
 
 const splitUrls = (csv?: string) =>
   (csv ?? "")

@@ -22,7 +22,7 @@ const port = Number(portRaw);
 if (!Number.isFinite(port)) {
   throw new Error(`Invalid PORT value: ${portRaw}`);
 }
-const { default: app } = await import("./app");
+const { default: app } = await import("./app.js");
 
 app.listen(port, () => {
   console.log(`[api-gateway] listening on :${port}`);

@@ -2,9 +2,9 @@ import type { Request, Response } from "express";
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { prisma } from "@kahier/db-crm";
-import * as service from "../services/clients.service";
-import { s3 } from "../lib/s3";
-import { fetchCompanyContext, fetchCompanyUsers, syncCompanySnapshot } from "../lib/company-sync";
+import * as service from "../services/clients.service.js";
+import { s3 } from "../lib/s3.js";
+import { fetchCompanyContext, fetchCompanyUsers, syncCompanySnapshot } from "../lib/company-sync.js";
 
 type CurrentUser = { id: string; companyId: string; role: "USER" | "MANAGER" | "ADMIN" };
 
