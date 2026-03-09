@@ -6,7 +6,8 @@
   "scripts": {
     "db:generate": "prisma generate",
     "predev": "pnpm run db:generate",
-    "dev": "tsx watch app/src/server.ts"
+    "dev": "tsx watch app/src/server.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "@kahier/db-company": "workspace:^",
@@ -14,13 +15,13 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "@types/node": "^22.15.3",
+    "typescript": "5.9.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@repo/typescript-config": "workspace:*",
-    "@types/node": "^22.15.3",
-    "typescript": "5.9.2"
+    "@repo/typescript-config": "workspace:*"
   }
 }

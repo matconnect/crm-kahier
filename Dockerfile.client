@@ -10,23 +10,15 @@ ENV NODE_ENV=production
 
 RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
 
-FROM base AS depsdev
+FROM base AS deps
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
 COPY apps/client ./apps/client
 COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
-FROM base AS depsprod
-
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/client ./apps/client
-COPY packages ./packages
-
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts
-
-FROM depsprod AS build
+FROM deps AS build
 
 RUN pnpm run build
 

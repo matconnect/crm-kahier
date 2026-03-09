@@ -2,12 +2,11 @@ services:
   gateway:
     restart: unless-stopped
     build:
+      context: .
       dockerfile: Dockerfile.service
       args:
         SERVICE_NAME: "api/gateway"
         SERVICE_FILTER: "@kahier/api-gateway"
-    ports:
-      - "3011:3011"
     environment:
       NODE_ENV: production
       PORT_FILE: "/run/secrets/port_gateway"
@@ -19,16 +18,17 @@ services:
       - crm_service_url
       - company_service_url
       - kahier_service_url
+    networks:
+      - app-net
 
   crm:
     restart: unless-stopped
     build:
+      context: .
       dockerfile: Dockerfile.service
       args:
         SERVICE_NAME: "api/crm"
         SERVICE_FILTER: "@kahier/crm-service"
-    ports:
-      - "3021:3021"
     environment:
       NODE_ENV: production
       PORT_FILE: "/run/secrets/port_crm"
@@ -58,16 +58,17 @@ services:
       - aws_access_key
       - aws_region
       - aws_s3_bucket_name
+    networks:
+      - app-net
 
   company:
     restart: unless-stopped
     build:
+      context: .
       dockerfile: Dockerfile.service
       args:
         SERVICE_NAME: "api/company"
         SERVICE_FILTER: "@kahier/company-service"
-    ports:
-      - "3022:3022"
     environment:
       NODE_ENV: production
       PORT_FILE: "/run/secrets/port_company"
@@ -89,54 +90,47 @@ services:
       - internal_service_token
       - port_company
       - better_auth
+    networks:
+      - app-net
 
   kahier:
     restart: unless-stopped
     build:
+      context: .
       dockerfile: Dockerfile.service
       args:
         SERVICE_NAME: "api/kahier"
         SERVICE_FILTER: "@kahier/kahier-service"
-    ports:
-      - "3023:3023"
     environment:
       NODE_ENV: production
       PORT_FILE: "/run/secrets/port_kahier"
     secrets:
       - port_kahier
+    networks:
+      - app-net
 
   client:
     restart: unless-stopped
     build:
+      context: .
       dockerfile: Dockerfile.client
-    ports:
-      - "3000:3000"
     environment:
       NODE_ENV: production
       BETTER_AUTH_FILE: "/run/secrets/better_auth"
       API_INTERNAL_URL: "http://gateway:3011"
-      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:3011}"
+      NEXT_PUBLIC_API_URL: "https://crm.kahier.com"
     secrets:
       - better_auth
-
-  mariadb:
-    restart: unless-stopped
-    image: mariadb:12.3.1-ubi10-rc
-    environment:
-      MARIADB_PASSWORD_FILE: /run/secrets/db_company_password
-      MARIADB_USER_FILE: /run/secrets/db_company_user
-      MARIADB_DATABASE_FILE: /run/secrets/db_company_name
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_company_root_password
-    secrets:
-      - db_company_password
-      - db_company_root_password
-      - db_company_user
-      - db_company_name
-    volumes:
-      - mariadb-data:/var/lib/mysql
-
-volumes:
-  mariadb-data:
+    networks:
+      - traefik-net
+      - app-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-net"
+      - "traefik.http.routers.crm-kahier.rule=Host(`crm.kahier.com`)"
+      - "traefik.http.routers.crm-kahier.entrypoints=websecure"
+      - "traefik.http.routers.crm-kahier.tls.certresolver=myresolver"
+      - "traefik.http.services.crm-kahier.loadbalancer.server.port=3000"
 
 secrets:
   db_host:
@@ -185,3 +179,9 @@ secrets:
     file: ./secrets/root/aws_region.txt
   aws_s3_bucket_name:
     file: ./secrets/root/aws_s3_bucket_name.txt
+
+networks:
+  traefik-net:
+    external: true
+  app-net:
+    driver: bridge
