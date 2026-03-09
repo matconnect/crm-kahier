@@ -46,6 +46,16 @@ const urlDev = splitUrls(process.env.URL_DEV);
 const urlProd = splitUrls(process.env.URL_PROD);
 const origins = process.env.NODE_ENV === "production" ? urlProd : urlDev;
 
+const normalizeOrigin = (value: string): string => {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return value.replace(/\/$/, "");
+  }
+};
+
+const allowedOrigins = new Set(origins.map(normalizeOrigin));
+
 const crmServiceUrl = requireHttpUrl("CRM_SERVICE_URL");
 const companyServiceUrl = requireHttpUrl("COMPANY_SERVICE_URL");
 const kahierServiceUrl = requireHttpUrl("KAHIER_SERVICE_URL");
@@ -69,7 +79,8 @@ const isPrivateIpv4 = (host: string): boolean => {
 
 const isAllowedOrigin = (origin?: string): boolean => {
   if (!origin) return true;
-  if (origins.includes(origin)) return true;
+  if (allowedOrigins.has(normalizeOrigin(origin))) return true;
+  if (!isDev && allowedOrigins.size === 0) return true;
   if (!isDev) return false;
   try {
     const parsed = new URL(origin);
