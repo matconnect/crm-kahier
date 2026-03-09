@@ -59,7 +59,7 @@ services:
 
   client:
     build:
-      target: depsdev
+      target: deps
     working_dir: /app/apps/client
     volumes:
       - ./:/app
