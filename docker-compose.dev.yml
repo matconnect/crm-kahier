@@ -1,0 +1,241 @@
+services:
+  gateway:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      target: depsdev
+      args:
+        SERVICE_NAME: "api/gateway"
+        SERVICE_FILTER: "@kahier/api-gateway"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/gateway/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      PORT_FILE: "/run/secrets/port_gateway"
+      CRM_SERVICE_URL_FILE: "/run/secrets/crm_service_url"
+      COMPANY_SERVICE_URL_FILE: "/run/secrets/company_service_url"
+      KAHIER_SERVICE_URL_FILE: "/run/secrets/kahier_service_url"
+      URL_DEV: "https://dev.crm.kahier.com"
+    secrets:
+      - port_gateway
+      - crm_service_url
+      - company_service_url
+      - kahier_service_url
+    networks:
+      - app-net
+    command: ["pnpm", "--dir", "apps/api/gateway", "dev"]
+
+  crm:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      target: depsdev
+      args:
+        SERVICE_NAME: "api/crm"
+        SERVICE_FILTER: "@kahier/crm-service"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/crm/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      PORT_FILE: "/run/secrets/port_crm"
+      INTERNAL_SERVICE_TOKEN_FILE: "/run/secrets/internal_service_token"
+      COMPANY_SERVICE_URL_FILE: "/run/secrets/company_service_url"
+      DB_PROTOCOL_FILE: "/run/secrets/db_protocol"
+      DB_HOST_FILE: "/run/secrets/db_host"
+      DB_PORT_FILE: "/run/secrets/db_port"
+      DB_USER_FILE: "/run/secrets/db_crm_user"
+      DB_PASSWORD_FILE: "/run/secrets/db_crm_password"
+      DB_NAME_FILE: "/run/secrets/db_crm_name_dev"
+      AWS_ACCESS_KEY_ID_FILE: "/run/secrets/aws_access_key_id"
+      AWS_ACCESS_KEY_FILE: "/run/secrets/aws_access_key"
+      AWS_REGION_FILE: "/run/secrets/aws_region"
+      AWS_S3_BUCKET_NAME_FILE: "/run/secrets/aws_s3_bucket_name"
+      URL_DEV: "https://dev.crm.kahier.com"
+    secrets:
+      - db_host
+      - db_protocol
+      - db_port
+      - db_crm_password
+      - db_crm_user
+      - db_crm_name_dev
+      - internal_service_token
+      - company_service_url
+      - port_crm
+      - aws_access_key_id
+      - aws_access_key
+      - aws_region
+      - aws_s3_bucket_name
+    networks:
+      - app-net
+    command:
+      - /bin/sh
+      - -lc
+      - pnpm --dir apps/api/crm db:generate && pnpm --dir apps/api/crm dev
+
+  company:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      target: depsdev
+      args:
+        SERVICE_NAME: "api/company"
+        SERVICE_FILTER: "@kahier/company-service"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/company/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      PORT_FILE: "/run/secrets/port_company"
+      INTERNAL_SERVICE_TOKEN_FILE: "/run/secrets/internal_service_token"
+      DB_PROTOCOL_FILE: "/run/secrets/db_protocol"
+      DB_HOST_FILE: "/run/secrets/db_host"
+      DB_PORT_FILE: "/run/secrets/db_port"
+      DB_USER_FILE: "/run/secrets/db_company_user"
+      DB_PASSWORD_FILE: "/run/secrets/db_company_password"
+      DB_NAME_FILE: "/run/secrets/db_company_name_dev"
+      BETTER_AUTH_FILE: "/run/secrets/better_auth"
+      URL_DEV: "https://dev.crm.kahier.com"
+    secrets:
+      - db_host
+      - db_protocol
+      - db_port
+      - db_company_password
+      - db_company_user
+      - db_company_name_dev
+      - internal_service_token
+      - port_company
+      - better_auth
+    networks:
+      - app-net
+    command:
+      - /bin/sh
+      - -lc
+      - pnpm --dir apps/api/company db:generate && pnpm --dir apps/api/company dev
+
+  kahier:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      target: depsdev
+      args:
+        SERVICE_NAME: "api/kahier"
+        SERVICE_FILTER: "@kahier/kahier-service"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/kahier/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      PORT_FILE: "/run/secrets/port_kahier"
+      URL_DEV: "https://dev.crm.kahier.com"
+    secrets:
+      - port_kahier
+    networks:
+      - app-net
+    command: ["pnpm", "--dir", "apps/api/kahier", "dev"]
+
+  client:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      target: deps
+    working_dir: /app/apps/client
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/client/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      HOSTNAME: "0.0.0.0"
+      PORT: "3000"
+      AUTH_SECRET: "/run/secrets/better_auth"
+      BETTER_AUTH_FILE: "/run/secrets/better_auth"
+      API_INTERNAL_URL: "http://gateway:3011"
+      NEXT_PUBLIC_API_URL: "https://dev.crm.kahier.com"
+    secrets:
+      - better_auth
+    networks:
+      - traefik-net
+      - app-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-net"
+      - "traefik.http.routers.crm-kahier-dev.rule=Host(`dev.crm.kahier.com`)"
+      - "traefik.http.routers.crm-kahier-dev.entrypoints=websecure"
+      - "traefik.http.routers.crm-kahier-dev.tls.certresolver=myresolver"
+      - "traefik.http.routers.crm-kahier-dev.service=crm-kahier-dev"
+      - "traefik.http.services.crm-kahier-dev.loadbalancer.server.port=3000"
+    command:
+      - /bin/sh
+      - -lc
+      - pnpm dev --hostname 0.0.0.0 --port 3000
+
+secrets:
+  db_host:
+    file: ./secrets/root/db_host.txt
+  db_protocol:
+    file: ./secrets/root/db_protocol.txt
+  db_port:
+    file: ./secrets/root/db_port.txt
+  db_company_password:
+    file: ./secrets/company/mariadb_company_password.txt
+  db_company_user:
+    file: ./secrets/company/mariadb_company_user.txt
+  db_company_name_dev:
+    file: ./secrets/company/mariadb_company_name_dev.txt
+  db_crm_password:
+    file: ./secrets/crm/mariadb_crm_password.txt
+  db_crm_user:
+    file: ./secrets/crm/mariadb_crm_user.txt
+  db_crm_name_dev:
+    file: ./secrets/crm/mariadb_crm_name_dev.txt
+  internal_service_token:
+    file: ./secrets/root/internal_service_token.txt
+  port_company:
+    file: ./secrets/company/port.txt
+  port_crm:
+    file: ./secrets/crm/port.txt
+  port_kahier:
+    file: ./secrets/kahier/port.txt
+  port_gateway:
+    file: ./secrets/gateway/port.txt
+  company_service_url:
+    file: ./secrets/gateway/company_service_url.txt
+  crm_service_url:
+    file: ./secrets/gateway/crm_service_url.txt
+  kahier_service_url:
+    file: ./secrets/gateway/kahier_service_url.txt
+  better_auth:
+    file: ./secrets/root/better_auth.txt
+  aws_access_key_id:
+    file: ./secrets/root/aws_access_key_id.txt
+  aws_access_key:
+    file: ./secrets/root/aws_access_key.txt
+  aws_region:
+    file: ./secrets/root/aws_region.txt
+  aws_s3_bucket_name:
+    file: ./secrets/root/aws_s3_bucket_name.txt
+
+networks:
+  traefik-net:
+    external: true
+  app-net:
+    driver: bridge
+
+volumes:
+  pnpm-store:
