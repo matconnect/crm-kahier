@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, ChevronDown, Mail, MessageSquare, PhoneCall, Send } from "lucide-react";
+import { Calendar, ChevronDown, Mail, MessageSquare, PhoneCall, Plus, Send } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { getBrowserApiBase } from "@/lib/public-api-base";
@@ -88,10 +88,29 @@ type KahierLegend = {
     planningId: number;
 };
 
+type KahierLinkStatus = {
+    connection: {
+        kahierZoneId: number | null;
+        kahierZoneName: string | null;
+    } | null;
+};
+
+// TODO(kahier-link): Réactiver quand la route finale de liaison sera stabilisée.
+// Ancienne tentative conservée pour reprise :
+// async function fetchKahierLinkStatus(apiBase: string, currentUserId: string) {
+//     const init: RequestInit = {
+//         cache: "no-store",
+//         headers: { "x-user-id": currentUserId },
+//     };
+//
+//     const primary = await fetch(`${apiBase}/kahier-link`, init);
+//     if (primary.status !== 404) return primary;
+//     return fetch(`${apiBase}/api/kahier-link`, init);
+// }
 
 export function LogInteraction({ clientId, currentUserId, enabled = true }: Props) {
     const apiBase = getBrowserApiBase();
-    const kahierZoneId = Number(process.env.NEXT_PUBLIC_KAHIER_ZONE_ID ?? 33);
+    const defaultKahierZoneId = Number(process.env.NEXT_PUBLIC_KAHIER_ZONE_ID ?? 33);
     const router = useRouter();
     const [pending, setPending] = React.useState(false);
     const [type, setType] = React.useState<string>("Email");
@@ -142,11 +161,17 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
     const [legendsLoading, setLegendsLoading] = React.useState(false);
     const [legendsError, setLegendsError] = React.useState<string | null>(null);
     const [selectedLegendId, setSelectedLegendId] = React.useState<string>("");
+    const [newLegendLabel, setNewLegendLabel] = React.useState("");
+    const [newLegendColor, setNewLegendColor] = React.useState("#2f9e95");
+    const [creatingLegend, setCreatingLegend] = React.useState(false);
     const [planningUserIds, setPlanningUserIds] = React.useState<string[]>([]);
     const [planningUsersOpen, setPlanningUsersOpen] = React.useState(false);
     const [planningUsersQuery, setPlanningUsersQuery] = React.useState("");
     const [planningTitle, setPlanningTitle] = React.useState("");
     const [planningDescription, setPlanningDescription] = React.useState("");
+    const [linkedKahierZoneId, setLinkedKahierZoneId] = React.useState<number | null>(null);
+
+    const kahierZoneId = linkedKahierZoneId ?? defaultKahierZoneId;
 
     React.useEffect(() => {
         if (!enabled) return;
@@ -165,6 +190,27 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
             }
         }
         void loadCollaborators();
+        return () => {
+            active = false;
+        };
+    }, [apiBase, currentUserId, enabled]);
+
+    React.useEffect(() => {
+        let active = true;
+        async function loadLinkStatus() {
+            if (!enabled || !apiBase || !currentUserId) return;
+            // TODO(kahier-link): Réactiver le chargement du statut Kahier plus tard.
+            // try {
+            //     const res = await fetchKahierLinkStatus(apiBase, currentUserId);
+            //     if (!res.ok) return;
+            //     const data = (await res.json()) as KahierLinkStatus;
+            //     if (!active) return;
+            //     setLinkedKahierZoneId(data.connection?.kahierZoneId ?? null);
+            // } catch {
+            //     // ignore, fallback to env zone id
+            // }
+        }
+        void loadLinkStatus();
         return () => {
             active = false;
         };
@@ -312,6 +358,11 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
 
     React.useEffect(() => {
         setSelectedLegendId("");
+    }, [selectedPlanningId]);
+
+    React.useEffect(() => {
+        setNewLegendLabel("");
+        setNewLegendColor("#2f9e95");
     }, [selectedPlanningId]);
 
     React.useEffect(() => {
@@ -594,6 +645,64 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
         id: String(legend.id),
         label: legend.label,
     }));
+
+    async function handleCreateLegend() {
+        if (!apiBase) {
+            toast.error("NEXT_PUBLIC_API_URL manquant.");
+            return;
+        }
+        if (!selectedPlanningId) {
+            toast.error("Choisis un planning avant de créer une légende.");
+            return;
+        }
+        const label = newLegendLabel.trim();
+        if (!label) {
+            toast.error("Ajoute un nom de légende.");
+            return;
+        }
+
+        setCreatingLegend(true);
+        try {
+            const createRes = await fetch(`${apiBase}/kahier/planning/legend`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    label,
+                    color: newLegendColor,
+                    selectedPlanningId: Number(selectedPlanningId),
+                    agenda_principal: true,
+                }),
+            });
+
+            const created = (await createRes.json().catch(() => null)) as KahierLegend | { error?: string } | null;
+            if (!createRes.ok || !created || typeof (created as KahierLegend).id !== "number") {
+                const message = created && "error" in created && created.error ? created.error : "Impossible de créer la légende.";
+                throw new Error(message);
+            }
+
+            const selectedPlanning = plannings.find((planning) => String(planning.id) === selectedPlanningId);
+            const mode = selectedPlanning?.type ?? "classic";
+            const legendsRes = await fetch(
+                `${apiBase}/kahier/plannings/${selectedPlanningId}/legends?mode=${encodeURIComponent(mode)}`
+            );
+            const legendsData = (await legendsRes.json().catch(() => null)) as KahierLegend[] | { error?: string } | null;
+            if (!legendsRes.ok || !Array.isArray(legendsData)) {
+                const message = legendsData && !Array.isArray(legendsData) && "error" in legendsData && legendsData.error
+                    ? legendsData.error
+                    : "Impossible de rafraîchir les légendes.";
+                throw new Error(message);
+            }
+
+            setLegends(legendsData);
+            setSelectedLegendId(String((created as KahierLegend).id));
+            setNewLegendLabel("");
+            toast.success("Légende créée.");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Erreur lors de la création de la légende.");
+        } finally {
+            setCreatingLegend(false);
+        }
+    }
 
     return (
         <Card className="border my-1">
@@ -964,6 +1073,31 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                            <div className="grid gap-2 rounded-md border border-border/60 bg-background p-2 sm:grid-cols-[1fr_auto_auto]">
+                                                <Input
+                                                    placeholder="Nouvelle légende"
+                                                    value={newLegendLabel}
+                                                    onChange={(e) => setNewLegendLabel(e.target.value)}
+                                                    disabled={pending || creatingLegend || !selectedPlanningId}
+                                                />
+                                                <Input
+                                                    type="color"
+                                                    value={newLegendColor}
+                                                    onChange={(e) => setNewLegendColor(e.target.value)}
+                                                    disabled={pending || creatingLegend || !selectedPlanningId}
+                                                    className="h-10 w-full min-w-[72px] cursor-pointer p-1"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => void handleCreateLegend()}
+                                                    disabled={pending || creatingLegend || !selectedPlanningId}
+                                                    className="gap-2"
+                                                >
+                                                    <Plus className="h-4 w-4" />
+                                                    {creatingLegend ? "Création..." : "Créer"}
+                                                </Button>
+                                            </div>
                                         </div>
                                         <UserPicker
                                             label="Assigné à"

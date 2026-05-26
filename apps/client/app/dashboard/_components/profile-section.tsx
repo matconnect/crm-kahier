@@ -15,13 +15,13 @@ type ProfileResponse =
     }
     | { error: string };
 
-type Props = { userId: string; email: string };
+type Props = { userId: string; email: string; initialFirstName?: string; initialLastName?: string };
 
-export function ProfileSection({ userId, email: initialEmail }: Props) {
+export function ProfileSection({ userId, email: initialEmail, initialFirstName = "", initialLastName = "" }: Props) {
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
-    const [firstName, setFirstName] = React.useState("");
-    const [lastName, setLastName] = React.useState("");
+    const [firstName, setFirstName] = React.useState(initialFirstName);
+    const [lastName, setLastName] = React.useState(initialLastName);
     const [password, setPassword] = React.useState("");
     const [passwordConfirm, setPasswordConfirm] = React.useState("");
     const [email, setEmail] = React.useState(initialEmail);
@@ -29,19 +29,27 @@ export function ProfileSection({ userId, email: initialEmail }: Props) {
 
     React.useEffect(() => {
         let active = true;
+
+        async function fetchProfile(attempt = 1): Promise<ProfileResponse> {
+            const apiBase = getBrowserApiBase() ?? "";
+            const res = await fetch(`${apiBase}/profile`, { headers: { "x-user-id": userId } });
+            const data = (await res.json()) as ProfileResponse;
+            if (res.ok && !("error" in data)) return data;
+            if (attempt < 2) {
+                await new Promise((resolve) => setTimeout(resolve, 250));
+                return fetchProfile(attempt + 1);
+            }
+            throw new Error("error" in data ? data.error : "Impossible de charger le profil");
+        }
+
         async function load() {
             try {
-                const apiBase = getBrowserApiBase();
-                if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
-                const res = await fetch(`${apiBase}/profile`, { headers: { "x-user-id": userId } });
-                const data = (await res.json()) as ProfileResponse;
-                if (!res.ok || "error" in data) {
-                    throw new Error("error" in data ? data.error : "Impossible de charger le profil");
-                }
+                const data = await fetchProfile();
                 if (active) {
                     setFirstName(data.user.firstName ?? "");
                     setLastName(data.user.lastName ?? "");
                     setEmail(data.user.email);
+                    setEmailConfirm(data.user.email);
                 }
             } catch {
                 toast.error("Impossible de charger le profil");
@@ -67,8 +75,7 @@ export function ProfileSection({ userId, email: initialEmail }: Props) {
         }
         setSaving(true);
         try {
-            const apiBase = getBrowserApiBase();
-            if (!apiBase) throw new Error("NEXT_PUBLIC_API_URL manquant");
+            const apiBase = getBrowserApiBase() ?? "";
             const res = await fetch(`${apiBase}/profile`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json", "x-user-id": userId },

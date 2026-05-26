@@ -1,27 +1,35 @@
 import { requireAuth } from "@/lib/authz";
-import { DashboardTopBar } from "@/components/dashboard/top-bar";
-import { ActivitySection } from "./_components/activity-section";
-import { DashboardHeader } from "./_components/dashboard-header";
-import { StatsSection } from "./_components/stats-section";
 
-export default async function DashboardPage() {
+import {
+    DashboardShell,
+    HomeDashboardOverview,
+    fetchDashboardData,
+} from "./_components";
+
+type DashboardPageProps = {
+    searchParams: Promise<{ q?: string }>;
+};
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
     const session = await requireAuth();
     const currentUserId = session.user?.id ?? "";
+    const firstName = session.user?.firstName?.trim() || "équipe";
+    const sp = await searchParams;
+    const { summary, interactions, clients, projects } = await fetchDashboardData(currentUserId);
 
     return (
-        <div className="min-h-screen bg-background">
-            <DashboardTopBar
-                subtitle="Dashboard"
-                anchors={[
-                    { label: "Vue d’ensemble", href: "#stats" },
-                    { label: "Activités", href: "#activity" },
-                ]}
-            />
-            <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
-                <DashboardHeader session={session} />
-                <StatsSection currentUserId={currentUserId} />
-                <ActivitySection currentUserId={currentUserId} />
-            </div>
-        </div>
+        <DashboardShell
+            firstName={firstName}
+            email={session.user?.email}
+            summary={summary}
+            interactionsCount={interactions.length}
+            activeMenu="interactions"
+            searchValue={sp.q ?? ""}
+            searchClients={clients}
+            searchInteractions={interactions}
+            searchProjects={projects}
+        >
+            <HomeDashboardOverview summary={summary} interactions={interactions} clients={clients} projects={projects} />
+        </DashboardShell>
     );
 }

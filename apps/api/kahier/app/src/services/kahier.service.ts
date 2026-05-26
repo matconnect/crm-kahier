@@ -5,7 +5,9 @@ import type {
     KahierUser,
     KahierPlanning,
     KahierLegend,
+    KahierCreateLegendPayload,
 } from "../types/kahier.types.js";
+import { readFileSync } from "node:fs";
 
 export class KahierServiceError extends Error {
     status: number;
@@ -16,10 +18,24 @@ export class KahierServiceError extends Error {
     }
 }
 
-const requireEnv = (name: string): string => {
+const fromEnvOrFile = (name: string): string | undefined => {
     const value = process.env[name];
+    if (value && value.trim()) {
+        return value.trim();
+    }
+
+    const filePath = process.env[`${name}_FILE`];
+    if (filePath && filePath.trim()) {
+        return readFileSync(filePath.trim(), "utf8").trim();
+    }
+
+    return undefined;
+};
+
+const requireEnv = (name: string): string => {
+    const value = fromEnvOrFile(name);
     if (!value) {
-        throw new Error(`Missing required environment variable: ${name}`);
+        throw new Error(`Missing required environment variable: ${name} or ${name}_FILE`);
     }
     return value;
 };
@@ -128,4 +144,25 @@ export async function createPlanningEvent(payload: Record<string, unknown>) {
     }
 
     return res.json();
+}
+
+export async function createPlanningLegend(payload: KahierCreateLegendPayload) {
+    const baseUrl = requireEnv("KAHIER_API_BASE");
+    const headers = buildHeaders(true);
+    const res = await fetch(`${baseUrl}/planning/color`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            label: payload.label,
+            color: payload.color,
+            selectedPlanningId: payload.selectedPlanningId,
+            agenda_principal: payload.agenda_principal ?? true,
+        }),
+    });
+
+    if (!res.ok) {
+        throw new KahierServiceError("Impossible de créer la légende.", res.status);
+    }
+
+    return (await res.json()) as KahierLegend;
 }

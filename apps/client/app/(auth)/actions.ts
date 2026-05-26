@@ -23,6 +23,21 @@ type RegisterPayload = {
     companyName?: string;
 };
 
+type RegisterWithPlanPayload = {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    companyName: string;
+    planId: "starter" | "pro" | "enterprise";
+    billingCycle: "monthly" | "yearly";
+    returnBaseUrl?: string;
+};
+
+type RegisterWithPlanResult = ActionResult & {
+    checkoutUrl?: string;
+};
+
 function extractErrorMessage(raw: unknown): string | null {
     if (!raw || typeof raw !== "object") return null;
     const data = raw as Record<string, unknown>;
@@ -88,6 +103,37 @@ export async function registerAction(payload: RegisterPayload): Promise<ActionRe
     }
 
     return { ok: true };
+}
+
+export async function registerWithPlanAction(payload: RegisterWithPlanPayload): Promise<RegisterWithPlanResult> {
+    const apiBase = getServerApiBase();
+    if (!apiBase) {
+        return { ok: false, error: "API backend non configurée." };
+    }
+
+    const res = await fetch(`${apiBase}/billing/register-with-plan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+    });
+
+    const data = (await res.json().catch(() => null)) as
+        | { error?: string; message?: string; checkoutUrl?: string }
+        | null;
+    if (!res.ok) {
+        const backendError = extractErrorMessage(data);
+        return {
+            ok: false,
+            error: backendError ?? `Register + Stripe backend échoué (HTTP ${res.status}).`,
+        };
+    }
+
+    if (!data?.checkoutUrl) {
+        return { ok: false, error: "Lien de paiement Stripe introuvable." };
+    }
+
+    return { ok: true, checkoutUrl: data.checkoutUrl };
 }
 
 export async function logoutAction(): Promise<void> {

@@ -1,4 +1,4 @@
-import type { ClientSegment, ClientStatus, Prisma } from "@kahier/db-crm";
+import type { ClientSegment, ClientStatus, Prisma, RevenueSource } from "@kahier/db-crm";
 
 export type ListParams = {
     q?: string;
@@ -16,6 +16,7 @@ export type ListItem = {
     name: string;
     status: ClientStatus;
     segment: ClientSegment;
+    revenueSource: RevenueSource | null;
     location: string | null;
     notes: string | null;
     contactsCount: number;
@@ -46,6 +47,21 @@ export type ListResponse = {
 export type ClientWithRelations = Prisma.ClientGetPayload<{
     include: {
         contacts: true;
+        projects: {
+            select: {
+                id: true;
+                name: true;
+                status: true;
+                priority: true;
+                progress: true;
+                revenueAmount: true;
+                costAmount: true;
+                invoicedAmount: true;
+                receivedAmount: true;
+                endDate: true;
+            };
+            orderBy: { updatedAt: "desc" };
+        };
         owner: { select: { firstName: true; lastName: true; email: true } };
         owners: { select: { userId: true; user: { select: { firstName: true; lastName: true; email: true } } } };
         interactions: {

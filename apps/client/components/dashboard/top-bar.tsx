@@ -2,7 +2,7 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
-import { Home, ListChecks, NotebookText, Settings, Users } from "lucide-react";
+import { FileText, Home, ListChecks, Settings, Users } from "lucide-react";
 
 import { requireAuth } from "@/lib/authz";
 import { getServerApiBase } from "@/lib/api-base";
@@ -38,7 +38,7 @@ type ApiListResponse = {
 const DEFAULT_DETAIL_LINKS: DetailLink[] = [
     { label: "Clients", href: "/dashboard/clients", icon: Users },
     { label: "Projets", href: "/dashboard/projects", icon: ListChecks },
-    { label: "Docs", href: "/dashboard/documents", icon: NotebookText },
+    { label: "Devis", href: "/dashboard/devis", icon: FileText },
 ];
 
 async function fetchUpcomingNotice(currentUserId: string) {
@@ -106,7 +106,7 @@ export async function DashboardTopBar({
               : null;
 
     return (
-        <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
+        <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/60 backdrop-blur-xl">
             <div className="mx-auto max-w-6xl space-y-3 px-4 py-3 sm:px-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Link href="/dashboard" className="flex items-center gap-2">
@@ -126,13 +126,13 @@ export async function DashboardTopBar({
 
                     <div className="flex flex-wrap items-center gap-2">
                         {resolvedHeaderNotice}
-                        <Button asChild size="sm" variant="ghost" className="gap-2">
+                        <Button asChild size="sm" variant="ghost" className="gap-2 rounded-full">
                             <Link href="/dashboard">
                                 <Home className="h-4 w-4" />
                                 Accueil
                             </Link>
                         </Button>
-                        <Button asChild size="sm" variant="outline" className="gap-2">
+                        <Button asChild size="sm" className="btn-dark gap-2 rounded-full border-0">
                             <Link href="/dashboard/settings">
                                 <Settings className="h-4 w-4" />
                                 Paramètres
@@ -143,12 +143,12 @@ export async function DashboardTopBar({
                 </div>
 
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <nav className="flex w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-lg border px-2 py-1 text-sm md:w-auto md:border-0 md:px-0 md:py-0">
+                    <nav className="flex w-full flex-nowrap items-center gap-2 overflow-x-auto rounded-full border border-slate-200/80 bg-white/60 px-2 py-1 text-sm md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0">
                         {anchors.map((link) => (
                             <a
                                 key={link.href}
                                 href={link.href}
-                                className="rounded-full px-3 py-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                className="nav-pill rounded-full px-3 py-1 transition"
                             >
                                 {link.label}
                             </a>
@@ -157,7 +157,7 @@ export async function DashboardTopBar({
 
                     <div className="flex flex-nowrap items-center gap-2 overflow-x-auto lg:flex lg:overflow-visible">
                         {detailLinks.map((link) => (
-                            <Button key={link.href} asChild variant="ghost" size="sm" className="gap-2 whitespace-nowrap">
+                            <Button key={link.href} asChild variant="ghost" size="sm" className="gap-2 whitespace-nowrap rounded-full">
                                 <Link href={link.href}>
                                     <link.icon className="h-4 w-4" />
                                     {link.label}

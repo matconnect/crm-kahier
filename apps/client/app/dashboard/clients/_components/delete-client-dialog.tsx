@@ -74,7 +74,7 @@ export function DeleteClientDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className={triggerClassName}>
+                <Button variant="outline" size="sm" className={["text-black", triggerClassName ?? ""].filter(Boolean).join(" ")}>
                     <Trash2 className="h-4 w-4" />
                     Supprimer
                 </Button>

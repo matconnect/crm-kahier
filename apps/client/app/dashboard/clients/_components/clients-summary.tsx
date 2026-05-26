@@ -10,16 +10,16 @@ type SummaryCardProps = {
 
 function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
     return (
-        <Card className="border-muted/60">
+        <Card className="crm-card h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-                <div className="rounded-lg bg-muted/70 p-2">
-                    <Icon className="h-4 w-4 text-foreground" />
+                <CardTitle className="text-sm font-medium text-slate-500">{label}</CardTitle>
+                <div className="rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                    <Icon className="h-4 w-4" />
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-semibold">{value}</div>
-                <CardDescription className="mt-1 text-xs text-muted-foreground">Mise à jour en continu</CardDescription>
+                <div className="text-3xl font-semibold text-slate-950">{value}</div>
+                <CardDescription className="mt-1 text-xs text-slate-500">Mise à jour en continu</CardDescription>
             </CardContent>
         </Card>
     );
@@ -66,8 +66,8 @@ export async function ClientsSummary({ currentUserId }: { currentUserId: string 
         <section id="clients-summary" className="space-y-3 scroll-mt-36">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-lg font-semibold">Vue d’ensemble</h2>
-                    <p className="text-sm text-muted-foreground">Comptes actifs, prospects et interactions clés.</p>
+                    <h2 className="text-lg font-semibold text-slate-950">Vue d’ensemble</h2>
+                    <p className="text-sm text-slate-600">Comptes actifs, prospects et interactions clés.</p>
                 </div>
             </div>
 

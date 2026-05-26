@@ -17,6 +17,27 @@ function generateCompanyCode() {
     return `cmp_${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
+async function canAddMemberToCompany(companyId: string) {
+    const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: { id: true, subscriptionType: true },
+    });
+    if (!company) return { ok: false as const, reason: "company_not_found" as const };
+
+    const usersCount = await prisma.user.count({ where: { companyId } });
+    if (company.subscriptionType === "STARTER_FREE" && usersCount >= 1) {
+        return { ok: false as const, reason: "starter_limit_reached" as const };
+    }
+    if (
+        (company.subscriptionType === "PRO_MONTHLY" || company.subscriptionType === "PRO_YEARLY") &&
+        usersCount >= 10
+    ) {
+        return { ok: false as const, reason: "pro_limit_reached" as const };
+    }
+
+    return { ok: true as const };
+}
+
 router.post("/login", async (req, res) => {
     const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : null;
     const password = typeof req.body?.password === "string" ? req.body.password : null;
@@ -25,7 +46,10 @@ router.post("/login", async (req, res) => {
         return res.status(400).json({ error: "Email et mot de passe requis." });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+        where: { email },
+        include: { company: { select: { subscriptionType: true } } },
+    });
     if (!user) return res.status(401).json({ error: "Identifiants invalides." });
 
     const ok = await bcrypt.compare(password, user.password);
@@ -39,6 +63,7 @@ router.post("/login", async (req, res) => {
             lastName: user.lastName,
             role: user.role as Role,
             companyId: user.companyId ?? null,
+            subscriptionType: user.company?.subscriptionType ?? "STARTER_FREE",
         },
     });
 });
@@ -93,7 +118,7 @@ router.post("/register", async (req, res) => {
         const name = body.companyName?.trim() || email.split("@")[1]?.split(".")[0] || "Entreprise";
         const slug = slugify(name);
         company = await prisma.company.create({
-            data: { name, id: `cmp_${slug}_${Date.now()}`, code: generateCompanyCode() },
+            data: { name, id: `cmp_${slug}_${Date.now()}`, code: generateCompanyCode(), subscriptionType: "STARTER_FREE" },
         });
         companyId = company.id;
         role = "ADMIN";
@@ -101,6 +126,18 @@ router.post("/register", async (req, res) => {
         company = await prisma.company.findUnique({ where: { id: companyId } });
         if (!company) {
             return res.status(400).json({ error: "Entreprise introuvable." });
+        }
+
+        const memberEligibility = await canAddMemberToCompany(company.id);
+        if (!memberEligibility.ok && memberEligibility.reason === "starter_limit_reached") {
+            return res.status(403).json({
+                error: "Le plan STARTER_FREE est limité à 1 utilisateur. Passez sur un plan Pro ou Entreprise pour inviter d'autres membres.",
+            });
+        }
+        if (!memberEligibility.ok && memberEligibility.reason === "pro_limit_reached") {
+            return res.status(403).json({
+                error: "Le plan Pro est limité à 10 utilisateurs. Passez sur l'offre Entreprise pour ajouter plus de membres.",
+            });
         }
     }
 
@@ -111,7 +148,7 @@ router.post("/register", async (req, res) => {
 
     return res.status(201).json({
         user,
-        company: company ? { id: company.id, name: company.name, code: company.code } : null,
+        company: company ? { id: company.id, name: company.name, code: company.code, subscriptionType: company.subscriptionType } : null,
     });
 });
 

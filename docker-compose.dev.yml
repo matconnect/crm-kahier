@@ -19,6 +19,7 @@ services:
       CRM_SERVICE_URL_FILE: "/run/secrets/crm_service_url"
       COMPANY_SERVICE_URL_FILE: "/run/secrets/company_service_url"
       KAHIER_SERVICE_URL_FILE: "/run/secrets/kahier_service_url"
+      BILLING_SERVICE_URL: "http://billing:3015"
       URL_DEV: "https://dev.crm.kahier.com"
     secrets:
       - port_gateway
@@ -123,6 +124,58 @@ services:
       - -lc
       - pnpm --dir apps/api/company db:generate && pnpm --dir apps/api/company dev
 
+  billing:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      target: depsdev
+      args:
+        SERVICE_NAME: "api/billing"
+        SERVICE_FILTER: "@kahier/billing-service"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/apps/api/billing/node_modules
+      - pnpm-store:/pnpm
+    environment:
+      NODE_ENV: development
+      PORT: "3015"
+      DB_PROTOCOL_FILE: "/run/secrets/db_protocol"
+      DB_HOST_FILE: "/run/secrets/db_host"
+      DB_PORT_FILE: "/run/secrets/db_port"
+      DB_USER_FILE: "/run/secrets/db_company_user"
+      DB_PASSWORD_FILE: "/run/secrets/db_company_password"
+      DB_NAME_FILE: "/run/secrets/db_company_name_dev"
+      URL_DEV: "https://dev.crm.kahier.com"
+      STRIPE_SECRET_KEY_FILE: "/run/secrets/stripe_secret_key_dev"
+      STRIPE_PRICE_STARTER_FILE: "/run/secrets/stripe_price_starter_dev"
+      STRIPE_PRICE_PRO_FILE: "/run/secrets/stripe_price_pro_dev"
+      STRIPE_PRICE_STARTER_YEARLY_FILE: "/run/secrets/stripe_price_starter_yearly_dev"
+      STRIPE_PRICE_PRO_YEARLY_FILE: "/run/secrets/stripe_price_pro_yearly_dev"
+      APP_PUBLIC_URL_FILE: "/run/secrets/app_public_url_dev"
+      STRIPE_WEBHOOK_SECRET_FILE: "/run/secrets/stripe_webhook_secret_dev"
+    secrets:
+      - db_host
+      - db_protocol
+      - db_port
+      - db_company_password
+      - db_company_user
+      - db_company_name_dev
+      - stripe_secret_key_dev
+      - stripe_price_starter_dev
+      - stripe_price_pro_dev
+      - stripe_price_starter_yearly_dev
+      - stripe_price_pro_yearly_dev
+      - app_public_url_dev
+      - stripe_webhook_secret_dev
+    networks:
+      - app-net
+    command:
+      - /bin/sh
+      - -lc
+      - pnpm --dir apps/api/billing db:generate && pnpm --dir apps/api/billing dev
+
   kahier:
     restart: unless-stopped
     build:
@@ -138,10 +191,14 @@ services:
       - /app/apps/api/kahier/node_modules
       - pnpm-store:/pnpm
     environment:
+      KAHIER_API_BASE_FILE: "/run/secrets/kahier_api_base"
+      KAHIER_API_KEY_FILE: "/run/secrets/kahier_api_key"
       NODE_ENV: development
       PORT_FILE: "/run/secrets/port_kahier"
       URL_DEV: "https://dev.crm.kahier.com"
     secrets:
+      - kahier_api_base
+      - kahier_api_key
       - port_kahier
     networks:
       - app-net
@@ -183,7 +240,7 @@ services:
     command:
       - /bin/sh
       - -lc
-      - pnpm dev --hostname 0.0.0.0 --port 3000
+      - rm -f /app/apps/client/.next/dev/lock && pnpm dev --webpack --hostname 0.0.0.0 --port 3000
 
 secrets:
   db_host:
@@ -220,6 +277,10 @@ secrets:
     file: ./secrets/gateway/crm_service_url.txt
   kahier_service_url:
     file: ./secrets/gateway/kahier_service_url.txt
+  kahier_api_base:
+    file: ./secrets/kahier/api_base.txt
+  kahier_api_key:
+    file: ./secrets/kahier/api_key.txt
   better_auth:
     file: ./secrets/root/better_auth.txt
   aws_access_key_id:
@@ -230,6 +291,20 @@ secrets:
     file: ./secrets/root/aws_region.txt
   aws_s3_bucket_name:
     file: ./secrets/root/aws_s3_bucket_name.txt
+  stripe_secret_key_dev:
+    file: ./secrets/stripe/secret_key_dev.txt
+  stripe_price_starter_dev:
+    file: ./secrets/stripe/price_starter_dev.txt
+  stripe_price_pro_dev:
+    file: ./secrets/stripe/price_pro_dev.txt
+  stripe_price_starter_yearly_dev:
+    file: ./secrets/stripe/price_starter_yearly_dev.txt
+  stripe_price_pro_yearly_dev:
+    file: ./secrets/stripe/price_pro_yearly_dev.txt
+  app_public_url_dev:
+    file: ./secrets/stripe/app_public_url_dev.txt
+  stripe_webhook_secret_dev:
+    file: ./secrets/stripe/webhook_secret_dev.txt
 
 networks:
   traefik-net:

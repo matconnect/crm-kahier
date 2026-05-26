@@ -1,4 +1,4 @@
-import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import type { ClientSegment, ClientStatus, RevenueSource } from "@/lib/client-enums";
 
 export type OwnerOption = {
     id: string;
@@ -20,6 +20,7 @@ export type FormState = {
     ownerIds: string[];
     status: ClientStatus;
     segment: ClientSegment;
+    revenueSource: RevenueSource;
     location: string;
     emails: string[];
     phones: string[];

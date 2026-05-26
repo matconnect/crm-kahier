@@ -20,14 +20,14 @@ type Props = {
 
 export function ContactsCard({ contacts, pending, onChange, onAdd, onRemove }: Props) {
     return (
-        <Card className="border-muted/60">
+        <Card className="crm-card">
             <CardHeader className="space-y-1">
-                <CardTitle className="text-base">Contacts</CardTitle>
-                <CardDescription>Associe une ou plusieurs personnes référentes au compte.</CardDescription>
+                <CardTitle className="text-base text-slate-950">Contacts</CardTitle>
+                <CardDescription className="text-slate-600">Associe une ou plusieurs personnes référentes au compte.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 {contacts.map((contact, idx) => (
-                    <div key={contact.id} className="rounded-lg border border-dashed border-muted/80 p-4 space-y-3">
+                    <div key={contact.id} className="space-y-3 rounded-[1.5rem] border border-dashed border-slate-300 p-4">
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2 text-sm font-medium">
                                 <UserRound className="h-4 w-4 text-muted-foreground" />
@@ -38,7 +38,7 @@ export function ContactsCard({ contacts, pending, onChange, onAdd, onRemove }: P
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="h-9 w-9"
+                                    className="h-9 w-9 rounded-full"
                                     onClick={() => onRemove(contact.id)}
                                     disabled={pending}
                                 >
@@ -105,7 +105,7 @@ export function ContactsCard({ contacts, pending, onChange, onAdd, onRemove }: P
                     </div>
                 ))}
 
-                <Button type="button" variant="outline" className="gap-2" onClick={onAdd} disabled={pending}>
+                <Button type="button" variant="outline" className="gap-2 rounded-full border-slate-300 bg-white/80" onClick={onAdd} disabled={pending}>
                     <UserRound className="h-4 w-4" />
                     Ajouter un contact
                 </Button>

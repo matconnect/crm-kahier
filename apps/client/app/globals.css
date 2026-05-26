@@ -46,6 +46,7 @@
 
 :root {
   --radius: 0.625rem;
+  --font-display: "Arial Black", "Arial Bold", "Trebuchet MS", sans-serif;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -77,6 +78,27 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --app-tint: rgba(13, 148, 136, 0.18);
+  --app-tint-strong: rgba(245, 158, 11, 0.22);
+  --app-hero: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.88));
+  --app-shell-bg:
+    radial-gradient(circle at top left, var(--app-tint), transparent 30%),
+    radial-gradient(circle at top right, var(--app-tint-strong), transparent 24%),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 0.94));
+  --surface-glass: rgba(255, 255, 255, 0.78);
+  --surface-glass-strong: rgba(255, 255, 255, 0.9);
+  --surface-border-strong: rgba(148, 163, 184, 0.28);
+  --surface-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+  --surface-shadow-strong: 0 30px 90px rgba(15, 23, 42, 0.18);
+  --button-brand-bg: linear-gradient(135deg, #f97316, #f59e0b);
+  --button-brand-bg-hover: linear-gradient(135deg, #ea580c, #d97706);
+  --button-brand-fg: #fff7ed;
+  --button-quiet-bg: rgba(255, 255, 255, 0.72);
+  --button-quiet-bg-hover: rgba(255, 255, 255, 0.94);
+  --button-quiet-fg: #0f172a;
+  --button-dark-bg: rgba(15, 23, 42, 0.82);
+  --button-dark-bg-hover: rgba(15, 23, 42, 0.96);
+  --button-dark-fg: #f8fafc;
 }
 
 .dark {
@@ -117,7 +139,192 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .app-shell {
+    background: var(--app-shell-bg);
+  }
+
+  .display-title {
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+  }
+
+  .surface-panel {
+    border: 1px solid var(--surface-border-strong);
+    background: var(--surface-glass);
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(18px);
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 220ms ease,
+      background-color 220ms ease;
+  }
+
+  .surface-panel-strong {
+    border: 1px solid var(--surface-border-strong);
+    background: var(--surface-glass-strong);
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(18px);
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 220ms ease,
+      background-color 220ms ease;
+  }
+
+  .surface-hero {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(226, 232, 240, 0.4);
+    background: var(--app-hero);
+    box-shadow: var(--surface-shadow-strong);
+    color: #f8fafc;
+  }
+
+  .surface-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at top left, rgba(45, 212, 191, 0.22), transparent 28%),
+      radial-gradient(circle at 80% 20%, rgba(249, 115, 22, 0.24), transparent 24%);
+    pointer-events: none;
+  }
+
+  .btn-brand {
+    background: var(--button-brand-bg);
+    color: var(--button-brand-fg);
+    box-shadow: 0 12px 32px rgba(249, 115, 22, 0.28);
+    transform: translateY(0) scale(1);
+  }
+
+  .btn-brand:hover {
+    background: var(--button-brand-bg-hover);
+    transform: translateY(-1px) scale(1.01);
+  }
+
+  .btn-quiet {
+    background: var(--button-quiet-bg);
+    color: var(--button-quiet-fg);
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    backdrop-filter: blur(12px);
+    transform: translateY(0) scale(1);
+  }
+
+  .btn-quiet:hover {
+    background: var(--button-quiet-bg-hover);
+    transform: translateY(-1px) scale(1.01);
+  }
+
+  .btn-dark {
+    background: var(--button-dark-bg);
+    color: var(--button-dark-fg);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    transform: translateY(0) scale(1);
+  }
+
+  .btn-dark:hover {
+    background: var(--button-dark-bg-hover);
+    transform: translateY(-1px) scale(1.01);
+  }
+
+  .btn-outline-strong {
+    background: rgba(255, 255, 255, 0.02);
+    color: inherit;
+    border: 1px solid rgba(148, 163, 184, 0.34);
+  }
+
+  .btn-outline-strong:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .btn-outline-strong,
+  .btn-dark,
+  .btn-quiet,
+  .btn-brand {
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 220ms ease,
+      border-color 220ms ease,
+      opacity 220ms ease;
+  }
+
+  .nav-pill {
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(255, 255, 255, 0.72);
+    color: rgb(71 85 105);
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-pill:hover {
+    background: rgba(255, 255, 255, 0.94);
+    color: rgb(15 23 42);
+  }
+
+  .section-kicker {
+    @apply text-xs uppercase tracking-[0.24em];
+    color: rgb(71 85 105);
+  }
+
+  .crm-card {
+    border: 1px solid var(--surface-border-strong);
+    background: var(--surface-glass);
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(18px);
+    border-radius: 1.75rem;
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 220ms ease,
+      background-color 220ms ease;
+  }
+
+  .crm-card-strong {
+    border: 1px solid var(--surface-border-strong);
+    background: var(--surface-glass-strong);
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(18px);
+    border-radius: 1.75rem;
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 220ms ease,
+      background-color 220ms ease;
+  }
+
+  .crm-card:hover,
+  .crm-card-strong:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 28px 90px rgba(15, 23, 42, 0.1);
+  }
+
+  .motion-reveal {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.985);
+    filter: blur(10px);
+    transition:
+      opacity 720ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms),
+      transform 720ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms),
+      filter 720ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+    will-change: opacity, transform, filter;
+  }
+
+  .motion-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
   }
 }

@@ -13,6 +13,7 @@ services:
       CRM_SERVICE_URL_FILE: "/run/secrets/crm_service_url"
       COMPANY_SERVICE_URL_FILE: "/run/secrets/company_service_url"
       KAHIER_SERVICE_URL_FILE: "/run/secrets/kahier_service_url"
+      BILLING_SERVICE_URL: "http://billing:3015"
     secrets:
       - port_gateway
       - crm_service_url
@@ -93,6 +94,47 @@ services:
     networks:
       - app-net
 
+  billing:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE_NAME: "api/billing"
+        SERVICE_FILTER: "@kahier/billing-service"
+    environment:
+      NODE_ENV: production
+      PORT: "3015"
+      DB_PROTOCOL_FILE: "/run/secrets/db_protocol"
+      DB_HOST_FILE: "/run/secrets/db_host"
+      DB_PORT_FILE: "/run/secrets/db_port"
+      DB_USER_FILE: "/run/secrets/db_company_user"
+      DB_PASSWORD_FILE: "/run/secrets/db_company_password"
+      DB_NAME_FILE: "/run/secrets/db_company_name"
+      STRIPE_SECRET_KEY_FILE: "/run/secrets/stripe_secret_key"
+      STRIPE_PRICE_STARTER_FILE: "/run/secrets/stripe_price_starter"
+      STRIPE_PRICE_PRO_FILE: "/run/secrets/stripe_price_pro"
+      STRIPE_PRICE_STARTER_YEARLY_FILE: "/run/secrets/stripe_price_starter_yearly"
+      STRIPE_PRICE_PRO_YEARLY_FILE: "/run/secrets/stripe_price_pro_yearly"
+      APP_PUBLIC_URL_FILE: "/run/secrets/app_public_url"
+      STRIPE_WEBHOOK_SECRET_FILE: "/run/secrets/stripe_webhook_secret"
+    secrets:
+      - db_host
+      - db_protocol
+      - db_port
+      - db_company_password
+      - db_company_user
+      - db_company_name
+      - stripe_secret_key
+      - stripe_price_starter
+      - stripe_price_pro
+      - stripe_price_starter_yearly
+      - stripe_price_pro_yearly
+      - app_public_url
+      - stripe_webhook_secret
+    networks:
+      - app-net
+
   kahier:
     restart: unless-stopped
     build:
@@ -102,9 +144,13 @@ services:
         SERVICE_NAME: "api/kahier"
         SERVICE_FILTER: "@kahier/kahier-service"
     environment:
+      KAHIER_API_BASE_FILE: "/run/secrets/kahier_api_base"
+      KAHIER_API_KEY_FILE: "/run/secrets/kahier_api_key"
       NODE_ENV: production
       PORT_FILE: "/run/secrets/port_kahier"
     secrets:
+      - kahier_api_base
+      - kahier_api_key
       - port_kahier
     networks:
       - app-net
@@ -172,6 +218,10 @@ secrets:
     file: ./secrets/gateway/crm_service_url.txt
   kahier_service_url:
     file: ./secrets/gateway/kahier_service_url.txt
+  kahier_api_base:
+    file: ./secrets/kahier/api_base.txt
+  kahier_api_key:
+    file: ./secrets/kahier/api_key.txt
   better_auth:
     file: ./secrets/root/better_auth.txt
   aws_access_key_id:
@@ -182,6 +232,20 @@ secrets:
     file: ./secrets/root/aws_region.txt
   aws_s3_bucket_name:
     file: ./secrets/root/aws_s3_bucket_name.txt
+  stripe_secret_key:
+    file: ./secrets/stripe/secret_key.txt
+  stripe_price_starter:
+    file: ./secrets/stripe/price_starter.txt
+  stripe_price_pro:
+    file: ./secrets/stripe/price_pro.txt
+  stripe_price_starter_yearly:
+    file: ./secrets/stripe/price_starter_yearly.txt
+  stripe_price_pro_yearly:
+    file: ./secrets/stripe/price_pro_yearly.txt
+  app_public_url:
+    file: ./secrets/stripe/app_public_url.txt
+  stripe_webhook_secret:
+    file: ./secrets/stripe/webhook_secret.txt
 
 networks:
   traefik-net:

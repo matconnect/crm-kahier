@@ -15,10 +15,10 @@ type Props = {
 
 export function NotesCard({ notes, pending, textareaClass, onChange }: Props) {
     return (
-        <Card className="border-muted/60">
+        <Card className="crm-card">
             <CardHeader className="space-y-1">
-                <CardTitle className="text-base">Notes & contexte</CardTitle>
-                <CardDescription>Brief de contexte, enjeux, prochaines étapes.</CardDescription>
+                <CardTitle className="text-base text-slate-950">Notes & contexte</CardTitle>
+                <CardDescription className="text-slate-600">Brief de contexte, enjeux, prochaines étapes.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
                 <Label htmlFor="notes" className="flex items-center gap-2 text-sm">

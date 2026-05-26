@@ -13,6 +13,7 @@ export type SessionUser = {
     lastName: string;
     role: Role;
     companyId: string | null;
+    subscriptionType?: string | null;
 };
 
 type SessionTokenPayload = {
@@ -97,7 +98,10 @@ function isSessionUser(value: unknown): value is SessionUser {
         typeof user.firstName === "string" &&
         typeof user.lastName === "string" &&
         typeof user.role === "string" &&
-        (typeof user.companyId === "string" || user.companyId === null)
+        (typeof user.companyId === "string" || user.companyId === null) &&
+        (user.subscriptionType === undefined ||
+            user.subscriptionType === null ||
+            typeof user.subscriptionType === "string")
     );
 }
 

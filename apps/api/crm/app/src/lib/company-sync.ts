@@ -16,6 +16,7 @@ type CompanyContext = {
         id: string;
         name: string;
         code: string;
+        subscriptionType?: string | null;
     };
 };
 
@@ -81,10 +82,12 @@ export async function syncCompanySnapshot(context: CompanyContext, users: Compan
             id: context.company.id,
             name: context.company.name,
             code: context.company.code,
+            subscriptionType: context.company.subscriptionType ?? "STARTER_FREE",
         },
         update: {
             name: context.company.name,
             code: context.company.code,
+            subscriptionType: context.company.subscriptionType ?? "STARTER_FREE",
         },
     });
 

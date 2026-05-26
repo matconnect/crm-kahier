@@ -63,7 +63,6 @@ export function ClientsFilters({ searchParams }: FiltersProps) {
         const items: { label: string; value: string; icon?: ReactNode }[] = [];
         if (status) items.push({ label: "Statut", value: status });
         if (segment) items.push({ label: "Segment", value: segment });
-        if (location) items.push({ label: "Localisation", value: location });
         return items;
     }, [status, segment, location]);
 
@@ -108,17 +107,17 @@ export function ClientsFilters({ searchParams }: FiltersProps) {
         <section id="clients-filters" className="space-y-3 scroll-mt-36">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                    <h2 className="text-lg font-semibold">Filtres</h2>
-                    <p className="text-sm text-muted-foreground">Affinez par statut, segment ou localisation.</p>
+                    <h2 className="text-lg font-semibold text-slate-950">Filtres</h2>
+                    <p className="text-sm text-slate-600">Affinez par statut, segment.</p>
                 </div>
-                <Badge variant="secondary" className="gap-1">
+                <Badge variant="secondary" className="gap-1 bg-orange-50 text-orange-700">
                     <Filter className="h-3 w-3" />
                     Vue filtrée
                 </Badge>
             </div>
 
-            <Card className="border-muted/60">
-                <CardContent className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="crm-card">
+                <CardContent className="flex gap-4 p-4 sm:flex-row flex-col">
                     <div className="space-y-2">
                         <Label htmlFor="search">Recherche</Label>
                         <div className="relative">
@@ -132,64 +131,49 @@ export function ClientsFilters({ searchParams }: FiltersProps) {
                             />
                         </div>
                     </div>
+                    <div className="flex justify-between sm:gap-4">
+                        <div className="space-y-2">
+                            <Label>Statut</Label>
+                            <Select value={status ?? ""} onValueChange={(v) => setStatus(v || undefined)}>
+                                <SelectTrigger className="w-[80%] sm:w-full">
+                                    <SelectValue placeholder="Choisir un statut" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {statusOptions.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                    <div className="space-y-2">
-                        <Label>Statut</Label>
-                        <Select value={status ?? ""} onValueChange={(v) => setStatus(v || undefined)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Choisir un statut" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {statusOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Segment</Label>
-                        <Select value={segment ?? ""} onValueChange={(v) => setSegment(v || undefined)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Choisir un segment" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {segmentOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Localisation</Label>
-                        <Select value={location ?? ""} onValueChange={(v) => setLocation(v || undefined)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Choisir une localisation" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {locationOptions.map((loc) => (
-                                    <SelectItem key={loc} value={loc}>
-                                        {loc}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className="space-y-2">
+                            <Label>Segment</Label>
+                            <Select value={segment ?? ""} onValueChange={(v) => setSegment(v || undefined)}>
+                                <SelectTrigger className="w-[80%] sm:w-full">
+                                    <SelectValue placeholder="Choisir un segment" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {segmentOptions.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </CardContent>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-muted/60 px-4 py-3">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 px-4 py-3">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
                         <SlidersHorizontal className="h-4 w-4" />
                         {activeFilters.length} filtre{activeFilters.length > 1 ? "s" : ""} actif{activeFilters.length > 1 ? "s" : ""}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         {activeFilters.map((f) => (
-                            <Badge key={f.label} variant="outline" className="gap-1">
+                            <Badge key={f.label} variant="outline" className="gap-1 border-slate-300 bg-white/70">
                                 {f.label === "Localisation" ? (
                                     <MapPin className="h-3 w-3" />
                                 ) : (
@@ -198,7 +182,7 @@ export function ClientsFilters({ searchParams }: FiltersProps) {
                                 {f.value}
                             </Badge>
                         ))}
-                        <Button variant="ghost" size="sm" onClick={resetFilters} disabled={pending}>
+                        <Button variant="ghost" size="sm" className="rounded-full" onClick={resetFilters} disabled={pending}>
                             Réinitialiser
                         </Button>
                     </div>

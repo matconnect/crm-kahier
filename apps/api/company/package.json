@@ -4,21 +4,21 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "db:generate": "prisma generate",
+    "db:generate": "prisma generate --schema ../../../prisma/schema.prisma",
     "predev": "pnpm run db:generate",
     "dev": "tsx watch app/src/server.ts",
     "build": "tsc"
   },
   "dependencies": {
     "@kahier/db-company": "workspace:^",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.15.3",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "tsx": "^4.21.0",
-    "@types/node": "^22.15.3",
-    "typescript": "5.9.2",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6"
+    "typescript": "5.9.2"
   }
 }

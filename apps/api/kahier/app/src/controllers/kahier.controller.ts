@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import {
     KahierServiceError,
     createPlanningEvent,
+    createPlanningLegend,
     createTask,
     getEstablishmentUsers,
     getPlannings,
@@ -106,6 +107,41 @@ export async function postPlanningEvent(req: Request, res: Response) {
             return res.status(error.status).json({ error: error.message });
         }
         console.error("Erreur kahier planning create:", error);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+}
+
+export async function postPlanningLegend(req: Request, res: Response) {
+    const body = req.body as {
+        label?: unknown;
+        color?: unknown;
+        selectedPlanningId?: unknown;
+        agenda_principal?: unknown;
+    };
+
+    if (typeof body.label !== "string" || !body.label.trim()) {
+        return res.status(400).json({ error: "label requis" });
+    }
+    if (typeof body.color !== "string" || !body.color.trim()) {
+        return res.status(400).json({ error: "color requis" });
+    }
+    if (!Number.isInteger(body.selectedPlanningId)) {
+        return res.status(400).json({ error: "selectedPlanningId requis" });
+    }
+
+    try {
+        const legend = await createPlanningLegend({
+            label: body.label.trim(),
+            color: body.color.trim(),
+            selectedPlanningId: Number(body.selectedPlanningId),
+            agenda_principal: body.agenda_principal === false ? false : true,
+        });
+        return res.status(201).json(legend);
+    } catch (error) {
+        if (error instanceof KahierServiceError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("Erreur kahier legend create:", error);
         return res.status(500).json({ error: "Erreur serveur" });
     }
 }

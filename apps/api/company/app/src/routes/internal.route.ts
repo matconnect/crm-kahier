@@ -44,7 +44,7 @@ router.get("/context/:userId", async (req, res) => {
             lastName: true,
             role: true,
             companyId: true,
-            company: { select: { id: true, name: true, code: true } },
+            company: { select: { id: true, name: true, code: true, subscriptionType: true } },
         },
     });
 

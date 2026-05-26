@@ -12,6 +12,7 @@ FROM base AS depsdev
 ARG SERVICE_NAME
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json prisma.config.ts ./
+COPY prisma ./prisma
 COPY apps/${SERVICE_NAME} ./apps/${SERVICE_NAME}
 COPY packages ./packages
 
@@ -22,6 +23,7 @@ FROM base AS depsprod
 ARG SERVICE_NAME
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json prisma.config.ts ./
+COPY prisma ./prisma
 COPY apps/${SERVICE_NAME} ./apps/${SERVICE_NAME}
 COPY packages ./packages
 
@@ -34,9 +36,11 @@ ARG SERVICE_NAME
 
 RUN case "${SERVICE_NAME}" in \
     "api/crm") \
-      pnpm --dir apps/api/crm exec prisma generate ;; \
+      pnpm exec prisma generate --schema prisma/schema.prisma ;; \
     "api/company") \
-      pnpm --dir apps/api/company exec prisma generate ;; \
+      pnpm exec prisma generate --schema prisma/schema.prisma ;; \
+    "api/billing") \
+      pnpm exec prisma generate --schema prisma/schema.prisma ;; \
     *) \
       echo "No prisma generation required for ${SERVICE_NAME}" ;; \
   esac

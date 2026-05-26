@@ -28,6 +28,39 @@ router.get("/", async (req, res) => {
   res.json({ user });
 });
 
+router.get("/subscription", async (req, res) => {
+  const userId = (req as unknown as { userId: string }).userId;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      companyId: true,
+      company: {
+        select: {
+          id: true,
+          name: true,
+          subscriptionType: true,
+          stripeSubscriptionStatus: true,
+          stripeCurrentPeriodEnd: true,
+        },
+      },
+    },
+  });
+
+  if (!user?.companyId || !user.company) {
+    return res.status(404).json({ error: "Entreprise introuvable" });
+  }
+
+  return res.json({
+    company: {
+      id: user.company.id,
+      name: user.company.name,
+      subscriptionType: user.company.subscriptionType,
+      stripeSubscriptionStatus: user.company.stripeSubscriptionStatus,
+      stripeCurrentPeriodEnd: user.company.stripeCurrentPeriodEnd,
+    },
+  });
+});
+
 router.patch("/", async (req, res) => {
   const userId = (req as unknown as { userId: string }).userId;
   const { firstName, lastName, password, email } = req.body ?? {};

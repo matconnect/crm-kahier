@@ -84,6 +84,7 @@ export async function list(params: ListParams): Promise<ListResponse> {
         name: c.name,
         status: c.status,
         segment: c.segment,
+        revenueSource: c.revenueSource ?? null,
         location: c.location,
         notes: c.notes ?? null,
         contactsCount: c._count.contacts,
@@ -182,6 +183,21 @@ export async function getById(id: string, companyId: string): Promise<ClientWith
         where: { id, companyId },
         include: {
             contacts: true,
+            projects: {
+                orderBy: { updatedAt: "desc" },
+                select: {
+                    id: true,
+                    name: true,
+                    status: true,
+                    priority: true,
+                    progress: true,
+                    revenueAmount: true,
+                    costAmount: true,
+                    invoicedAmount: true,
+                    receivedAmount: true,
+                    endDate: true,
+                },
+            },
             owner: { select: { firstName: true, lastName: true, email: true } },
             owners: { select: { userId: true, user: { select: { firstName: true, lastName: true, email: true } } } },
             interactions: {
@@ -267,105 +283,6 @@ export async function updateInteraction(
         ...(input.meetingEnd !== undefined ? { meetingEnd: input.meetingEnd } : {}),
     };
     return prisma.clientInteraction.update({ where: { id: interactionId }, data });
-}
-
-async function assertClientAccess(clientId: string, companyId: string) {
-    await prisma.client.findFirstOrThrow({ where: { id: clientId, companyId }, select: { id: true } });
-}
-
-export async function listDocuments(clientId: string, companyId: string) {
-    await assertClientAccess(clientId, companyId);
-    return prisma.clientDocument.findMany({
-        where: { clientId },
-        orderBy: { createdAt: "desc" },
-        select: {
-            id: true,
-            fileName: true,
-            mimeType: true,
-            size: true,
-            createdAt: true,
-            uploader: { select: { firstName: true, lastName: true, email: true } },
-        },
-    });
-}
-
-export async function createDocument(
-    clientId: string,
-    companyId: string,
-    input: {
-        uploaderId?: string | null;
-        fileName: string;
-        s3Key: string;
-        mimeType?: string | null;
-        size?: number | null;
-    },
-) {
-    await assertClientAccess(clientId, companyId);
-    return prisma.clientDocument.create({
-        data: {
-            clientId,
-            uploaderId: input.uploaderId ?? null,
-            fileName: input.fileName,
-            s3Key: input.s3Key,
-            mimeType: input.mimeType ?? null,
-            size: input.size ?? null,
-        },
-    });
-}
-
-export async function getDocumentForDownload(
-    documentId: string,
-    clientId: string,
-    companyId: string,
-) {
-    return prisma.clientDocument.findFirstOrThrow({
-        where: {
-            id: documentId,
-            clientId,
-            client: { companyId },
-        },
-        select: {
-            id: true,
-            fileName: true,
-            s3Key: true,
-            mimeType: true,
-        },
-    });
-}
-
-export async function updateDocumentName(
-    documentId: string,
-    clientId: string,
-    companyId: string,
-    fileName: string,
-) {
-    await assertClientAccess(clientId, companyId);
-    return prisma.clientDocument.update({
-        where: { id: documentId, clientId },
-        data: { fileName },
-        select: {
-            id: true,
-            fileName: true,
-            mimeType: true,
-            size: true,
-            createdAt: true,
-            uploader: { select: { firstName: true, lastName: true, email: true } },
-        },
-    });
-}
-
-export async function deleteDocument(
-    documentId: string,
-    clientId: string,
-    companyId: string,
-) {
-    await assertClientAccess(clientId, companyId);
-    const doc = await prisma.clientDocument.findFirstOrThrow({
-        where: { id: documentId, clientId },
-        select: { id: true, s3Key: true },
-    });
-    await prisma.clientDocument.delete({ where: { id: doc.id } });
-    return doc.s3Key;
 }
 
 export async function deleteInteraction(interactionId: string, companyId: string) {

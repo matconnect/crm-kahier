@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import type { ClientSegment, ClientStatus, RevenueSource } from "@/lib/client-enums";
 import { getBrowserApiBase } from "@/lib/public-api-base";
 import { Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ type Props = {
     emails?: string[];
     phones?: string[];
     notes: string | null;
+    revenueSource?: RevenueSource | null;
     ownerIds?: string[];
     triggerClassName?: string;
     currentUserId: string;
@@ -54,6 +55,15 @@ const segmentOptions: { value: ClientSegment; label: string }[] = [
     { value: "OTHER", label: "AUTRE" },
 ];
 
+const revenueSourceOptions: { value: RevenueSource; label: string }[] = [
+    { value: "REFERRAL", label: "Recommandation" },
+    { value: "OUTBOUND", label: "Prospection" },
+    { value: "ADS", label: "Publicité" },
+    { value: "PARTNER", label: "Partenaire" },
+    { value: "UPSELL", label: "Upsell" },
+    { value: "OTHER", label: "Autre" },
+];
+
 export function EditClientDialog(props: Props) {
     const apiBase = getBrowserApiBase();
     const [open, setOpen] = React.useState(false);
@@ -61,6 +71,7 @@ export function EditClientDialog(props: Props) {
     const [name, setName] = React.useState(props.name);
     const [status, setStatus] = React.useState<ClientStatus>(props.status);
     const [segment, setSegment] = React.useState<ClientSegment>(props.segment);
+    const [revenueSource, setRevenueSource] = React.useState<RevenueSource>(props.revenueSource ?? "OTHER");
     const [location, setLocation] = React.useState(props.location ?? "");
     const [emails, setEmails] = React.useState<string[]>(
         props.emails?.length ? props.emails : [props.primaryEmail ?? ""],
@@ -135,6 +146,7 @@ export function EditClientDialog(props: Props) {
                     name: name.trim(),
                     status,
                     segment,
+                    revenueSource,
                     location: location.trim() || null,
                     emails: cleanEmails,
                     phones: cleanPhones,
@@ -210,6 +222,21 @@ export function EditClientDialog(props: Props) {
                         <div className="space-y-2">
                             <Label>Localisation</Label>
                             <Input placeholder="Ville, pays" value={location} onChange={(e) => setLocation(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Source de revenu</Label>
+                            <Select value={revenueSource} onValueChange={(v) => setRevenueSource(v as RevenueSource)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Choisir une source" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {revenueSourceOptions.map((opt) => (
+                                        <SelectItem key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <MultiInput
                             label="Emails"

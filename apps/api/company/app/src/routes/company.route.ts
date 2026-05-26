@@ -23,6 +23,14 @@ router.get("/", async (req, res) => {
             name: true,
             code: true,
             createdAt: true,
+            subscriptionType: true,
+            stripeCustomerId: true,
+            stripeSubscriptionId: true,
+            stripePriceId: true,
+            stripeSubscriptionStatus: true,
+            stripePurchasedAt: true,
+            stripeCurrentPeriodStart: true,
+            stripeCurrentPeriodEnd: true,
             users: {
                 select: { id: true, email: true, firstName: true, lastName: true, role: true, createdAt: true },
                 orderBy: { createdAt: "asc" },
@@ -31,7 +39,32 @@ router.get("/", async (req, res) => {
     });
     if (!company) return res.status(404).json({ error: "Entreprise introuvable" });
 
-    return res.json({ company, viewerRole: currentUser.role, creatorId: company.users[0]?.id ?? null });
+    const stripe =
+        currentUser.role === "ADMIN"
+            ? {
+                subscriptionType: company.subscriptionType,
+                stripeCustomerId: company.stripeCustomerId,
+                stripeSubscriptionId: company.stripeSubscriptionId,
+                stripePriceId: company.stripePriceId,
+                stripeSubscriptionStatus: company.stripeSubscriptionStatus,
+                stripePurchasedAt: company.stripePurchasedAt,
+                stripeCurrentPeriodStart: company.stripeCurrentPeriodStart,
+                stripeCurrentPeriodEnd: company.stripeCurrentPeriodEnd,
+            }
+            : null;
+
+    return res.json({
+        company: {
+            id: company.id,
+            name: company.name,
+            code: company.code,
+            createdAt: company.createdAt,
+            users: company.users,
+        },
+        stripe,
+        viewerRole: currentUser.role,
+        creatorId: company.users[0]?.id ?? null,
+    });
 });
 
 router.patch("/", async (req, res) => {

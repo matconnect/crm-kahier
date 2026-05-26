@@ -58,5 +58,12 @@ export type KahierLegend = {
     id: number;
     label: string;
     color: string;
-    planningId: number;
+    planningId: number | null;
+};
+
+export type KahierCreateLegendPayload = {
+    label: string;
+    color: string;
+    selectedPlanningId: number;
+    agenda_principal?: boolean;
 };

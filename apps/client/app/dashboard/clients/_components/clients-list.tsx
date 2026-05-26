@@ -1,4 +1,4 @@
-import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import type { ClientSegment, ClientStatus, RevenueSource } from "@/lib/client-enums";
 import { getServerApiBase } from "@/lib/api-base";
 
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ type ApiListResponse = {
         status: ClientStatus;
         location: string | null;
         notes: string | null;
+        revenueSource: RevenueSource | null;
         contactsCount: number;
         owner: { firstName: string | null; lastName: string | null; email: string | null } | null;
         primaryEmail: string | null;
@@ -103,16 +104,16 @@ export async function ClientsList({ searchParams, currentUserId, currentUserRole
         <section id="clients-list" className="space-y-3 scroll-mt-36">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-lg font-semibold">Clients</h2>
-                    <p className="text-sm text-muted-foreground">Liste des clients et derniers échanges.</p>
+                    <h2 className="text-lg font-semibold text-slate-950">Clients</h2>
+                    <p className="text-sm text-slate-600">Liste des clients et derniers échanges.</p>
                 </div>
-                <Badge variant="secondary">
+                <Badge variant="secondary" className="bg-slate-950 text-white">
                     {total} client{total > 1 ? "s" : ""}
                 </Badge>
             </div>
 
             {clients.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-muted/60 bg-muted/50 p-6 text-sm text-muted-foreground">
+                <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/60 p-6 text-sm text-slate-500">
                     {hasApiError
                         ? "Le service clients est momentanément indisponible."
                         : currentUserRole === "USER"
@@ -130,6 +131,7 @@ export async function ClientsList({ searchParams, currentUserId, currentUserRole
                                 segment: client.segment,
                                 status: client.status,
                                 location: client.location,
+                                revenueSource: client.revenueSource ?? null,
                                 owner: client.owner,
                                 contactsCount: client.contactsCount,
                                 primaryPhone: client.primaryPhone,

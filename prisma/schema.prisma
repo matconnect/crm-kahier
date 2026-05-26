@@ -2,50 +2,110 @@ datasource db {
   provider = "mysql"
 }
 
-generator client {
+generator companyClient {
   provider = "prisma-client-js"
+  output   = "../packages/db-company/generated/client"
 }
 
-//SECTION - Enums
+generator crmClient {
+  provider = "prisma-client-js"
+  output   = "../packages/db-crm/generated/client"
+}
 
-//NOTE - Role
 enum Role {
   USER
   MANAGER
   ADMIN
 }
 
-//NOTE - Company
 model Company {
   id        String   @id @default(cuid())
   name      String
   code      String   @unique @default(cuid())
+  subscriptionType String @default("STARTER_FREE")
+  stripeCustomerId String? @unique
+  stripeSubscriptionId String? @unique
+  stripePriceId String?
+  stripeSubscriptionStatus String?
+  stripePurchasedAt DateTime?
+  stripeCurrentPeriodStart DateTime?
+  stripeCurrentPeriodEnd DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users   User[]
-  clients Client[]
+  users             User[]
+  clients           Client[]
+  projects          Project[]
+  kahierConnection  KahierConnection?
+  kahierLinkTokens  KahierLinkToken[]
 }
 
-//NOTE - ClientStatus
+model KahierConnection {
+  id                      String   @id @default(cuid())
+  companyId               String   @unique
+  kahierEstablishmentId   Int
+  kahierEstablishmentName String
+  kahierZoneId            Int?
+  kahierZoneName          String?
+  kahierUserId            Int?
+  kahierUserLabel         String?
+  linkedByUserId          String?
+  linkedAt                DateTime @default(now())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([kahierEstablishmentId])
+  @@index([kahierZoneId])
+}
+
+model KahierLinkToken {
+  id                      String   @id @default(cuid())
+  companyId               String
+  codeHash                String   @unique
+  codePreview             String
+  expiresAt               DateTime
+  consumedAt              DateTime?
+  createdByUserId         String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  kahierEstablishmentId   Int?
+  kahierEstablishmentName String?
+  kahierZoneId            Int?
+  kahierZoneName          String?
+  kahierUserId            Int?
+  kahierUserLabel         String?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, expiresAt])
+  @@index([companyId, consumedAt])
+}
+
 enum ClientStatus {
   ACTIVE
   INACTIVE
   PROSPECT
 }
 
-//NOTE - ClientSegment
 enum ClientSegment {
-  TPE //NOTE - Très Petite Entreprise
-  PME //NOTE - Petite et Moyenne Entreprise
-  ETI //NOTE - Entreprise de Taille Intermédiaire
-  GE //NOTE - Grande Entreprise
+  TPE
+  PME
+  ETI
+  GE
   OTHER
 }
 
-//!SECTION - Fin enums
+enum RevenueSource {
+  REFERRAL
+  OUTBOUND
+  ADS
+  PARTNER
+  UPSELL
+  OTHER
+}
 
-//SECTION Models - User
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -59,22 +119,20 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  //NOTE - Relations
   clientsOwned              Client[]            @relation("UserToClientOwner")
   clientAssignments         ClientOwner[]
   clientInteractions        ClientInteraction[]
   collaboratingInteractions ClientInteraction[] @relation("InteractionCollaborators")
   uploadedClientDocuments   ClientDocument[]
+  projectsOwned             Project[]
 }
 
-//!SECTION Models - Fin User
-
-//SECTION Models - Client
 model Client {
   id           String        @id @default(cuid())
   name         String
   status       ClientStatus  @default(PROSPECT)
   segment      ClientSegment @default(OTHER)
+  revenueSource RevenueSource?
   location     String?
   companyId    String?
   ownerId      String?
@@ -87,15 +145,14 @@ model Client {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  //NOTE - Relations
   owner        User?               @relation("UserToClientOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   company      Company?            @relation(fields: [companyId], references: [id], onDelete: SetNull)
   owners       ClientOwner[]
   contacts     ClientContact[]
   interactions ClientInteraction[]
   documents    ClientDocument[]
+  projects     Project[]
 
-  //NOTE - Indexs
   @@index([status])
   @@index([segment])
   @@index([location])
@@ -119,9 +176,6 @@ model ClientOwner {
   @@index([userId])
 }
 
-//!SECTION Models - Fin Client
-
-//SECTION Models - ClientContact
 model ClientContact {
   id        String  @id @default(cuid())
   clientId  String
@@ -136,17 +190,12 @@ model ClientContact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  //NOTE - Relations
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  //NOTE - Indexs
   @@index([clientId])
   @@index([email])
 }
 
-//!SECTION Models - Fin ClientContact
-
-//SECTION Models - ClientInteraction
 model ClientInteraction {
   id           String    @id @default(cuid())
   clientId     String
@@ -160,19 +209,14 @@ model ClientInteraction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  //NOTE - Relations
   client        Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   user          User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
   collaborators User[] @relation("InteractionCollaborators")
 
-  //NOTE - Indexs
   @@index([clientId, occurredAt])
   @@index([userId])
 }
 
-//!SECTION Models - Fin ClientInteraction
-
-//SECTION Models - ClientDocument
 model ClientDocument {
   id         String  @id @default(cuid())
   clientId   String
@@ -191,4 +235,57 @@ model ClientDocument {
   @@index([uploaderId])
 }
 
-//!SECTION Models - Fin ClientDocument
+enum ProjectStatus {
+  DRAFT
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Project {
+  id          String          @id @default(cuid())
+  name        String
+  reference   String?
+  description String?         @db.Text
+  context     String?         @db.Text
+  goals       String?         @db.Text
+  deliverables String?        @db.Text
+  successMetrics String?      @db.Text
+  risks       String?         @db.Text
+  notes       String?         @db.Text
+  status      ProjectStatus   @default(DRAFT)
+  priority    ProjectPriority @default(MEDIUM)
+  progress    Int             @default(0)
+  budgetAmount Int?
+  revenueAmount Int?
+  costAmount Int?
+  invoicedAmount Int?
+  receivedAmount Int?
+  billingMode String?
+  startDate   DateTime?
+  endDate     DateTime?
+  companyId   String
+  clientId    String?
+  ownerId     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client  Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  owner   User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([clientId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([priority])
+  @@index([name])
+  @@index([endDate])
+}

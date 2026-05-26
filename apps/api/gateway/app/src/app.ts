@@ -59,6 +59,7 @@ const allowedOrigins = new Set(origins.map(normalizeOrigin));
 const crmServiceUrl = requireHttpUrl("CRM_SERVICE_URL");
 const companyServiceUrl = requireHttpUrl("COMPANY_SERVICE_URL");
 const kahierServiceUrl = requireHttpUrl("KAHIER_SERVICE_URL");
+const billingServiceUrl = requireHttpUrl("BILLING_SERVICE_URL");
 
 const app: express.Express = express();
 
@@ -117,6 +118,19 @@ function mountServiceProxy(basePath: string, target: string) {
   );
 }
 
+function mountServiceProxyWithReplace(basePath: string, target: string, replacePrefix: string | RegExp) {
+  app.use(
+    basePath,
+    createProxyMiddleware({
+      target,
+      changeOrigin: true,
+      xfwd: true,
+      ws: true,
+      pathRewrite: (path) => path.replace(replacePrefix, "") || "/",
+    }),
+  );
+}
+
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
@@ -125,15 +139,30 @@ app.get("/health", (_req, res) => {
       crmServiceUrl,
       companyServiceUrl,
       kahierServiceUrl,
+      billingServiceUrl,
     },
   });
 });
 
+mountServiceProxy("/billing", billingServiceUrl);
+app.use(
+  "/auth/stripe/webhook",
+  createProxyMiddleware({
+    target: billingServiceUrl,
+    changeOrigin: true,
+    xfwd: true,
+    ws: true,
+    pathRewrite: () => "/billing/stripe/webhook",
+  }),
+);
 mountServiceProxy("/clients", crmServiceUrl);
+mountServiceProxy("/projects", crmServiceUrl);
+mountServiceProxy("/kahier-link", crmServiceUrl);
 mountServiceProxy("/company", companyServiceUrl);
 mountServiceProxy("/users", companyServiceUrl);
 mountServiceProxy("/profile", companyServiceUrl);
 mountServiceProxy("/auth", companyServiceUrl);
+mountServiceProxyWithReplace("/api/company", companyServiceUrl, /^\/api\/company/);
 mountServiceProxy("/kahier", kahierServiceUrl);
 
 export default app;

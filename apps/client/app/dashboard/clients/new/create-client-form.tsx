@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CLIENT_SEGMENT_OPTIONS, CLIENT_STATUS_OPTIONS } from "@/lib/client-enums";
+import { CLIENT_REVENUE_SOURCE_OPTIONS, CLIENT_SEGMENT_OPTIONS, CLIENT_STATUS_OPTIONS } from "@/lib/client-enums";
 import { getBrowserApiBase } from "@/lib/public-api-base";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ const statusOptions = CLIENT_STATUS_OPTIONS.map((s) => ({
 }));
 
 const segmentOptions = CLIENT_SEGMENT_OPTIONS;
+const revenueSourceOptions = CLIENT_REVENUE_SOURCE_OPTIONS;
 
 const textareaClass =
     "border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground h-28 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50";
@@ -42,6 +43,7 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
         ownerIds: [currentUserId].filter(Boolean),
         status: "PROSPECT",
         segment: "OTHER",
+        revenueSource: "OTHER",
         location: "",
         emails: [""],
         phones: [""],
@@ -151,6 +153,7 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
                 ownerId: form.ownerIds[0] ?? null,
                 status: form.status,
                 segment: form.segment,
+                revenueSource: form.revenueSource,
                 location: clean(form.location),
                 emails: emails.length ? emails : undefined,
                 phones: phones.length ? phones : undefined,
@@ -184,12 +187,12 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
 
     return (
         <form id="client-create-form" onSubmit={handleSubmit} className="space-y-6">
-            <Card className="border-dashed border-muted/60">
-                <CardContent className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm text-muted-foreground">
+            <Card className="crm-card border-dashed">
+                <CardContent className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm text-slate-500">
                     <div className="flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-emerald-500" />
                         Assigné à :{" "}
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-slate-950">
                             {owners.find((o) => o.id === form.ownerIds[0])?.label ?? "Moi"}
                         </span>
                     </div>
@@ -206,6 +209,7 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
                     owners={owners}
                     statusOptions={statusOptions}
                     segmentOptions={segmentOptions}
+                    revenueSourceOptions={revenueSourceOptions}
                     onChange={update}
                 />
 

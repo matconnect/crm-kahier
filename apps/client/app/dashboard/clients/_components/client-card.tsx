@@ -23,7 +23,7 @@ import { ContactFlash } from "./contact-flash";
 import { LogInteraction } from "./log-interaction";
 import { EditClientDialog } from "./edit-client-dialog";
 import { DeleteClientDialog } from "./delete-client-dialog";
-import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import { getRevenueSourceLabel, type ClientSegment, type ClientStatus, type RevenueSource } from "@/lib/client-enums";
 
 type Interaction = {
     id: string;
@@ -43,6 +43,7 @@ type ClientCardProps = {
         segment: ClientSegment;
         status: ClientStatus;
         location: string | null;
+        revenueSource: RevenueSource | null;
         owner: { firstName: string | null; lastName: string | null; email: string | null } | null;
         contactsCount: number;
         primaryPhone: string | null;
@@ -70,6 +71,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
     const lastActivity = client.interactions[0]?.occurredAt
         ? format(new Date(client.interactions[0].occurredAt), "P", { locale: fr })
         : "Aucune";
+    const revenueSourceLabel = getRevenueSourceLabel(client.revenueSource);
 
     const primaryPhone = client.primaryPhone ?? null;
     const primaryEmail = client.primaryEmail ?? null;
@@ -83,40 +85,44 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
     );
 
     return (
-        <Card className="border-muted/60">
+        <Card className="crm-card h-full">
             <CardHeader className="space-y-2">
                 <div className="flex items-start justify-between">
                     <div className="space-y-1">
                         <div className="inline-flex items-center gap-2">
-                            <Badge variant="outline">{segmentLabel}</Badge>
-                            <Badge variant="secondary">{statusLabel}</Badge>
+                            <Badge variant="outline" className="border-slate-300 bg-white/70">{segmentLabel}</Badge>
+                            <Badge variant="secondary" className="bg-orange-50 text-orange-700">{statusLabel}</Badge>
                         </div>
-                        <CardTitle className="text-lg">
+                        <CardTitle className="text-lg text-slate-950">
                             <Link href={`/dashboard/clients/${client.id}`} className="hover:underline">
                                 {client.name}
                             </Link>
                         </CardTitle>
-                        <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wide">
+                        <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
                             <MapPin className="h-3 w-3" />
                             {client.location ?? "Non renseigné"}
                         </CardDescription>
                     </div>
-                    <Badge variant="outline" className="gap-1">
+                    <Badge variant="outline" className="gap-1 border-slate-300 bg-white/70">
                         <Building2 className="h-4 w-4" />
                         {client.contactsCount} contact{client.contactsCount > 1 ? "s" : ""}
                     </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <CardContent className="space-y-3 text-sm text-slate-500">
                 <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    Gestionnaire : <span className="text-foreground">{ownerDisplay}</span>
+                    Gestionnaire : <span className="text-slate-950">{ownerDisplay}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4" />
-                    Dernière interaction : <span className="text-foreground">{lastActivity}</span>
+                    Dernière interaction : <span className="text-slate-950">{lastActivity}</span>
                 </div>
-                <Separator />
+                <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Source de revenu : <span className="text-slate-950">{revenueSourceLabel}</span>
+                </div>
+                <Separator className="bg-slate-200/70" />
                 <ContactFlash
                     primaryPhone={primaryPhone}
                     primaryEmail={primaryEmail}
@@ -125,7 +131,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                 />
                 <Dialog open={interactionDialogOpen} onOpenChange={setInteractionDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-2 w-full">
+                        <Button variant="outline" size="sm" className="gap-2 w-full rounded-full border-slate-300 bg-white/80">
                             <History className="h-4 w-4" />
                             Voir les interactions
                         </Button>
@@ -141,26 +147,26 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                     <p className="text-sm text-muted-foreground">Aucune interaction enregistrée.</p>
                                 )}
                                 {pagedInteractions.map((interaction) => (
-                                    <div key={interaction.id} className="rounded-lg border border-dashed border-muted px-3 py-2">
+                                    <div key={interaction.id} className="rounded-[1.25rem] border border-dashed border-slate-300 px-3 py-2">
                                         <div className="flex flex-col gap-1 text-sm font-medium sm:flex-row sm:items-center sm:justify-between">
                                             <span className="truncate">{interaction.type}</span>
-                                            <span className="text-xs text-muted-foreground sm:shrink-0">
+                                            <span className="text-xs text-slate-500 sm:shrink-0">
                                                 {format(new Date(interaction.occurredAt), "Pp", { locale: fr })}
                                             </span>
                                         </div>
                                         {interaction.summary && (
-                                            <p className="mt-1 text-sm text-muted-foreground line-clamp-3 break-words">
+                                            <p className="mt-1 text-sm text-slate-500 line-clamp-3 break-words">
                                                 {interaction.summary}
                                             </p>
                                         )}
                                         {interaction.type === "Réunion" && interaction.meetingStart && interaction.meetingEnd && (
-                                            <p className="mt-1 text-xs text-muted-foreground">
+                                            <p className="mt-1 text-xs text-slate-500">
                                                 {format(new Date(interaction.meetingStart), "Pp", { locale: fr })} →{" "}
                                                 {format(new Date(interaction.meetingEnd), "Pp", { locale: fr })}
                                             </p>
                                         )}
                                         {interaction.user && (
-                                            <p className="mt-1 text-xs text-muted-foreground line-clamp-2 break-words">
+                                            <p className="mt-1 text-xs text-slate-500 line-clamp-2 break-words">
                                                 Par{" "}
                                                 {`${interaction.user.firstName ?? ""} ${interaction.user.lastName ?? ""}`.trim() ||
                                                     interaction.user.email ||
@@ -168,7 +174,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                             </p>
                                         )}
                                         {interaction.collaborators && interaction.collaborators.length > 0 && (
-                                            <p className="text-xs text-muted-foreground line-clamp-2 break-words">
+                                            <p className="text-xs text-slate-500 line-clamp-2 break-words">
                                                 Avec{" "}
                                                 {interaction.collaborators
                                                     .map(
@@ -183,7 +189,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                     </div>
                                 ))}
                                 {client.interactions.length > 0 && (
-                                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                                    <div className="flex items-center justify-between pt-1 text-xs text-slate-500">
                                         <span>
                                             Page {page} / {totalPages}
                                         </span>
@@ -191,6 +197,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
+                                                className="rounded-full border-slate-300 bg-white/80"
                                                 disabled={page <= 1}
                                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                                             >
@@ -199,6 +206,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
+                                                className="rounded-full border-slate-300 bg-white/80"
                                                 disabled={page >= totalPages}
                                                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                             >
@@ -228,6 +236,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                         emails={client.emails}
                         phones={client.phones}
                         notes={client.notes}
+                        revenueSource={client.revenueSource}
                         triggerClassName="w-full justify-center"
                         currentUserId={currentUserId}
                     />
@@ -237,8 +246,8 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                         currentUserId={currentUserId}
                         triggerClassName="w-full justify-center gap-2"
                     />
-                    <Button asChild variant="outline" size="sm" className="gap-2 w-full">
-                        <Link href={`/dashboard/clients/${client.id}`} className="text-black">
+                    <Button asChild variant="outline" size="sm" className="gap-2 w-full rounded-full border-slate-300 bg-white/80">
+                        <Link href={`/dashboard/clients/${client.id}`} className="text-slate-950">
                             Voir le détail
                         </Link>
                     </Button>

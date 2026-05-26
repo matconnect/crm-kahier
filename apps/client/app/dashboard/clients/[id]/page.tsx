@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
-import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import { AlertTriangle, ArrowLeft, BriefcaseBusiness, Mail, MapPin, Phone } from "lucide-react";
+import { getRevenueSourceLabel, type ClientSegment, type ClientStatus, type RevenueSource } from "@/lib/client-enums";
 import { getServerApiBase } from "@/lib/api-base";
 import { requireAuth } from "@/lib/authz";
 import type { Role } from "@/lib/roles";
-import { DashboardTopBar } from "@/components/dashboard/top-bar";
+import { MotionReveal } from "@/components/motion/reveal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,9 +18,10 @@ import { EditContactDialog } from "../_components/edit-contact-dialog";
 import { DeleteContactDialog } from "../_components/delete-contact-dialog";
 import { DeleteClientDialog } from "../_components/delete-client-dialog";
 import { ClientDocumentsCard } from "../_components/client-documents-card";
+import { DashboardShell, fetchDashboardData } from "../../_components";
 
 type DetailPageProps = {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 };
 
 type ClientDetail = {
@@ -28,6 +29,7 @@ type ClientDetail = {
     name: string;
     segment: ClientSegment;
     status: ClientStatus;
+    revenueSource: RevenueSource | null;
     location: string | null;
     primaryEmail: string | null;
     primaryPhone: string | null;
@@ -58,7 +60,37 @@ type ClientDetail = {
         meetingStart?: string | null;
         meetingEnd?: string | null;
     }[];
+    projects: {
+        id: string;
+        name: string;
+        status: "DRAFT" | "IN_PROGRESS" | "ON_HOLD" | "COMPLETED";
+        priority: "LOW" | "MEDIUM" | "HIGH";
+        progress: number;
+        revenueAmount: number | null;
+        costAmount: number | null;
+        invoicedAmount: number | null;
+        receivedAmount: number | null;
+        endDate: string | null;
+    }[];
 };
+
+const PROJECT_STATUS_META = {
+    DRAFT: { label: "En cadrage", tone: "bg-sky-50 text-sky-700 border-sky-200" },
+    IN_PROGRESS: { label: "En production", tone: "bg-amber-50 text-amber-700 border-amber-200" },
+    ON_HOLD: { label: "En pause", tone: "bg-rose-50 text-rose-700 border-rose-200" },
+    COMPLETED: { label: "Clôturé", tone: "bg-slate-100 text-slate-700 border-slate-200" },
+} as const;
+
+const PROJECT_PRIORITY_LABEL = {
+    LOW: "Basse",
+    MEDIUM: "Moyenne",
+    HIGH: "Haute",
+} as const;
+
+function formatAmount(value: number | null | undefined) {
+    if (typeof value !== "number" || Number.isNaN(value)) return "—";
+    return `${value.toLocaleString("fr-FR")} €`;
+}
 
 async function fetchClient(id: string, currentUserId: string): Promise<ClientDetail | null> {
     const apiBase = getServerApiBase();
@@ -89,6 +121,8 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
     const session = await requireAuth();
     const currentUserId = session.user?.id ?? "";
     const currentUserRole = (session.user?.role ?? "USER") as Role;
+    const firstName = session.user?.firstName?.trim() || "équipe";
+    const dashboardData = await fetchDashboardData(currentUserId);
 
     const { id } = await params;
     if (!id) {
@@ -118,6 +152,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                 : client.status === "PROSPECT"
                 ? "Prospect"
                 : client.status;
+    const revenueSourceLabel = getRevenueSourceLabel(client.revenueSource);
     const now = Date.now();
     const alertWindowDays = 7;
     const alertWindowMs = alertWindowDays * 24 * 60 * 60 * 1000;
@@ -140,172 +175,254 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
     const canEdit = currentUserRole === "ADMIN" || assignedUserIds.has(currentUserId);
 
     return (
-        <div className="min-h-screen bg-background">
-            <DashboardTopBar
-                subtitle="Client"
-                anchors={[
-                    { label: "Note", href: "#client-summary" },
-                    { label: "Contacts", href: "#client-contacts" },
-                    { label: "Interactions", href: "#client-interactions" },
-                ]}
-            />
-
-            <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="space-y-1" id="client-summary">
-                        <div className="text-xs text-muted-foreground uppercase tracking-wide">{client.segment}</div>
-                        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{client.name}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Statut : {statusLabel} · Gestionnaire principal : {ownerDisplay}
-                            {managerNames.length > 0 ? ` · Assignés : ${managerNames.join(", ")}` : ""}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                            {client.location && (
-                                <span className="inline-flex items-center gap-1">
-                                    <MapPin className="h-4 w-4" />
-                                    {client.location}
-                                </span>
-                            )}
-                            {(clientEmails[0] || client.primaryEmail) && (
-                                <span className="inline-flex items-center gap-1">
-                                    <Mail className="h-4 w-4" />
-                                    {clientEmails[0] ?? client.primaryEmail}
-                                </span>
-                            )}
-                            {(clientPhones[0] || client.primaryPhone) && (
-                                <span className="inline-flex items-center gap-1">
-                                    <Phone className="h-4 w-4" />
-                                    {clientPhones[0] ?? client.primaryPhone}
-                                </span>
-                            )}
-                        </div>
-                        {(clientEmails.length > 1 || clientPhones.length > 1) && (
-                            <div className="mt-3 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-                                {clientEmails.length > 0 && (
-                                    <div className="rounded-lg border border-dashed border-muted/70 px-3 py-2">
-                                        <p className="text-xs text-muted-foreground">Emails</p>
-                                        <div className="mt-1 space-y-1 text-sm font-medium text-foreground">
-                                            {clientEmails.map((email, index) => (
-                                                <div key={email} className="flex items-center gap-2">
-                                                    <span className="break-all">{email}</span>
-                                                    {index === 0 && <Badge variant="secondary">Principal</Badge>}
+        <DashboardShell
+            firstName={firstName}
+            email={session.user?.email}
+            summary={dashboardData.summary}
+            interactionsCount={dashboardData.interactions.length}
+            activeMenu="clients"
+            searchClients={dashboardData.clients}
+            searchInteractions={dashboardData.interactions}
+            searchProjects={dashboardData.projects}
+        >
+            <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+                <MotionReveal>
+                    <div className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
+                        <div className="relative flex flex-wrap items-start justify-between gap-4">
+                            <div className="space-y-1" id="client-summary">
+                                <div className="inline-flex items-center gap-2 rounded-full border border-[#e1e4ef] bg-white px-3 py-1 text-xs text-[#6f7488]">
+                                    Vue client
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                    Segment : {client.segment}
+                                </div>
+                                <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#1f2335] md:text-3xl">{client.name}</h1>
+                                <p className="text-sm text-[#6f7488]">
+                                    Statut : {statusLabel} · Gestionnaire principal : {ownerDisplay}
+                                    {managerNames.length > 0 ? ` · Assignés : ${managerNames.join(", ")}` : ""}
+                                </p>
+                                <p className="text-sm text-[#6f7488]">
+                                    Source de revenu : {revenueSourceLabel}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-3 text-sm text-[#6f7488]">
+                                    {client.location && (
+                                        <span className="inline-flex items-center gap-1">
+                                            <MapPin className="h-4 w-4" />
+                                            {client.location}
+                                        </span>
+                                    )}
+                                    {(clientEmails[0] || client.primaryEmail) && (
+                                        <span className="inline-flex items-center gap-1">
+                                            <Mail className="h-4 w-4" />
+                                            {clientEmails[0] ?? client.primaryEmail}
+                                        </span>
+                                    )}
+                                    {(clientPhones[0] || client.primaryPhone) && (
+                                        <span className="inline-flex items-center gap-1">
+                                            <Phone className="h-4 w-4" />
+                                            {clientPhones[0] ?? client.primaryPhone}
+                                        </span>
+                                    )}
+                                </div>
+                                {(clientEmails.length > 1 || clientPhones.length > 1) && (
+                                    <div className="mt-3 grid gap-3 text-sm text-[#6f7488] sm:grid-cols-2">
+                                        {clientEmails.length > 0 && (
+                                            <div className="rounded-[1.25rem] border border-dashed border-[#d8ddeb] bg-white/70 px-3 py-2">
+                                                <p className="text-xs text-[#8f93a9]">Emails</p>
+                                                <div className="mt-1 space-y-1 text-sm font-medium text-[#2f3344]">
+                                                    {clientEmails.map((email, index) => (
+                                                        <div key={email} className="flex items-center gap-2">
+                                                            <span className="break-all">{email}</span>
+                                                            {index === 0 && <Badge variant="secondary">Principal</Badge>}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {clientPhones.length > 0 && (
-                                    <div className="rounded-lg border border-dashed border-muted/70 px-3 py-2">
-                                        <p className="text-xs text-muted-foreground">Téléphones</p>
-                                        <div className="mt-1 space-y-1 text-sm font-medium text-foreground">
-                                            {clientPhones.map((phone, index) => (
-                                                <div key={phone} className="flex items-center gap-2">
-                                                    <span>{phone}</span>
-                                                    {index === 0 && <Badge variant="secondary">Principal</Badge>}
+                                            </div>
+                                        )}
+                                        {clientPhones.length > 0 && (
+                                            <div className="rounded-[1.25rem] border border-dashed border-[#d8ddeb] bg-white/70 px-3 py-2">
+                                                <p className="text-xs text-[#8f93a9]">Téléphones</p>
+                                                <div className="mt-1 space-y-1 text-sm font-medium text-[#2f3344]">
+                                                    {clientPhones.map((phone, index) => (
+                                                        <div key={phone} className="flex items-center gap-2">
+                                                            <span>{phone}</span>
+                                                            {index === 0 && <Badge variant="secondary">Principal</Badge>}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
-                        )}
-                    </div>
-                    {nextInteraction && (
-                        <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-                            <AlertTriangle />
-                            <AlertTitle>Interaction planifiée bientôt</AlertTitle>
-                            <AlertDescription>
-                                <p>
-                                    Prochaine interaction : {nextInteraction.type}{" "}
-                                    {new Date(nextInteraction.upcomingAt).toLocaleString("fr-FR", {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                    })}
-                                </p>
-                                {upcomingInteractions.length > 1 && (
-                                    <p>
-                                        {upcomingInteractions.length - 1} autre(s) interaction(s) prévue(s) dans les {alertWindowDays} prochains jours.
-                                    </p>
-                                )}
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                            {nextInteraction && (
+                                <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                                    <AlertTriangle />
+                                    <AlertTitle>Interaction planifiée bientôt</AlertTitle>
+                                    <AlertDescription>
+                                        <p>
+                                            Prochaine interaction : {nextInteraction.type}{" "}
+                                            {new Date(nextInteraction.upcomingAt).toLocaleString("fr-FR", {
+                                                dateStyle: "medium",
+                                                timeStyle: "short",
+                                            })}
+                                        </p>
+                                        {upcomingInteractions.length > 1 && (
+                                            <p>
+                                                {upcomingInteractions.length - 1} autre(s) interaction(s) prévue(s) dans les {alertWindowDays} prochains jours.
+                                            </p>
+                                        )}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
 
-                    <Link
-                        href="/dashboard/clients"
-                        className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        Retour liste
-                    </Link>
-                    {canEdit && (
-                        <div className="flex flex-wrap gap-2">
-                            <EditClientDialog
-                                clientId={client.id}
-                                name={client.name}
-                                status={client.status}
-                                segment={client.segment}
-                                location={client.location}
-                                primaryEmail={client.primaryEmail}
-                                primaryPhone={client.primaryPhone}
-                                emails={client.emails ?? []}
-                                phones={client.phones ?? []}
-                                notes={client.notes}
-                                ownerIds={[
-                                    ...(client.ownerId ? [client.ownerId] : []),
-                                    ...(client.owners ?? []).map((o) => o.userId),
-                                ]}
-                                currentUserId={currentUserId}
-                            />
-                            <AddContactDialog clientId={client.id} currentUserId={currentUserId} />
-                            <DeleteClientDialog
-                                clientId={client.id}
-                                clientName={client.name}
-                                currentUserId={currentUserId}
-                                redirectTo="/dashboard/clients"
-                                triggerClassName="gap-2"
-                            />
+                            <div className="ml-auto flex flex-wrap items-center gap-2">
+                                <Link
+                                    href="/dashboard/clients"
+                                    className="inline-flex items-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 py-2 text-sm font-medium text-[#2f3344]"
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                    Retour liste
+                                </Link>
+                                {canEdit && (
+                                    <>
+                                        <EditClientDialog
+                                            clientId={client.id}
+                                            name={client.name}
+                                            status={client.status}
+                                            segment={client.segment}
+                                            location={client.location}
+                                            primaryEmail={client.primaryEmail}
+                                            primaryPhone={client.primaryPhone}
+                                            emails={client.emails ?? []}
+                                            phones={client.phones ?? []}
+                                            notes={client.notes}
+                                            revenueSource={client.revenueSource}
+                                            ownerIds={[
+                                                ...(client.ownerId ? [client.ownerId] : []),
+                                                ...(client.owners ?? []).map((o) => o.userId),
+                                            ]}
+                                            currentUserId={currentUserId}
+                                        />
+                                        <AddContactDialog clientId={client.id} currentUserId={currentUserId} />
+                                        <DeleteClientDialog
+                                            clientId={client.id}
+                                            clientName={client.name}
+                                            currentUserId={currentUserId}
+                                            redirectTo="/dashboard/clients"
+                                            triggerClassName="gap-2"
+                                        />
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                </MotionReveal>
 
                 <div className="grid gap-6 lg:grid-cols-3">
-                    <Card className="lg:col-span-2 border-muted/60">
-                        <CardHeader>
-                            <CardTitle className="text-base">Notes & dernières interactions</CardTitle>
-                            <CardDescription>Vue d’ensemble des notes et échanges récents.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <div className="text-sm font-medium">Notes</div>
-                                <p className="text-sm text-muted-foreground whitespace-pre-line">
-                                    {client.notes ?? "Aucune note."}
-                                </p>
-                            </div>
-                            <Separator />
-                            <div id="client-interactions" className="space-y-3">
-                                <div className="text-sm font-medium">Interactions</div>
-                                <InteractionsList
-                                    interactions={client.interactions}
-                                    clientId={client.id}
-                                    currentUserId={currentUserId}
-                                    canEdit={canEdit}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <MotionReveal delay={80} className="lg:col-span-2">
+                        <div className="space-y-6">
+                            <Card className="crm-card-strong lg:col-span-2">
+                                <CardHeader>
+                                    <CardTitle className="text-base text-slate-950">Notes & dernières interactions</CardTitle>
+                                    <CardDescription className="text-slate-600">Vue d’ensemble des notes et échanges récents.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <div className="text-sm font-medium text-slate-950">Notes</div>
+                                        <p className="text-sm whitespace-pre-line text-slate-600">
+                                            {client.notes ?? "Aucune note."}
+                                        </p>
+                                    </div>
+                                    <Separator className="bg-slate-200/70" />
+                                    <div id="client-interactions" className="space-y-3">
+                                        <div className="text-sm font-medium text-slate-950">Interactions</div>
+                                        <InteractionsList
+                                            interactions={client.interactions}
+                                            clientId={client.id}
+                                            currentUserId={currentUserId}
+                                            canEdit={canEdit}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
 
-                    <Card className="border-muted/60" id="client-contacts">
-                        <CardHeader>
-                            <CardTitle className="text-base">Contacts</CardTitle>
-                            <CardDescription>Liste des personnes liées au compte.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            {client.contacts.length === 0 && (
-                                <p className="text-sm text-muted-foreground">Aucun contact associé.</p>
-                            )}
-                            {client.contacts.map((contact) => (
-                                <div key={contact.id} className="rounded-md border border-dashed border-muted px-3 py-2">
+                            <Card className="crm-card-strong lg:col-span-2" id="client-projects">
+                                <CardHeader>
+                                    <CardTitle className="text-base text-slate-950">Projets liés</CardTitle>
+                                    <CardDescription className="text-slate-600">
+                                        Accès direct aux projets rattachés à ce client, sans entrer dans le détail ici.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {client.projects.length === 0 ? (
+                                        <p className="text-sm text-slate-500">Aucun projet lié à ce client.</p>
+                                    ) : (
+                                        client.projects.map((project) => (
+                                            <Link
+                                                key={project.id}
+                                                href={`/dashboard/projects/${project.id}`}
+                                                className="block rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300 hover:bg-slate-50"
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="rounded-2xl bg-slate-950 p-2 text-amber-300">
+                                                                <BriefcaseBusiness className="h-4 w-4" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium text-slate-950">{project.name}</p>
+                                                                <p className="text-xs text-slate-500">
+                                                                    Priorité {PROJECT_PRIORITY_LABEL[project.priority].toLowerCase()}
+                                                                    {project.endDate
+                                                                        ? ` · Échéance ${new Date(project.endDate).toLocaleDateString("fr-FR", {
+                                                                              day: "numeric",
+                                                                              month: "short",
+                                                                              timeZone: "Europe/Paris",
+                                                                          })}`
+                                                                        : ""}
+                                                                </p>
+                                                                <p className="text-xs text-slate-500">
+                                                                    Revenu {formatAmount(project.revenueAmount)} · Coût {formatAmount(project.costAmount)}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <Badge variant="outline" className={PROJECT_STATUS_META[project.status].tone}>
+                                                        {PROJECT_STATUS_META[project.status].label}
+                                                    </Badge>
+                                                </div>
+                                                <div className="mt-4 space-y-2">
+                                                    <div className="flex items-center justify-between text-xs text-slate-500">
+                                                        <span>Avancement</span>
+                                                        <span>{project.progress}%</span>
+                                                    </div>
+                                                    <div className="h-2 rounded-full bg-slate-100">
+                                                        <div
+                                                            className="h-2 rounded-full bg-[linear-gradient(90deg,#f97316,#f59e0b)]"
+                                                            style={{ width: `${project.progress}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </MotionReveal>
+
+                    <MotionReveal delay={130}>
+                        <Card className="crm-card-strong" id="client-contacts">
+                            <CardHeader>
+                                <CardTitle className="text-base text-slate-950">Contacts</CardTitle>
+                                <CardDescription className="text-slate-600">Liste des personnes liées au compte.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {client.contacts.length === 0 && (
+                                    <p className="text-sm text-slate-500">Aucun contact associé.</p>
+                                )}
+                                {client.contacts.map((contact) => (
+                                    <div key={contact.id} className="rounded-[1.25rem] border border-dashed border-slate-300 px-3 py-2">
                                     <div className="flex items-center gap-2">
                                         <div className="text-sm font-medium">
                                             {`${contact.firstName} ${contact.lastName}`.trim() || "Contact"}
@@ -338,20 +455,27 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                             <DeleteContactDialog clientId={client.id} contactId={contact.id} currentUserId={currentUserId} />
                                         </div>
                                     )}
-                                </div>
-                            ))}
-                        </CardContent>
-                    </Card>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    </MotionReveal>
                 </div>
 
-                <ClientDocumentsCard
-                    clientId={client.id}
-                    currentUserId={currentUserId}
-                    canEdit={canEdit}
-                />
+                <MotionReveal delay={180}>
+                    <ClientDocumentsCard
+                        clientId={client.id}
+                        currentUserId={currentUserId}
+                        canEdit={canEdit}
+                    />
+                </MotionReveal>
 
-                {canEdit && <LogInteraction clientId={client.id} currentUserId={currentUserId} />}
+                {canEdit && (
+                    <MotionReveal delay={220}>
+                        <LogInteraction clientId={client.id} currentUserId={currentUserId} />
+                    </MotionReveal>
+                )}
             </div>
-        </div>
+        </DashboardShell>
     );
 }

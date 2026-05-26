@@ -74,7 +74,7 @@ export function StatsGrid({ periods }: Props) {
         <div className="space-y-3">
             <div className="flex justify-end">
                 <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[200px] rounded-full border-slate-200 bg-white/75">
                         <SelectValue placeholder="Période" />
                     </SelectTrigger>
                     <SelectContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ClientSegment, ClientStatus } from "@/lib/client-enums";
+import type { ClientSegment, ClientStatus, RevenueSource } from "@/lib/client-enums";
 import { MapPin } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,10 +19,11 @@ type Props = {
     owners: OwnerOption[];
     statusOptions: { value: ClientStatus; label: string }[];
     segmentOptions: { value: ClientSegment; label: string }[];
+    revenueSourceOptions: { value: RevenueSource; label: string }[];
     onChange: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
 };
 
-export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOptions, onChange }: Props) {
+export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOptions, revenueSourceOptions, onChange }: Props) {
     const [ownersOpen, setOwnersOpen] = React.useState(false);
     const [ownersQuery, setOwnersQuery] = React.useState("");
     const ownerOptions: PickerOption[] = owners.map((owner) => ({
@@ -32,10 +33,10 @@ export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOp
     }));
 
     return (
-        <Card className="border-muted/60">
+        <Card className="crm-card">
             <CardHeader className="space-y-1">
-                <CardTitle className="text-base">Informations client</CardTitle>
-                <CardDescription>Nom, statut, segment, localisation et coordonnées principales.</CardDescription>
+                <CardTitle className="text-base text-slate-950">Informations client</CardTitle>
+                <CardDescription className="text-slate-600">Nom, statut, segment, localisation et coordonnées principales.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -50,7 +51,7 @@ export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOp
                             disabled={pending}
                         />
                     </div>
-                    <div className="grid gap-2 md:grid-cols-2">
+                    <div className="grid gap-2 md:grid-cols-3">
                         <div className="space-y-2">
                             <Label htmlFor="status">Statut</Label>
                             <Select
@@ -82,6 +83,25 @@ export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOp
                                 </SelectTrigger>
                                 <SelectContent>
                                     {segmentOptions.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="revenue-source">Source de revenu</Label>
+                            <Select
+                                value={form.revenueSource}
+                                onValueChange={(value) => onChange("revenueSource", value as RevenueSource)}
+                                disabled={pending}
+                            >
+                                <SelectTrigger id="revenue-source" className="w-full">
+                                    <SelectValue placeholder="Source de revenu" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {revenueSourceOptions.map((option) => (
                                         <SelectItem key={option.value} value={option.value}>
                                             {option.label}
                                         </SelectItem>

@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import clientsRouter from "./routes/clients.route.js";
+import projectsRouter from "./routes/projects.route.js";
+import kahierLinkRouter from "./routes/kahier-link.route.js";
 
 const splitUrls = (csv?: string) =>
   (csv ?? "")
@@ -20,5 +22,7 @@ app.use(express.json({ limit: "2mb" }));
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "crm-service" }));
 app.use("/clients", clientsRouter);
+app.use("/projects", projectsRouter);
+app.use("/kahier-link", kahierLinkRouter);
 
 export default app;

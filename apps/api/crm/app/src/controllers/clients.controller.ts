@@ -1,55 +1,8 @@
 import type { Request, Response } from "express";
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { prisma } from "@kahier/db-crm";
+import { prisma, RevenueSource } from "@kahier/db-crm";
 import * as service from "../services/clients.service.js";
-import { s3 } from "../lib/s3.js";
-import { fetchCompanyContext, fetchCompanyUsers, syncCompanySnapshot } from "../lib/company-sync.js";
-
-type CurrentUser = { id: string; companyId: string; role: "USER" | "MANAGER" | "ADMIN" };
-
-function getHeaderValue(req: Request, key: string) {
-    const value = req.headers[key];
-    if (Array.isArray(value)) return value[0];
-    if (typeof value === "string") return value;
-    return null;
-}
-
-function getParamValue(req: Request, key: string) {
-    const value = (req.params as Record<string, string | string[] | undefined>)[key];
-    if (!value) return null;
-    return Array.isArray(value) ? value[0] : value;
-}
-
-async function getCurrentUser(req: Request): Promise<CurrentUser | null> {
-    const userId = getHeaderValue(req, "x-user-id")?.trim();
-    if (!userId) return null;
-
-    try {
-        const context = await fetchCompanyContext(userId);
-        if (!context.user?.companyId) return null;
-        const users = await fetchCompanyUsers(context.user.companyId);
-        await syncCompanySnapshot(context, users);
-
-        return {
-            id: context.user.id,
-            companyId: context.user.companyId,
-            role: context.user.role as CurrentUser["role"],
-        };
-    } catch (error) {
-        console.error("getCurrentUser sync", error);
-        const localUser = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true, companyId: true, role: true },
-        });
-        if (!localUser?.companyId) return null;
-        return {
-            id: localUser.id,
-            companyId: localUser.companyId,
-            role: localUser.role as CurrentUser["role"],
-        };
-    }
-}
+import * as documentService from "../services/client-documents.service.js";
+import { getCurrentUser, getHeaderValue, getParamValue, type CurrentUser } from "../lib/current-user.js";
 
 async function isAssignedToClient(clientId: string, companyId: string, userId: string) {
     const client = await prisma.client.findFirst({
@@ -131,6 +84,17 @@ function normalizeStringArray(value: unknown): string[] {
     return [];
 }
 
+function normalizeRevenueSource(value: unknown): RevenueSource | null | undefined {
+    if (value === undefined) return undefined;
+    if (value === null || value === "") return null;
+    if (typeof value !== "string") return undefined;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    return Object.values(RevenueSource).includes(trimmed as RevenueSource)
+        ? (trimmed as RevenueSource)
+        : undefined;
+}
+
 export async function list(req: Request, res: Response) {
     const currentUser = await getCurrentUser(req);
     if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
@@ -156,6 +120,16 @@ export async function summary(_req: Request, res: Response) {
 export async function create(req: Request, res: Response) {
     const currentUser = await getCurrentUser(req);
     if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+
+    if (currentUser.subscriptionType === "STARTER_FREE") {
+        const clientsCount = await prisma.client.count({ where: { companyId: currentUser.companyId } });
+        if (clientsCount >= 200) {
+            return res.status(403).json({
+                error: "Le plan STARTER_FREE est limité à 200 contacts. Passez à un plan Pro pour en ajouter davantage.",
+            });
+        }
+    }
+
     const { contacts, ownerIds: _ignoredOwnerIds, ...rest } = req.body ?? {};
     const normalizedContacts = normalizeContacts(contacts);
     const body = (req.body ?? {}) as {
@@ -164,6 +138,7 @@ export async function create(req: Request, res: Response) {
         primaryEmail?: unknown;
         primaryPhone?: unknown;
         ownerIds?: unknown;
+        revenueSource?: unknown;
     };
     const emails = normalizeStringArray(body.emails);
     const phones = normalizeStringArray(body.phones);
@@ -174,6 +149,10 @@ export async function create(req: Request, res: Response) {
             .filter(Boolean)
         : [];
     const uniqueOwnerIds = Array.from(new Set(ownerIds));
+    const normalizedRevenueSource = normalizeRevenueSource(body.revenueSource);
+    if ("revenueSource" in body && normalizedRevenueSource === undefined) {
+        return res.status(400).json({ error: "Source de revenu invalide" });
+    }
     if (currentUser.role !== "ADMIN" && !uniqueOwnerIds.includes(currentUser.id)) {
         uniqueOwnerIds.push(currentUser.id);
     }
@@ -186,6 +165,7 @@ export async function create(req: Request, res: Response) {
     const payload = {
         ...rest,
         companyId: currentUser.companyId,
+        revenueSource: normalizedRevenueSource ?? null,
         emails: emails.length ? emails : undefined,
         phones: phones.length ? phones : undefined,
         primaryEmail: primaryEmail || emails[0] || null,
@@ -237,6 +217,7 @@ export async function update(req: Request, res: Response) {
         primaryEmail?: unknown;
         primaryPhone?: unknown;
         ownerIds?: unknown;
+        revenueSource?: unknown;
     };
     const emails = normalizeStringArray(body.emails);
     const phones = normalizeStringArray(body.phones);
@@ -253,10 +234,18 @@ export async function update(req: Request, res: Response) {
             .filter(Boolean)
         : [];
     const uniqueOwnerIds = Array.from(new Set(ownerIds));
+    const normalizedRevenueSource = normalizeRevenueSource(body.revenueSource);
+    if ("revenueSource" in body && normalizedRevenueSource === undefined) {
+        return res.status(400).json({ error: "Source de revenu invalide" });
+    }
     const rest = { ...(req.body ?? {}) } as Record<string, unknown>;
     delete rest.ownerIds;
+    delete rest.revenueSource;
     const payload = {
         ...rest,
+        ...("revenueSource" in body
+            ? { revenueSource: normalizedRevenueSource ?? null }
+            : {}),
         ...("emails" in body ? { emails: emails.length ? emails : [] } : {}),
         ...("phones" in body ? { phones: phones.length ? phones : [] } : {}),
         ...(primaryEmail !== undefined || "emails" in body
@@ -411,7 +400,7 @@ export async function listDocuments(req: Request, res: Response) {
         if (!(await ensureCanViewClient(clientId, currentUser))) {
             return res.status(403).json({ error: "Accès refusé" });
         }
-        const documents = await service.listDocuments(clientId, currentUser.companyId);
+        const documents = await documentService.list(clientId, currentUser.companyId);
         res.json({ documents });
     } catch (error) {
         console.error("listDocuments", error);
@@ -449,22 +438,8 @@ export async function presignDocument(req: Request, res: Response) {
         return;
     }
 
-    const bucket = process.env.AWS_S3_BUCKET_NAME;
-    if (!bucket) {
-        res.status(500).json({ error: "Bucket S3 non configuré" });
-        return;
-    }
-
-    const safeName = fileName.replace(/[^a-zA-Z0-9.\-_ ]/g, "").trim().replace(/\s+/g, "_");
-    const key = `clients/${clientId}/${Date.now()}-${crypto.randomUUID()}-${safeName || "document"}`;
-
     try {
-        await service.getById(clientId, currentUser.companyId);
-        const command = new PutObjectCommand({
-            Bucket: bucket,
-            Key: key,
-        });
-        const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
+        const { uploadUrl, key } = await documentService.createUploadUrl(clientId, currentUser.companyId, fileName);
         res.json({
             uploadUrl,
             key,
@@ -505,7 +480,7 @@ export async function createDocument(req: Request, res: Response) {
 
     try {
         const uploaderId = getHeaderValue(req, "x-user-id")?.trim();
-        const document = await service.createDocument(clientId, currentUser.companyId, {
+        const document = await documentService.create(clientId, currentUser.companyId, {
             uploaderId,
             fileName,
             s3Key,
@@ -532,21 +507,8 @@ export async function getDocumentDownload(req: Request, res: Response) {
         return res.status(403).json({ error: "Accès refusé" });
     }
 
-    const bucket = process.env.AWS_S3_BUCKET_NAME;
-    if (!bucket) {
-        res.status(500).json({ error: "Bucket S3 non configuré" });
-        return;
-    }
-
     try {
-        const doc = await service.getDocumentForDownload(documentId, clientId, currentUser.companyId);
-        const command = new GetObjectCommand({
-            Bucket: bucket,
-            Key: doc.s3Key,
-            ResponseContentType: doc.mimeType ?? undefined,
-            ResponseContentDisposition: `attachment; filename="${encodeURIComponent(doc.fileName)}"`,
-        });
-        const url = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
+        const url = await documentService.createDownloadUrl(documentId, clientId, currentUser.companyId);
         res.json({ url });
     } catch (error) {
         console.error("getDocumentDownload", error);
@@ -574,7 +536,7 @@ export async function updateDocument(req: Request, res: Response) {
     }
 
     try {
-        const document = await service.updateDocumentName(documentId, clientId, currentUser.companyId, fileName);
+        const document = await documentService.updateName(documentId, clientId, currentUser.companyId, fileName);
         res.json({ document });
     } catch (error) {
         console.error("updateDocument", error);
@@ -595,20 +557,8 @@ export async function deleteDocument(req: Request, res: Response) {
         return res.status(403).json({ error: "Accès refusé" });
     }
 
-    const bucket = process.env.AWS_S3_BUCKET_NAME;
-    if (!bucket) {
-        res.status(500).json({ error: "Bucket S3 non configuré" });
-        return;
-    }
-
     try {
-        const s3Key = await service.deleteDocument(documentId, clientId, currentUser.companyId);
-        await s3.send(
-            new DeleteObjectCommand({
-                Bucket: bucket,
-                Key: s3Key,
-            }),
-        );
+        await documentService.remove(documentId, clientId, currentUser.companyId);
         res.status(204).send();
     } catch (error) {
         console.error("deleteDocument", error);
