@@ -45,6 +45,7 @@ model KahierConnection {
   companyId               String   @unique
   kahierEstablishmentId   Int
   kahierEstablishmentName String
+  kahierApiKey            String?
   kahierZoneId            Int?
   kahierZoneName          String?
   kahierUserId            Int?

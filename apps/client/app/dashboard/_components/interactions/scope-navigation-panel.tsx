@@ -17,7 +17,7 @@ export function ScopeNavigationPanel() {
                     <List className="h-4 w-4" />
                 </Link>
             </div>
-            <p className="mt-4 text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Navigation</p>
+            <p className="mt-4 text-xs uppercase  text-[#8f93a9]">Navigation</p>
             <div className="mt-3 space-y-1 text-sm font-semibold text-[#2f3344]">
                 {SCOPE_ITEMS.map((item, index) => (
                     <Link key={item.href} href={item.href} className={`block rounded-xl px-3 py-2 ${index === 0 ? "bg-[#f3f5fb]" : ""}`}>

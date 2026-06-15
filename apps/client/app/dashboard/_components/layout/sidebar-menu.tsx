@@ -136,7 +136,7 @@ function MainNavLink({
                 {label}
             </span>
             {locked ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#d8dcec] bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#6d738a]">
+                <span className="inline-flex items-center gap-1 rounded-full border border-[#d8dcec] bg-white px-2 py-0.5 text-[10px] font-semibold uppercase  text-[#6d738a]">
                     <Lock className="h-3 w-3" />
                     Pro
                 </span>
@@ -164,8 +164,8 @@ export function SidebarMenu({
         <aside className="border-b border-[#d9dce8] bg-[#f7f8fc] p-5 lg:border-r lg:border-b-0 lg:p-6">
             <div className="flex items-center justify-between rounded-2xl border border-[#e2e5ef] bg-white px-4 py-4">
                 <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">CRM</p>
-                    <p className="text-[26px] font-bold leading-none tracking-tight">KAHIER</p>
+                    <p className="text-xs uppercase  text-[#8f93a9]">CRM</p>
+                    <p className="text-[26px] font-bold leading-none ">KAHIER</p>
                 </div>
                 <div className="rounded-xl bg-[#f0f2f8] p-2.5">
                     <BriefcaseBusiness className="h-5 w-5" />
@@ -176,7 +176,7 @@ export function SidebarMenu({
                 <div className="space-y-5">
                     {MENU_SECTIONS.map((section) => (
                         <div key={section.title}>
-                            <p className="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#9aa0b5]">{section.title}</p>
+                            <p className="px-3 text-xs font-semibold uppercase  text-[#9aa0b5]">{section.title}</p>
                             <div className="mt-3 space-y-1">
                                 {section.items.map((item) => {
                                     const rawBadge = resolveBadgeValue(item.badge, badgeValues);
@@ -204,7 +204,7 @@ export function SidebarMenu({
             </div>
 
             <div className="mt-7 rounded-2xl border border-[#e2e5ef] bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Compte</p>
+                <p className="text-xs uppercase  text-[#8f93a9]">Compte</p>
                 <p className="mt-2 text-sm font-semibold text-[#2f3344]">{email ?? "Utilisateur"}</p>
                 <div className="mt-4 flex items-center justify-between gap-3">
                     <Link

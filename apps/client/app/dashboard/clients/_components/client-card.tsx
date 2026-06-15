@@ -98,7 +98,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                 {client.name}
                             </Link>
                         </CardTitle>
-                        <CardDescription className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                        <CardDescription className="flex items-center gap-2 text-xs uppercase  text-slate-500">
                             <MapPin className="h-3 w-3" />
                             {client.location ?? "Non renseigné"}
                         </CardDescription>

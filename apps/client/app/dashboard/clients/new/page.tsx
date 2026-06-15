@@ -37,7 +37,7 @@ export default async function NewClientPage() {
                                     Connecté : {session.user?.email}
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Nouveau client</h1>
+                                    <h1 className="text-2xl font-bold  md:text-3xl">Nouveau client</h1>
                                     <p className="text-sm text-[#6f7488]">
                                         Renseigne le compte, le responsable, les contacts et les notes en une fois.
                                     </p>

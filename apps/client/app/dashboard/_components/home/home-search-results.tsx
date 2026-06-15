@@ -17,7 +17,7 @@ export function HomeSearchResults({ query, clients, interactions, projects }: Ho
         <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
             <div className="flex items-center justify-between gap-3">
                 <div>
-                    <p className="text-xs uppercase tracking-[0.16em] text-[#8f93a9]">Recherche globale</p>
+                    <p className="text-xs uppercase  text-[#8f93a9]">Recherche globale</p>
                     <h2 className="mt-2 text-2xl font-bold text-[#1f2335]">Résultats pour “{query}”</h2>
                     <p className="mt-1 text-sm text-[#6f7488]">{total} résultat(s) trouvé(s).</p>
                 </div>

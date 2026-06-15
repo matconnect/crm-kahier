@@ -74,7 +74,7 @@ export default async function NewProjectPage() {
                                     Connecté : {session.user?.email}
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Nouveau projet</h1>
+                                    <h1 className="text-2xl font-bold  md:text-3xl">Nouveau projet</h1>
                                     <p className="text-sm text-[#6f7488]">
                                         Renseigne une fiche projet complète : cadrage, budget, livrables, risques et suivi.
                                     </p>

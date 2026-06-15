@@ -195,7 +195,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                                     Segment : {client.segment}
                                 </div>
-                                <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#1f2335] md:text-3xl">{client.name}</h1>
+                                <h1 className="mt-2 text-2xl font-bold  text-[#1f2335] md:text-3xl">{client.name}</h1>
                                 <p className="text-sm text-[#6f7488]">
                                     Statut : {statusLabel} · Gestionnaire principal : {ownerDisplay}
                                     {managerNames.length > 0 ? ` · Assignés : ${managerNames.join(", ")}` : ""}
@@ -428,7 +428,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                             {`${contact.firstName} ${contact.lastName}`.trim() || "Contact"}
                                         </div>
                                         {contact.role && (
-                                            <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                                            <span className="text-xs text-muted-foreground uppercase ">
                                                 {contact.role}
                                             </span>
                                         )}

@@ -93,7 +93,7 @@ export async function ActivitySection({ currentUserId }: { currentUserId: string
                                 {activity.summary && (
                                     <CardDescription className="text-xs line-clamp-2">{activity.summary}</CardDescription>
                                 )}
-                                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                <div className="text-[11px] uppercase  text-muted-foreground">
                                     {new Date(activity.occurredAt).toLocaleString("fr-FR")} ·{" "}
                                     {activity.user
                                         ? `${activity.user.firstName ?? ""} ${activity.user.lastName ?? ""}`.trim() ||

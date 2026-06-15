@@ -55,7 +55,7 @@ export function FocusCard({ summary, interactions }: FocusCardProps) {
 
     return (
         <section className="rounded-[28px] border border-white/70 bg-gradient-to-br from-[#fefeff] to-[#f7f2ff] p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-7">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Portefeuille total</p>
+            <p className="text-xs uppercase  text-[#8f93a9]">Portefeuille total</p>
             <p className="mt-3 text-6xl font-black leading-none">{portfolioSize}</p>
             <p className="mt-1 text-sm text-[#6d7288]">
                 {summary.active} client(s) actif(s) · {summary.prospects} prospect(s)
@@ -63,15 +63,15 @@ export function FocusCard({ summary, interactions }: FocusCardProps) {
 
             <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-2xl border border-[#e4e7f2] bg-white px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-[#8f93a9]">Interactions / dossier</p>
+                    <p className="text-[11px] uppercase  text-[#8f93a9]">Interactions / dossier</p>
                     <p className="mt-1 font-semibold text-[#2d3145]">{interactionsPerCaseLabel}</p>
                 </div>
                 <div className="rounded-2xl border border-[#e4e7f2] bg-white px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-[#8f93a9]">Canal dominant</p>
+                    <p className="text-[11px] uppercase  text-[#8f93a9]">Canal dominant</p>
                     <p className="mt-1 font-semibold text-[#2d3145]">{dominantChannel}</p>
                 </div>
                 <div className="col-span-2 rounded-2xl border border-[#e4e7f2] bg-white px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-[#8f93a9]">Dernière interaction</p>
+                    <p className="text-[11px] uppercase  text-[#8f93a9]">Dernière interaction</p>
                     <p className="mt-1 font-semibold text-[#2d3145]">{latestInteractionAt}</p>
                 </div>
             </div>

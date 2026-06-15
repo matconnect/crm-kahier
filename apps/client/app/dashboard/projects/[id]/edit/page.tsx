@@ -103,6 +103,8 @@ function toFormValues(project: ProjectDetail, currentUserId: string): ProjectFor
         successMetrics: project.successMetrics ?? "",
         risks: project.risks ?? "",
         notes: project.notes ?? "",
+        createKahierTask: false,
+        kahierCategoryId: "",
     };
 }
 
@@ -158,7 +160,7 @@ export default async function EditProjectPage({ params }: EditPageProps) {
                                     Connecté : {session.user?.email}
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-tight text-[#1f2335] md:text-3xl">Modifier {project.name}</h1>
+                                    <h1 className="text-2xl font-bold  text-[#1f2335] md:text-3xl">Modifier {project.name}</h1>
                                     <p className="text-sm text-[#6f7488]">
                                         Mets à jour la fiche projet complète sans mélanger lecture et édition sur la même page.
                                     </p>

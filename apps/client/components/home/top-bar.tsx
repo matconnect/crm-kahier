@@ -14,7 +14,7 @@ export function TopBar({ session }: { session: SessionData }) {
           <Link href="/" className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2">
             <Image src="/icons/jwin-1.png" alt="Logo KAHIER" width={36} height={36} className="rounded-lg" priority />
             <div className="leading-tight">
-              <div className="text-[0.68rem] uppercase tracking-[0.24em] text-slate-500">CRM</div>
+              <div className="text-[0.68rem] uppercase  text-slate-500">CRM</div>
               <div className="display-title text-base text-slate-950">KAHIER</div>
             </div>
           </Link>

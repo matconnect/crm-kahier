@@ -1,5 +1,4 @@
 import { Mail, Phone, ShieldCheck, Users } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getServerApiBase } from "@/lib/api-base";
 
 type SummaryCardProps = {
@@ -10,18 +9,14 @@ type SummaryCardProps = {
 
 function SummaryCard({ label, value, icon: Icon }: SummaryCardProps) {
     return (
-        <Card className="crm-card h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-slate-500">{label}</CardTitle>
-                <div className="rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
-                    <Icon className="h-4 w-4" />
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-semibold text-slate-950">{value}</div>
-                <CardDescription className="mt-1 text-xs text-slate-500">Mise à jour en continu</CardDescription>
-            </CardContent>
-        </Card>
+        <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
+            <div className="mb-3 inline-flex rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                <Icon className="h-4 w-4" />
+            </div>
+            <p className="text-sm font-medium text-slate-500">{label}</p>
+            <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{value}</p>
+            <p className="mt-2 text-sm leading-6 text-[#6f7488]">Mise à jour en continu</p>
+        </div>
     );
 }
 
@@ -71,7 +66,7 @@ export async function ClientsSummary({ currentUserId }: { currentUserId: string 
                 </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {cards.map((item) => (
                     <SummaryCard key={item.label} {...item} />
                 ))}

@@ -14,6 +14,7 @@ type ProfileResponse =
         user: { id: string; email: string; firstName: string | null; lastName: string | null };
     }
     | { error: string };
+type ProfileSuccess = Extract<ProfileResponse, { user: unknown }>;
 
 type Props = { userId: string; email: string; initialFirstName?: string; initialLastName?: string };
 
@@ -30,7 +31,7 @@ export function ProfileSection({ userId, email: initialEmail, initialFirstName =
     React.useEffect(() => {
         let active = true;
 
-        async function fetchProfile(attempt = 1): Promise<ProfileResponse> {
+        async function fetchProfile(attempt = 1): Promise<ProfileSuccess> {
             const apiBase = getBrowserApiBase() ?? "";
             const res = await fetch(`${apiBase}/profile`, { headers: { "x-user-id": userId } });
             const data = (await res.json()) as ProfileResponse;

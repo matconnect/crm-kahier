@@ -112,26 +112,26 @@ export function HomeInsightsSection({ summary, interactions, clients, projects, 
             <article className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-2xl border border-[#e4e7f2] bg-[#f8f9fd] p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Clients actifs</p>
+                        <p className="text-xs uppercase  text-[#8f93a9]">Clients actifs</p>
                         <p className="mt-2 text-3xl font-black text-[#1f2335]">{summary.active}</p>
                     </div>
                     <div className="rounded-2xl border border-[#e4e7f2] bg-[#f8f9fd] p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Prospects</p>
+                        <p className="text-xs uppercase  text-[#8f93a9]">Prospects</p>
                         <p className="mt-2 text-3xl font-black text-[#1f2335]">{summary.prospects}</p>
                     </div>
                     <div className="rounded-2xl border border-[#e4e7f2] bg-[#f8f9fd] p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Taux conversion</p>
+                        <p className="text-xs uppercase  text-[#8f93a9]">Taux conversion</p>
                         <p className="mt-2 text-3xl font-black text-[#1f2335]">{conversionRate}%</p>
                     </div>
                     <div className="rounded-2xl border border-[#e4e7f2] bg-[#f8f9fd] p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Projets suivis</p>
+                        <p className="text-xs uppercase  text-[#8f93a9]">Projets suivis</p>
                         <p className="mt-2 text-3xl font-black text-[#1f2335]">{projects.length}</p>
                     </div>
                 </div>
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2">
                     <div className="rounded-2xl border border-[#e4e7f2] bg-[#f8f9fd] p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">{cadenceLabel(period)}</p>
+                        <p className="text-xs uppercase  text-[#8f93a9]">{cadenceLabel(period)}</p>
                         <div className="mt-4 flex items-end gap-2 overflow-x-auto overflow-y-visible pb-1 pt-12">
                             {weekly.map((item) => (
                                 <div
@@ -156,7 +156,7 @@ export function HomeInsightsSection({ summary, interactions, clients, projects, 
                     </div>
 
                     <div className="rounded-2xl border border-[#e4e7f2] bg-[#f8f9fd] p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Répartition des interactions</p>
+                        <p className="text-xs uppercase  text-[#8f93a9]">Répartition des interactions</p>
                         <div className="mt-4 space-y-3">
                             {byType.length === 0 ? (
                                 <p className="text-sm text-[#7d8399]">Pas encore de données disponibles.</p>
@@ -183,7 +183,7 @@ export function HomeInsightsSection({ summary, interactions, clients, projects, 
 
             <div className="space-y-5">
                 <article className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Top clients engagés</p>
+                    <p className="text-xs uppercase  text-[#8f93a9]">Top clients engagés</p>
                     <div className="mt-4 space-y-3">
                         {topClients.length === 0 ? (
                             <p className="text-sm text-[#7d8399]">Aucun client avec interactions pour le moment.</p>
@@ -199,7 +199,7 @@ export function HomeInsightsSection({ summary, interactions, clients, projects, 
                 </article>
 
                 <article className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Charge projets par client</p>
+                    <p className="text-xs uppercase  text-[#8f93a9]">Charge projets par client</p>
                     <div className="mt-4 space-y-3">
                         {projectByClient.length === 0 ? (
                             <p className="text-sm text-[#7d8399]">Aucun projet enregistré pour l’instant.</p>

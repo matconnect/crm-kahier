@@ -46,7 +46,7 @@ export async function FutureModulePage({ title, description, activeMenu }: Futur
                                 Module à venir
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{title}</h1>
+                                <h1 className="text-2xl font-bold  md:text-3xl">{title}</h1>
                                 <p className="mt-2 text-sm text-[#6f7488]">{description}</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">

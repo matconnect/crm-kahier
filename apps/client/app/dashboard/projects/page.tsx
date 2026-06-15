@@ -175,7 +175,7 @@ export default async function ProjectsPage() {
                                     Connecté : {session.user?.email}
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Projets</h1>
+                                    <h1 className="text-2xl font-bold  md:text-3xl">Projets</h1>
                                     <p className="text-sm text-[#6f7488]">
                                         Une lecture propre du pipeline, des échéances et de la charge réelle.
                                     </p>
@@ -202,37 +202,37 @@ export default async function ProjectsPage() {
 
                         <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <div className="mb-4 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <BriefcaseBusiness className="h-5 w-5" />
+                                <div className="mb-3 inline-flex rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                                    <BriefcaseBusiness className="h-4 w-4" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Actifs</p>
+                                <p className="text-sm font-medium text-slate-500">Actifs</p>
                                 <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{activeProjects}</p>
                                 <p className="mt-2 text-sm leading-6 text-[#6f7488]">Projets ouverts, hors éléments clôturés.</p>
                             </div>
 
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <div className="mb-4 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <Target className="h-5 w-5" />
+                                <div className="mb-3 inline-flex rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                                    <Target className="h-4 w-4" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Avancement moyen</p>
+                                <p className="text-sm font-medium text-slate-500">Avancement moyen</p>
                                 <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{deliveryRate}%</p>
                                 <p className="mt-2 text-sm leading-6 text-[#6f7488]">Moyenne réelle calculée sur les projets chargés.</p>
                             </div>
 
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <div className="mb-4 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <Clock3 className="h-5 w-5" />
+                                <div className="mb-3 inline-flex rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                                    <Clock3 className="h-4 w-4" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Priorité haute</p>
+                                <p className="text-sm font-medium text-slate-500">Priorité haute</p>
                                 <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{summary.highPriority}</p>
                                 <p className="mt-2 text-sm leading-6 text-[#6f7488]">Dossiers à surveiller de près.</p>
                             </div>
 
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <div className="mb-4 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <CalendarRange className="h-5 w-5" />
+                                <div className="mb-3 inline-flex rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                                    <CalendarRange className="h-4 w-4" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Échéances proches</p>
+                                <p className="text-sm font-medium text-slate-500">Échéances proches</p>
                                 <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{summary.dueSoon}</p>
                                 <p className="mt-2 text-sm leading-6 text-[#6f7488]">Livrables planifiés sur les prochains jours.</p>
                             </div>
@@ -269,22 +269,22 @@ export default async function ProjectsPage() {
                                     <>
                                         <div className="grid gap-4 md:grid-cols-4">
                                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
-                                                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">En cadrage</p>
+                                                <p className="text-xs uppercase  text-slate-500">En cadrage</p>
                                                 <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.draft}</p>
                                                 <p className="mt-2 text-sm text-slate-600">Projets encore en phase de structuration.</p>
                                             </div>
                                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
-                                                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">En production</p>
+                                                <p className="text-xs uppercase  text-slate-500">En production</p>
                                                 <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.inProgress}</p>
                                                 <p className="mt-2 text-sm text-slate-600">Dossiers en cours d’exécution active.</p>
                                             </div>
                                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
-                                                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">En pause</p>
+                                                <p className="text-xs uppercase  text-slate-500">En pause</p>
                                                 <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.onHold}</p>
                                                 <p className="mt-2 text-sm text-slate-600">Éléments à relancer ou arbitrer.</p>
                                             </div>
                                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
-                                                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Clôturés</p>
+                                                <p className="text-xs uppercase  text-slate-500">Clôturés</p>
                                                 <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.completed}</p>
                                                 <p className="mt-2 text-sm text-slate-600">Projets terminés côté CRM.</p>
                                             </div>
@@ -293,7 +293,7 @@ export default async function ProjectsPage() {
                                         <div className="mt-6 space-y-3">
                                             <div className="flex items-center justify-between">
                                                 <h3 className="text-base font-semibold text-slate-950">Dernières mises à jour</h3>
-                                                <span className="text-xs uppercase tracking-[0.22em] text-slate-400">Réel</span>
+                                                <span className="text-xs uppercase  text-slate-400">Réel</span>
                                             </div>
                                             <div className="space-y-3">
                                                 {recentlyUpdated.map((project) => (
@@ -469,7 +469,7 @@ export default async function ProjectsPage() {
                                     )}
 
                                     <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#f7f8fc] px-4 py-4">
-                                        <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Cadence</p>
+                                        <p className="text-xs uppercase  text-[#8f93a9]">Cadence</p>
                                         <p className="mt-3 text-sm font-medium text-[#1e2234]">{summary.dueSoon} échéance(s) proche(s)</p>
                                         <p className="mt-1 text-sm text-[#6f7488]">
                                             Lecture en temps réel des fins prévues sur les projets non clôturés.

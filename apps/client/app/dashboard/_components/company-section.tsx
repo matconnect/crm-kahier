@@ -176,7 +176,7 @@ export function CompanySection({ userId }: Props) {
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                         <div className="flex h-11 min-w-[240px] flex-1 items-center rounded-lg border border-input bg-background px-3">
-                            <span className="font-mono text-[17px] tracking-[0.06em]">{companyData.code}</span>
+                            <span className="font-mono text-[17px] ">{companyData.code}</span>
                         </div>
                         <Button
                             type="button"
@@ -197,7 +197,7 @@ export function CompanySection({ userId }: Props) {
                 {viewerRole === "ADMIN" && stripe && (
                     <section className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold tracking-tight">Facturation et abonnement</h3>
+                            <h3 className="text-sm font-semibold ">Facturation et abonnement</h3>
                             {stripe.subscriptionType !== "STARTER_FREE" && (
                                 <Button
                                     variant="outline"
@@ -352,7 +352,7 @@ export function CompanySection({ userId }: Props) {
 
                 {/* Section : Membres */}
                 <section className="space-y-4">
-                    <h3 className="text-sm font-semibold tracking-tight">Membres de l&apos;équipe ({companyData.users.length})</h3>
+                    <h3 className="text-sm font-semibold ">Membres de l&apos;équipe ({companyData.users.length})</h3>
                     <div className="grid gap-2">
                         {companyData.users.map((user) => {
                             const isCreator = user.id === creatorId;

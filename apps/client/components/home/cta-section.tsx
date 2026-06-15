@@ -12,7 +12,7 @@ export function CtaSection({ session }: { session: SessionData }) {
       <Card className="rounded-[1.75rem] border border-slate-200 bg-white shadow-none">
         <CardContent className="flex flex-col items-start justify-between gap-5 p-6 md:flex-row md:items-center md:p-8">
           <div className="space-y-2">
-            <div className="text-[0.68rem] font-medium uppercase tracking-[0.24em] text-slate-500">Prêt à démarrer</div>
+            <div className="text-[0.68rem] font-medium uppercase text-slate-500">Prêt à démarrer</div>
             <div className="display-title text-2xl text-slate-950">Accédez à votre espace</div>
             <div className="text-sm text-slate-600">
               {session ? "Continuez sur votre dashboard." : "Créez votre compte et commencez en quelques secondes."}
@@ -47,7 +47,26 @@ export function CtaSection({ session }: { session: SessionData }) {
         </CardContent>
       </Card>
 
-      <footer className="py-8 text-center text-xs uppercase tracking-[0.22em] text-slate-500">© {new Date().getFullYear()} KAHIER CRM</footer>
+      <footer className="space-y-3 py-8 text-center text-xs uppercase  text-slate-500">
+        <div>© {new Date().getFullYear()} KAHIER CRM</div>
+        <nav className="flex flex-wrap items-center justify-center gap-2 text-[0.65rem] ">
+          <Link href="/confidentialite" className="hover:text-slate-700">
+            Politique de confidentialité
+          </Link>
+          <span aria-hidden="true">•</span>
+          <Link href="/mentions-legales" className="hover:text-slate-700">
+            Mentions légales
+          </Link>
+          <span aria-hidden="true">•</span>
+          <Link href="/cgu" className="hover:text-slate-700">
+            CGU
+          </Link>
+          <span aria-hidden="true">•</span>
+          <Link href="/cgv" className="hover:text-slate-700">
+            CGV
+          </Link>
+        </nav>
+      </footer>
     </section>
   );
 }

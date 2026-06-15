@@ -1,5 +1,7 @@
 import type {
     KahierCategory,
+    KahierCreateCategoryPayload,
+    KahierCreateTabPayload,
     KahierPeriodeTab,
     KahierTaskPayload,
     KahierUser,
@@ -15,6 +17,21 @@ export class KahierServiceError extends Error {
     constructor(message: string, status: number) {
         super(message);
         this.status = status;
+    }
+}
+
+async function extractUpstreamError(res: Response): Promise<string> {
+    try {
+        const raw = await res.text();
+        if (!raw.trim()) return `Erreur upstream (${res.status})`;
+        try {
+            const parsed = JSON.parse(raw) as { error?: string; message?: string };
+            return parsed.error?.trim() || parsed.message?.trim() || raw.slice(0, 300);
+        } catch {
+            return raw.slice(0, 300);
+        }
+    } catch {
+        return `Erreur upstream (${res.status})`;
     }
 }
 
@@ -40,19 +57,22 @@ const requireEnv = (name: string): string => {
     return value;
 };
 
-function buildHeaders(includeJson = false) {
+function buildHeaders(includeJson = false, apiKeyOverride?: string | null) {
     const headers: HeadersInit = { Accept: "application/json" };
     if (includeJson) {
         headers["Content-Type"] = "application/json";
     }
-    const apiKey = requireEnv("KAHIER_API_KEY");
+    const apiKey = apiKeyOverride?.trim() || fromEnvOrFile("KAHIER_API_KEY");
+    if (!apiKey) {
+        throw new KahierServiceError("Clé API Kahier manquante.", 400);
+    }
     headers["x-api-key"] = apiKey;
     return headers;
 }
 
-export async function getZoneData(zoneId: string) {
+export async function getZoneData(zoneId: string, apiKey?: string | null) {
     const baseUrl = requireEnv("KAHIER_API_BASE");
-    const headers = buildHeaders();
+    const headers = buildHeaders(false, apiKey);
 
     const tabsRes = await fetch(`${baseUrl}/periodes/zone/?zoneId=${zoneId}`, { headers });
 
@@ -76,9 +96,9 @@ export async function getZoneData(zoneId: string) {
     };
 }
 
-export async function createTask(payload: KahierTaskPayload) {
+export async function createTask(payload: KahierTaskPayload, apiKey?: string | null) {
     const baseUrl = requireEnv("KAHIER_API_BASE");
-    const headers = buildHeaders(true);
+    const headers = buildHeaders(true, apiKey);
     const res = await fetch(`${baseUrl}/tasks`, {
         method: "POST",
         headers,
@@ -92,9 +112,9 @@ export async function createTask(payload: KahierTaskPayload) {
     return res.json();
 }
 
-export async function getEstablishmentUsers() {
+export async function getEstablishmentUsers(apiKey?: string | null) {
     const baseUrl = requireEnv("KAHIER_API_BASE");
-    const headers = buildHeaders();
+    const headers = buildHeaders(false, apiKey);
     const res = await fetch(`${baseUrl}/establishments/users`, { headers });
 
     if (!res.ok) {
@@ -104,9 +124,9 @@ export async function getEstablishmentUsers() {
     return (await res.json()) as KahierUser[];
 }
 
-export async function getPlannings() {
+export async function getPlannings(apiKey?: string | null) {
     const baseUrl = requireEnv("KAHIER_API_BASE");
-    const headers = buildHeaders();
+    const headers = buildHeaders(false, apiKey);
     const res = await fetch(`${baseUrl}/plannings`, { headers });
 
     if (!res.ok) {
@@ -116,9 +136,9 @@ export async function getPlannings() {
     return (await res.json()) as KahierPlanning[];
 }
 
-export async function getPlanningLegends(planningId: string, mode: string) {
+export async function getPlanningLegends(planningId: string, mode: string, apiKey?: string | null) {
     const baseUrl = requireEnv("KAHIER_API_BASE");
-    const headers = buildHeaders();
+    const headers = buildHeaders(false, apiKey);
     const res = await fetch(`${baseUrl}/plannings/${planningId}/legends?mode=${encodeURIComponent(mode)}`, {
         headers,
     });
@@ -130,9 +150,9 @@ export async function getPlanningLegends(planningId: string, mode: string) {
     return (await res.json()) as KahierLegend[];
 }
 
-export async function createPlanningEvent(payload: Record<string, unknown>) {
+export async function createPlanningEvent(payload: Record<string, unknown>, apiKey?: string | null) {
     const baseUrl = requireEnv("KAHIER_API_BASE");
-    const headers = buildHeaders(true);
+    const headers = buildHeaders(true, apiKey);
     const res = await fetch(`${baseUrl}/planning`, {
         method: "POST",
         headers,
@@ -146,9 +166,9 @@ export async function createPlanningEvent(payload: Record<string, unknown>) {
     return res.json();
 }
 
-export async function createPlanningLegend(payload: KahierCreateLegendPayload) {
+export async function createPlanningLegend(payload: KahierCreateLegendPayload, apiKey?: string | null) {
     const baseUrl = requireEnv("KAHIER_API_BASE");
-    const headers = buildHeaders(true);
+    const headers = buildHeaders(true, apiKey);
     const res = await fetch(`${baseUrl}/planning/color`, {
         method: "POST",
         headers,
@@ -165,4 +185,63 @@ export async function createPlanningLegend(payload: KahierCreateLegendPayload) {
     }
 
     return (await res.json()) as KahierLegend;
+}
+
+export async function getApiKeyScopes(apiKey?: string | null) {
+    const baseUrl = requireEnv("KAHIER_API_BASE");
+    const headers = buildHeaders(false, apiKey);
+    const scopesUrl = new URL("/api/establishments/api-keys/scopes", baseUrl).toString();
+    const res = await fetch(scopesUrl, { headers });
+
+    if (!res.ok) {
+        const details = await extractUpstreamError(res);
+        throw new KahierServiceError(`Impossible de récupérer les scopes. ${details}`, res.status);
+    }
+
+    return (await res.json()) as {
+        scopes: { id: number; label: string; description: string; scopes: string[] }[];
+    };
+}
+
+export async function createPeriodeTab(payload: KahierCreateTabPayload, apiKey?: string | null) {
+    const baseUrl = requireEnv("KAHIER_API_BASE");
+    const headers = buildHeaders(true, apiKey);
+    const res = await fetch(`${baseUrl}/periodes`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            label: payload.name,
+            zoneId: payload.zoneId,
+            isGeneral: false,
+        }),
+    });
+
+    if (!res.ok) {
+        const details = await extractUpstreamError(res);
+        throw new KahierServiceError(`Impossible de créer l'onglet. ${details}`, res.status);
+    }
+
+    return (await res.json()) as KahierPeriodeTab;
+}
+
+export async function createCategoryTab(payload: KahierCreateCategoryPayload, apiKey?: string | null) {
+    const baseUrl = requireEnv("KAHIER_API_BASE");
+    const headers = buildHeaders(true, apiKey);
+    const res = await fetch(`${baseUrl}/categories`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            name: payload.name,
+            periodeTabId: payload.tabId,
+            displayOrder: 9999,
+            assignedUserIds: [],
+        }),
+    });
+
+    if (!res.ok) {
+        const details = await extractUpstreamError(res);
+        throw new KahierServiceError(`Impossible de créer la catégorie. ${details}`, res.status);
+    }
+
+    return (await res.json()) as KahierCategory;
 }

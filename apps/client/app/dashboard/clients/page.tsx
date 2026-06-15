@@ -54,7 +54,7 @@ export default async function ClientsPage({ searchParams }: PageProps) {
                                     Connecté : {session.user?.email}
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Clients et prospects</h1>
+                                    <h1 className="text-2xl font-bold  md:text-3xl">Clients et prospects</h1>
                                     <p className="text-sm text-[#6f7488]">
                                         Suivez vos comptes, contacts clés et dernières interactions.
                                     </p>

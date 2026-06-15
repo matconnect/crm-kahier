@@ -7,7 +7,7 @@ export function SecuritySection() {
     <section id="organisation" className="py-10 md:py-12">
       <div className="mb-6 grid gap-4 lg:grid-cols-2 lg:items-end">
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Organisation</p>
+          <p className="text-xs uppercase  text-slate-500">Organisation</p>
           <h2 className="display-title text-2xl text-slate-950 md:text-3xl">Une structure claire pour l’équipe</h2>
         </div>
       </div>

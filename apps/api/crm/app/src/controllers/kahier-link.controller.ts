@@ -72,3 +72,47 @@ export async function confirmCode(req: Request, res: Response) {
         return res.status(500).json({ error: "Impossible de confirmer la liaison Kahier." });
     }
 }
+
+export async function saveApiKey(req: Request, res: Response) {
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    if (currentUser.role === "USER") return res.status(403).json({ error: "Accès refusé" });
+
+    const body = (req.body ?? {}) as { apiKey?: unknown };
+    if (typeof body.apiKey !== "string" || !body.apiKey.trim()) {
+        return res.status(400).json({ error: "apiKey requis" });
+    }
+
+    try {
+        const result = await service.saveApiKey({
+            companyId: currentUser.companyId,
+            apiKey: body.apiKey.trim(),
+        });
+        return res.json(result);
+    } catch (error) {
+        if (error instanceof service.KahierLinkError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("kahier-link saveApiKey", error);
+        return res.status(500).json({ error: "Impossible d'enregistrer la clé API Kahier." });
+    }
+}
+
+export async function deleteApiKey(req: Request, res: Response) {
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
+    if (currentUser.role === "USER") return res.status(403).json({ error: "Accès refusé" });
+
+    try {
+        const result = await service.deleteApiKey({
+            companyId: currentUser.companyId,
+        });
+        return res.json(result);
+    } catch (error) {
+        if (error instanceof service.KahierLinkError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("kahier-link deleteApiKey", error);
+        return res.status(500).json({ error: "Impossible de supprimer la clé API Kahier." });
+    }
+}

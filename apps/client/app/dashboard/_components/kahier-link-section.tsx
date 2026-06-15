@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Link2, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { getBrowserApiBase } from "@/lib/public-api-base";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type Props = {
     userId: string;
@@ -21,17 +23,13 @@ type KahierLinkStatus = {
         kahierZoneName: string | null;
         kahierUserId: number | null;
         kahierUserLabel: string | null;
+        kahierApiKey: string | null;
+        hasApiKey: boolean;
         linkedByUserId: string | null;
         linkedAt: string;
         updatedAt: string;
     } | null;
-    pendingLink: {
-        id: string;
-        codePreview: string;
-        expiresAt: string;
-        createdAt: string;
-        createdByUserId: string;
-    } | null;
+    pendingLink: null;
 };
 
 // TODO(kahier-link): Réactiver quand la route finale de liaison sera stabilisée.
@@ -54,17 +52,26 @@ type KahierLinkStatus = {
 export function KahierLinkSection({ userId, role }: Props) {
     const apiBase = getBrowserApiBase();
     const [loading, setLoading] = React.useState(true);
-    const [generating, setGenerating] = React.useState(false);
+    const [savingApiKey, setSavingApiKey] = React.useState(false);
+    const [loadingScopes, setLoadingScopes] = React.useState(false);
     const [status, setStatus] = React.useState<KahierLinkStatus | null>(null);
-    const [latestCode, setLatestCode] = React.useState<string | null>(null);
+    const [apiKeyInput, setApiKeyInput] = React.useState("");
+    const [scopes, setScopes] = React.useState<{ id: number; label: string; description: string; scopes: string[] }[]>([]);
+    const [scopesError, setScopesError] = React.useState<string | null>(null);
+    const scopesRequestRef = React.useRef<{ inFlight: boolean; key: string; lastAt: number }>({
+        inFlight: false,
+        key: "",
+        lastAt: 0,
+    });
+    const saveRequestRef = React.useRef(false);
+
+    const hasSavedApiKey = status?.connection?.hasApiKey === true;
 
     const loadStatus = React.useCallback(async () => {
-        if (!apiBase || !userId) return;
-        // TODO(kahier-link): Réactiver la récupération du statut quand l'intégration est prête.
-        setStatus(null);
-        setLoading(false);
-        return;
-        /*
+        if (!apiBase || !userId) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
         try {
             const res = await fetch(`${apiBase}/kahier-link`, {
@@ -76,59 +83,151 @@ export function KahierLinkSection({ userId, role }: Props) {
                 const errorMessage = "error" in data ? data.error : undefined;
                 throw new Error(errorMessage || "Impossible de récupérer l'intégration Kahier.");
             }
-            setStatus(data as KahierLinkStatus);
+            const typed = data as KahierLinkStatus;
+            setStatus(typed);
+            const key = typed.connection?.kahierApiKey ?? "";
+            setApiKeyInput(key);
+            if (key) {
+                window.localStorage.setItem("kahier_api_key", key);
+            }
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Impossible de récupérer l'intégration Kahier.");
         } finally {
             setLoading(false);
         }
-        */
     }, [apiBase, userId]);
 
     React.useEffect(() => {
         void loadStatus();
     }, [loadStatus]);
 
-    async function handleGenerate() {
+    async function loadScopesWithKey(apiKey: string, options?: { silentSuccess?: boolean }) {
+        if (!apiBase) {
+            toast.error("Configuration API manquante.");
+            return false;
+        }
+        const normalizedApiKey = apiKey.trim();
+        if (!normalizedApiKey) {
+            toast.error("Saisis d'abord une clé API.");
+            return false;
+        }
+        const now = Date.now();
+        const requestState = scopesRequestRef.current;
+        if (requestState.inFlight && requestState.key === normalizedApiKey) {
+            return false;
+        }
+        if (requestState.key === normalizedApiKey && now - requestState.lastAt < 4000) {
+            return false;
+        }
+        scopesRequestRef.current = { inFlight: true, key: normalizedApiKey, lastAt: requestState.lastAt };
+        setLoadingScopes(true);
+        setScopesError(null);
+        try {
+            const res = await fetch(`${apiBase}/kahier/scopes`, {
+                headers: {
+                    "x-api-key": normalizedApiKey,
+                },
+            });
+            const data = (await res.json().catch(() => null)) as
+                | { scopes?: { id: number; label: string; description: string; scopes: string[] }[]; error?: string }
+                | null;
+            if (!res.ok || !data?.scopes) {
+                throw new Error(data?.error ?? "Impossible de récupérer les scopes.");
+            }
+            setScopes(data.scopes);
+            if (!options?.silentSuccess) {
+                toast.success("Autorisations API récupérées.");
+            }
+            return true;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Impossible de récupérer les scopes.";
+            setScopesError(message);
+            toast.error(message);
+            return false;
+        } finally {
+            scopesRequestRef.current = { inFlight: false, key: normalizedApiKey, lastAt: Date.now() };
+            setLoadingScopes(false);
+        }
+    }
+
+    async function handleSaveApiKey() {
+        if (saveRequestRef.current) {
+            return;
+        }
         if (!apiBase) {
             toast.error("Configuration API manquante.");
             return;
         }
-        // TODO(kahier-link): Réactiver la génération de code quand l'intégration est prête.
-        toast.message("Liaison Kahier temporairement désactivée (à reprendre plus tard).");
-        return;
-        /*
-        setGenerating(true);
+        if (!apiKeyInput.trim()) {
+            toast.error("Saisis une clé API Kahier.");
+            return;
+        }
+
+        saveRequestRef.current = true;
+        setSavingApiKey(true);
         try {
-            const res = await fetch(`${apiBase}/kahier-link/code`, {
-                method: "POST",
+            const normalizedApiKey = apiKeyInput.trim();
+            const res = await fetch(`${apiBase}/kahier-link/api-key`, {
+                method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     "x-user-id": userId,
                 },
+                body: JSON.stringify({ apiKey: normalizedApiKey }),
             });
-            const data = (await res.json()) as
-                | {
-                    code: string;
-                    expiresAt: string;
-                    pendingLink: KahierLinkStatus["pendingLink"];
-                }
-                | { error?: string };
-
+            const data = (await res.json().catch(() => null)) as { error?: string } | null;
             if (!res.ok) {
-                const errorMessage = "error" in data ? data.error : undefined;
-                throw new Error(errorMessage || "Impossible de générer un code de liaison.");
+                throw new Error(data?.error ?? "Impossible d'enregistrer la clé API.");
             }
+            window.localStorage.setItem("kahier_api_key", normalizedApiKey);
+            toast.success("Clé API Kahier enregistrée.");
+            await loadStatus();
+            // Auto-test unique after save. Retest remains manual via button.
+            await loadScopesWithKey(normalizedApiKey, { silentSuccess: true });
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Impossible d'enregistrer la clé API.");
+        } finally {
+            saveRequestRef.current = false;
+            setSavingApiKey(false);
+        }
+    }
 
-            setLatestCode((data as { code: string }).code);
-            toast.success("Code de liaison Kahier généré.");
+    async function handleDeleteApiKey() {
+        if (!apiBase) {
+            toast.error("Configuration API manquante.");
+            return;
+        }
+        if (!window.confirm("Supprimer la clé API Kahier enregistrée ?")) {
+            return;
+        }
+
+        setSavingApiKey(true);
+        try {
+            const res = await fetch(`${apiBase}/kahier-link/api-key`, {
+                method: "DELETE",
+                headers: {
+                    "x-user-id": userId,
+                },
+            });
+            const data = (await res.json().catch(() => null)) as { error?: string } | null;
+            if (!res.ok) {
+                throw new Error(data?.error ?? "Impossible de supprimer la clé API.");
+            }
+            window.localStorage.removeItem("kahier_api_key");
+            setApiKeyInput("");
+            setScopes([]);
+            setScopesError(null);
+            toast.success("Clé API Kahier supprimée.");
             await loadStatus();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Impossible de générer un code de liaison.");
+            toast.error(error instanceof Error ? error.message : "Impossible de supprimer la clé API.");
         } finally {
-            setGenerating(false);
+            setSavingApiKey(false);
         }
-        */
+    }
+
+    async function handleLoadScopes() {
+        await loadScopesWithKey(apiKeyInput, { silentSuccess: false });
     }
 
     const canManage = role !== "USER";
@@ -139,7 +238,7 @@ export function KahierLinkSection({ userId, role }: Props) {
                 <div className="space-y-1">
                     <CardTitle className="text-base">Intégration Kahier</CardTitle>
                     <CardDescription>
-                        Générez un code de liaison côté CRM, puis confirmez-le plus tard depuis l&apos;app Kahier.
+                        Renseignez uniquement la clé API de l&apos;établissement Kahier pour activer les requêtes.
                     </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
@@ -147,63 +246,69 @@ export function KahierLinkSection({ userId, role }: Props) {
                         <RefreshCcw className="mr-2 h-4 w-4" />
                         Actualiser
                     </Button>
-                    {canManage ? (
-                        <Button type="button" size="sm" onClick={() => void handleGenerate()} disabled={generating || loading}>
-                            <Link2 className="mr-2 h-4 w-4" />
-                            Générer un code
-                        </Button>
-                    ) : null}
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                {latestCode ? (
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-                        <div className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-700">Code à usage unique</div>
-                        <div className="mt-2 flex flex-wrap items-center gap-3">
-                            <div className="font-mono text-lg font-semibold text-emerald-950">{latestCode}</div>
+                <div className="rounded-lg border border-muted/60 px-4 py-3">
+                    <div className="space-y-3">
+                        <div className="text-xs font-medium uppercase text-muted-foreground">Statut clé API établissement</div>
+                        {hasSavedApiKey ? (
+                            <p className="text-sm text-slate-700">Clé API enregistrée et masquée.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                <Label htmlFor="kahier-api-key">x-api-key</Label>
+                                <Input
+                                    id="kahier-api-key"
+                                    value={apiKeyInput}
+                                    onChange={(e) => setApiKeyInput(e.target.value)}
+                                    placeholder="Saisir la clé API Kahier de l'établissement"
+                                    disabled={!canManage || savingApiKey}
+                                />
+                            </div>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                            {!hasSavedApiKey ? (
+                                <Button
+                                    type="button"
+                                    onClick={() => void handleSaveApiKey()}
+                                    disabled={!canManage || savingApiKey || loadingScopes}
+                                >
+                                    Enregistrer la clé
+                                </Button>
+                            ) : null}
                             <Button
                                 type="button"
-                                size="sm"
                                 variant="outline"
-                                onClick={async () => {
-                                    await navigator.clipboard.writeText(latestCode);
-                                    toast.success("Code copié.");
-                                }}
+                                onClick={() => void handleLoadScopes()}
+                                disabled={!canManage || loadingScopes || !apiKeyInput.trim()}
                             >
-                                Copier
+                                {hasSavedApiKey ? "Tester l'API" : "Tester l'API"}
                             </Button>
+                            {hasSavedApiKey ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => void handleDeleteApiKey()}
+                                    disabled={!canManage || savingApiKey}
+                                >
+                                    Supprimer la clé
+                                </Button>
+                            ) : null}
                         </div>
-                        <p className="mt-2 text-sm text-emerald-800">
-                            Ce code n&apos;est affiché qu&apos;une seule fois. Saisissez-le dans l&apos;application Kahier pour terminer la liaison.
-                        </p>
-                    </div>
-                ) : null}
-
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-lg border border-muted/60 px-4 py-3">
-                        <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Connexion active</div>
-                        {status?.connection ? (
-                            <div className="mt-3 space-y-1 text-sm text-slate-700">
-                                <p><span className="font-medium text-slate-950">Établissement :</span> {status.connection.kahierEstablishmentName}</p>
-                                <p><span className="font-medium text-slate-950">ID Kahier :</span> {status.connection.kahierEstablishmentId}</p>
-                                <p><span className="font-medium text-slate-950">Zone :</span> {status.connection.kahierZoneName ?? "Non définie"}</p>
-                                <p><span className="font-medium text-slate-950">Utilisateur Kahier :</span> {status.connection.kahierUserLabel ?? "Non renseigné"}</p>
+                        {scopesError ? <p className="text-xs text-amber-700">{scopesError}</p> : null}
+                        {scopes.length > 0 ? (
+                            <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
+                                <p className="mb-3 font-medium text-slate-900">Permissions API ({scopes.length})</p>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    {scopes.map((scope) => (
+                                        <article key={scope.id} className="rounded-lg border border-slate-200 bg-white p-3">
+                                            <p className="text-sm font-semibold text-slate-900">{scope.label}</p>
+                                            <p className="mt-1 text-xs text-slate-500">{scope.description}</p>
+                                        </article>
+                                    ))}
+                                </div>
                             </div>
-                        ) : (
-                            <p className="mt-3 text-sm text-muted-foreground">Aucune liaison active pour cette entreprise.</p>
-                        )}
-                    </div>
-
-                    <div className="rounded-lg border border-muted/60 px-4 py-3">
-                        <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Code en attente</div>
-                        {status?.pendingLink ? (
-                            <div className="mt-3 space-y-1 text-sm text-slate-700">
-                                <p><span className="font-medium text-slate-950">Code :</span> {status.pendingLink.codePreview}</p>
-                                <p><span className="font-medium text-slate-950">Expire le :</span> {new Date(status.pendingLink.expiresAt).toLocaleString("fr-FR")}</p>
-                            </div>
-                        ) : (
-                            <p className="mt-3 text-sm text-muted-foreground">Aucun code de liaison actif.</p>
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </CardContent>

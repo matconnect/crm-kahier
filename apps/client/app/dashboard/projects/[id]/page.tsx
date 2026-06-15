@@ -96,7 +96,7 @@ function formatAmount(value: number | null | undefined) {
 function DetailBlock({ title, content }: { title: string; content: string | null }) {
     return (
         <div className="rounded-[1.5rem] border border-slate-200 bg-white/80 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{title}</p>
+            <p className="text-xs uppercase  text-slate-400">{title}</p>
             <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{content?.trim() || "Non renseigné"}</p>
         </div>
     );
@@ -163,7 +163,7 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                     ) : null}
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-tight text-[#1f2335] md:text-3xl">{project.name}</h1>
+                                    <h1 className="text-2xl font-bold  text-[#1f2335] md:text-3xl">{project.name}</h1>
                                     <p className="mt-2 max-w-3xl text-sm text-[#6f7488]">
                                         {project.description || "Projet sans résumé renseigné pour le moment."}
                                     </p>
@@ -200,14 +200,14 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <FolderKanban className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Avancement</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Avancement</p>
                                 <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{project.progress}%</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <CalendarRange className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Planning</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Planning</p>
                                 <p className="mt-2 text-sm font-semibold text-[#1e2234]">{formatDate(project.startDate)}</p>
                                 <p className="mt-1 text-sm text-[#6f7488]">Fin : {formatDate(project.endDate)}</p>
                             </div>
@@ -215,7 +215,7 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <CircleDollarSign className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Budget</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Budget</p>
                                 <p className="mt-2 text-sm font-semibold text-[#1e2234]">
                                     {formatAmount(project.budgetAmount)}
                                 </p>
@@ -225,7 +225,7 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <UserRound className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Pilotage</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Pilotage</p>
                                 <p className="mt-2 text-sm font-semibold text-[#1e2234]">{formatOwner(project)}</p>
                                 <p className="mt-1 text-sm text-[#6f7488]">Créé le {formatDate(project.createdAt, true)}</p>
                             </div>
@@ -233,19 +233,19 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
 
                         <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Revenu prévisionnel</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Revenu prévisionnel</p>
                                 <p className="mt-2 text-sm font-semibold text-[#1e2234]">{formatAmount(project.revenueAmount)}</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Coût projet</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Coût projet</p>
                                 <p className="mt-2 text-sm font-semibold text-[#1e2234]">{formatAmount(project.costAmount)}</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Marge estimée</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Marge estimée</p>
                                 <p className="mt-2 text-sm font-semibold text-[#1e2234]">{formatAmount(marginAmount)}</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Reste à encaisser</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Reste à encaisser</p>
                                 <p className="mt-2 text-sm font-semibold text-[#1e2234]">{formatAmount(outstandingAmount)}</p>
                             </div>
                         </div>
@@ -282,22 +282,22 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Priorité</p>
+                                        <p className="text-xs uppercase  text-slate-400">Priorité</p>
                                         <p className="mt-2 text-sm font-medium text-slate-950">{PRIORITY_META[project.priority]}</p>
                                     </div>
                                     <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Client</p>
+                                        <p className="text-xs uppercase  text-slate-400">Client</p>
                                         <p className="mt-2 text-sm font-medium text-slate-950">{project.client?.name ?? "Sans client"}</p>
                                     </div>
                                     <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Facturation</p>
+                                        <p className="text-xs uppercase  text-slate-400">Facturation</p>
                                         <p className="mt-2 text-sm font-medium text-slate-950">{project.billingMode || "Non renseignée"}</p>
                                         <p className="mt-1 text-xs text-slate-500">
                                             Facturé {formatAmount(project.invoicedAmount)} · Encaissé {formatAmount(project.receivedAmount)}
                                         </p>
                                     </div>
                                     <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Objectif de pilotage</p>
+                                        <p className="text-xs uppercase  text-slate-400">Objectif de pilotage</p>
                                         <p className="mt-2 text-sm font-medium text-slate-950">{project.progress}% réalisé</p>
                                         <div className="mt-3 h-2 rounded-full bg-slate-100">
                                             <div
@@ -307,7 +307,7 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                         </div>
                                     </div>
                                     <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Suivi</p>
+                                        <p className="text-xs uppercase  text-slate-400">Suivi</p>
                                         <p className="mt-2 text-sm font-medium text-slate-950">Màj le {formatDate(project.updatedAt, true)}</p>
                                     </div>
                                 </CardContent>

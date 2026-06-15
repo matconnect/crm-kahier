@@ -38,12 +38,12 @@ export function InteractionDetailsPanel({
             {selectedInteraction ? (
                 <div className="mt-4 space-y-4 rounded-2xl border border-[#e7eaf3] bg-[#fafbff] p-4">
                     <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Interaction sélectionnée</p>
+                        <p className="text-xs uppercase  text-[#8f93a9]">Interaction sélectionnée</p>
                         <p className="mt-1 text-lg font-bold text-[#202334]">{selectedInteraction.clientName}</p>
                     </div>
                     <div className="grid grid-cols-1 gap-3 text-sm">
                         <div className="rounded-xl bg-white px-3 py-2">
-                            <p className="text-[11px] uppercase tracking-wide text-[#8f93a9]">Heure</p>
+                            <p className="text-[11px] uppercase  text-[#8f93a9]">Heure</p>
                             <p className="mt-1 font-semibold text-[#2d3145]">{formatTime(selectedInteraction.occurredAt)}</p>
                         </div>
                     </div>

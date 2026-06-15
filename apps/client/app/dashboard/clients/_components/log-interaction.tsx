@@ -92,6 +92,7 @@ type KahierLinkStatus = {
     connection: {
         kahierZoneId: number | null;
         kahierZoneName: string | null;
+        kahierApiKey: string | null;
     } | null;
 };
 
@@ -170,6 +171,7 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
     const [planningTitle, setPlanningTitle] = React.useState("");
     const [planningDescription, setPlanningDescription] = React.useState("");
     const [linkedKahierZoneId, setLinkedKahierZoneId] = React.useState<number | null>(null);
+    const [kahierApiKey, setKahierApiKey] = React.useState<string>("");
 
     const kahierZoneId = linkedKahierZoneId ?? defaultKahierZoneId;
 
@@ -199,16 +201,27 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
         let active = true;
         async function loadLinkStatus() {
             if (!enabled || !apiBase || !currentUserId) return;
-            // TODO(kahier-link): Réactiver le chargement du statut Kahier plus tard.
-            // try {
-            //     const res = await fetchKahierLinkStatus(apiBase, currentUserId);
-            //     if (!res.ok) return;
-            //     const data = (await res.json()) as KahierLinkStatus;
-            //     if (!active) return;
-            //     setLinkedKahierZoneId(data.connection?.kahierZoneId ?? null);
-            // } catch {
-            //     // ignore, fallback to env zone id
-            // }
+            const localKey = typeof window !== "undefined" ? window.localStorage.getItem("kahier_api_key") : null;
+            if (localKey?.trim() && active) {
+                setKahierApiKey(localKey.trim());
+            }
+            try {
+                const res = await fetch(`${apiBase}/kahier-link`, {
+                    cache: "no-store",
+                    headers: { "x-user-id": currentUserId },
+                });
+                if (!res.ok) return;
+                const data = (await res.json()) as KahierLinkStatus;
+                if (!active) return;
+                setLinkedKahierZoneId(data.connection?.kahierZoneId ?? null);
+                const key = data.connection?.kahierApiKey?.trim();
+                if (key) {
+                    setKahierApiKey(key);
+                    window.localStorage.setItem("kahier_api_key", key);
+                }
+            } catch {
+                // ignore, fallback zone/env
+            }
         }
         void loadLinkStatus();
         return () => {
@@ -227,7 +240,9 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
             setTabsLoading(true);
             setTabsError(null);
             try {
-                const res = await fetch(`${apiBase}/kahier/zone/${kahierZoneId}`);
+                const res = await fetch(`${apiBase}/kahier/zone/${kahierZoneId}`, {
+                    headers: kahierApiKey ? { "x-api-key": kahierApiKey } : undefined,
+                });
                 const data = (await res.json()) as {
                     periodes?: KahierPeriodeTab[];
                     categoriesByPeriode?: Record<string, KahierCategory[]>;
@@ -256,7 +271,7 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
         return () => {
             active = false;
         };
-    }, [apiBase, createTask, kahierZoneId, selectedTabId]);
+    }, [apiBase, createTask, kahierApiKey, kahierZoneId, selectedTabId]);
 
     React.useEffect(() => {
         let active = true;
@@ -269,7 +284,9 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
             setUsersLoading(true);
             setUsersError(null);
             try {
-                const res = await fetch(`${apiBase}/kahier/users`);
+                const res = await fetch(`${apiBase}/kahier/users`, {
+                    headers: kahierApiKey ? { "x-api-key": kahierApiKey } : undefined,
+                });
                 const data = (await res.json()) as KahierUser[];
                 if (!res.ok || !Array.isArray(data)) {
                     throw new Error("Impossible de récupérer les utilisateurs.");
@@ -287,7 +304,7 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
         return () => {
             active = false;
         };
-    }, [apiBase, createTask, openSections]);
+    }, [apiBase, createTask, kahierApiKey, openSections]);
 
     React.useEffect(() => {
         let active = true;
@@ -300,7 +317,9 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
             setPlanningsLoading(true);
             setPlanningsError(null);
             try {
-                const res = await fetch(`${apiBase}/kahier/plannings`);
+                const res = await fetch(`${apiBase}/kahier/plannings`, {
+                    headers: kahierApiKey ? { "x-api-key": kahierApiKey } : undefined,
+                });
                 const data = (await res.json()) as KahierPlanning[];
                 if (!res.ok || !Array.isArray(data)) {
                     throw new Error("Impossible de récupérer les plannings.");
@@ -318,7 +337,7 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
         return () => {
             active = false;
         };
-    }, [apiBase, openSections]);
+    }, [apiBase, kahierApiKey, openSections]);
 
     React.useEffect(() => {
         let active = true;
@@ -335,7 +354,10 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
             setLegendsError(null);
             try {
                 const res = await fetch(
-                    `${apiBase}/kahier/plannings/${selectedPlanningId}/legends?mode=${encodeURIComponent(mode)}`
+                    `${apiBase}/kahier/plannings/${selectedPlanningId}/legends?mode=${encodeURIComponent(mode)}`,
+                    {
+                        headers: kahierApiKey ? { "x-api-key": kahierApiKey } : undefined,
+                    }
                 );
                 const data = (await res.json()) as KahierLegend[];
                 if (!res.ok || !Array.isArray(data)) {
@@ -354,7 +376,7 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
         return () => {
             active = false;
         };
-    }, [apiBase, openSections, plannings, selectedPlanningId]);
+    }, [apiBase, kahierApiKey, openSections, plannings, selectedPlanningId]);
 
     React.useEffect(() => {
         setSelectedLegendId("");
@@ -524,7 +546,10 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
             if (createTask) {
                 const taskRes = await fetch(`${apiBase}/kahier/tasks`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(kahierApiKey ? { "x-api-key": kahierApiKey } : {}),
+                    },
                     body: JSON.stringify({
                         name: summary.trim() || `${type} ${format(new Date(), "Pp")}`,
                         categoryId: Number(selectedCategoryId),
@@ -555,7 +580,10 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
                 const dateValue = planningDate ? format(planningDate, "yyyy-MM-dd") : occurredDateValue;
                 const planningRes = await fetch(`${apiBase}/kahier/planning`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(kahierApiKey ? { "x-api-key": kahierApiKey } : {}),
+                    },
                     body: JSON.stringify({
                         selectedRoomId: null,
                         title: planningLabel,
@@ -665,7 +693,10 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
         try {
             const createRes = await fetch(`${apiBase}/kahier/planning/legend`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(kahierApiKey ? { "x-api-key": kahierApiKey } : {}),
+                },
                 body: JSON.stringify({
                     label,
                     color: newLegendColor,
@@ -683,7 +714,10 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
             const selectedPlanning = plannings.find((planning) => String(planning.id) === selectedPlanningId);
             const mode = selectedPlanning?.type ?? "classic";
             const legendsRes = await fetch(
-                `${apiBase}/kahier/plannings/${selectedPlanningId}/legends?mode=${encodeURIComponent(mode)}`
+                `${apiBase}/kahier/plannings/${selectedPlanningId}/legends?mode=${encodeURIComponent(mode)}`,
+                {
+                    headers: kahierApiKey ? { "x-api-key": kahierApiKey } : undefined,
+                }
             );
             const legendsData = (await legendsRes.json().catch(() => null)) as KahierLegend[] | { error?: string } | null;
             if (!legendsRes.ok || !Array.isArray(legendsData)) {

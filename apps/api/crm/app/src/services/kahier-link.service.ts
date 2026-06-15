@@ -41,17 +41,20 @@ function formatCodePreview(code: string) {
 
 function mapConnection(connection: Awaited<ReturnType<typeof prisma.kahierConnection.findUnique>>) {
     if (!connection) return null;
+    const row = connection as typeof connection & { kahierApiKey?: string | null };
     return {
-        id: connection.id,
-        kahierEstablishmentId: connection.kahierEstablishmentId,
-        kahierEstablishmentName: connection.kahierEstablishmentName,
-        kahierZoneId: connection.kahierZoneId,
-        kahierZoneName: connection.kahierZoneName,
-        kahierUserId: connection.kahierUserId,
-        kahierUserLabel: connection.kahierUserLabel,
-        linkedByUserId: connection.linkedByUserId,
-        linkedAt: connection.linkedAt,
-        updatedAt: connection.updatedAt,
+        id: row.id,
+        kahierEstablishmentId: row.kahierEstablishmentId,
+        kahierEstablishmentName: row.kahierEstablishmentName,
+        kahierZoneId: row.kahierZoneId,
+        kahierZoneName: row.kahierZoneName,
+        kahierUserId: row.kahierUserId,
+        kahierUserLabel: row.kahierUserLabel,
+        kahierApiKey: row.kahierApiKey ?? null,
+        hasApiKey: Boolean(row.kahierApiKey),
+        linkedByUserId: row.linkedByUserId,
+        linkedAt: row.linkedAt,
+        updatedAt: row.updatedAt,
     };
 }
 
@@ -195,5 +198,44 @@ export async function confirmLinkCode(params: {
     return {
         ok: true,
         connection: mapConnection(connection),
+    };
+}
+
+export async function saveApiKey(params: { companyId: string; apiKey: string }) {
+    const updated = await prisma.kahierConnection.upsert({
+        where: { companyId: params.companyId },
+        create: {
+            companyId: params.companyId,
+            kahierEstablishmentId: 0,
+            kahierEstablishmentName: "Non renseigné",
+            kahierApiKey: params.apiKey,
+            linkedAt: new Date(),
+        },
+        update: { kahierApiKey: params.apiKey } as any,
+    });
+
+    return {
+        ok: true,
+        connection: mapConnection(updated),
+    };
+}
+
+export async function deleteApiKey(params: { companyId: string }) {
+    const existing = await prisma.kahierConnection.findUnique({
+        where: { companyId: params.companyId },
+    });
+
+    if (!existing) {
+        return { ok: true, connection: null };
+    }
+
+    const updated = await prisma.kahierConnection.update({
+        where: { companyId: params.companyId },
+        data: { kahierApiKey: null } as any,
+    });
+
+    return {
+        ok: true,
+        connection: mapConnection(updated),
     };
 }

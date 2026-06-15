@@ -4,7 +4,7 @@ export function DashboardPreview() {
       <div className="grid min-h-[420px] grid-cols-[180px_minmax(0,1fr)]">
         <aside className="border-r border-slate-200 bg-[#f7f8fc] p-3">
           <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-            <div className="text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">CRM</div>
+            <div className="text-[0.62rem] uppercase  text-slate-500">CRM</div>
             <div className="display-title text-sm text-slate-900">KAHIER</div>
           </div>
 
@@ -13,7 +13,7 @@ export function DashboardPreview() {
             <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">Finance</div>
           </div>
 
-          <div className="mt-4 text-[0.62rem] uppercase tracking-[0.22em] text-slate-400">Commercial</div>
+          <div className="mt-4 text-[0.62rem] uppercase  text-slate-400">Commercial</div>
           <div className="mt-2 space-y-2">
             <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">Clients</div>
             <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">Projets</div>
@@ -27,7 +27,7 @@ export function DashboardPreview() {
                 <div className="text-sm font-semibold text-slate-900">Bonjour, Mathéo.</div>
                 <div className="text-xs text-slate-500">mardi 28 avr., 09:42</div>
               </div>
-              <div className="rounded-full border border-slate-200 bg-[#f7f8fc] px-2.5 py-1 text-[0.62rem] font-medium uppercase tracking-[0.2em] text-slate-500">
+              <div className="rounded-full border border-slate-200 bg-[#f7f8fc] px-2.5 py-1 text-[0.62rem] font-medium uppercase  text-slate-500">
                 Aperçu du dashboard
               </div>
             </div>
@@ -52,11 +52,11 @@ export function DashboardPreview() {
 
               <div className="space-y-3">
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <div className="text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">Projets</div>
+                  <div className="text-[0.62rem] uppercase  text-slate-500">Projets</div>
                   <div className="mt-1 text-2xl font-semibold text-slate-900">2</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <div className="text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">Interactions</div>
+                  <div className="text-[0.62rem] uppercase  text-slate-500">Interactions</div>
                   <div className="mt-1 text-2xl font-semibold text-slate-900">8</div>
                 </div>
               </div>
@@ -64,19 +64,19 @@ export function DashboardPreview() {
 
             <div className="grid gap-3 md:grid-cols-4">
               <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <div className="text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">Clients actifs</div>
+                <div className="text-[0.62rem] uppercase  text-slate-500">Clients actifs</div>
                 <div className="mt-1 text-xl font-semibold text-slate-900">1</div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <div className="text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">Prospects</div>
+                <div className="text-[0.62rem] uppercase  text-slate-500">Prospects</div>
                 <div className="mt-1 text-xl font-semibold text-slate-900">0</div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <div className="text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">Conversion</div>
+                <div className="text-[0.62rem] uppercase  text-slate-500">Conversion</div>
                 <div className="mt-1 text-xl font-semibold text-slate-900">100%</div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <div className="text-[0.62rem] uppercase tracking-[0.22em] text-slate-500">Projets suivis</div>
+                <div className="text-[0.62rem] uppercase  text-slate-500">Projets suivis</div>
                 <div className="mt-1 text-xl font-semibold text-slate-900">2</div>
               </div>
             </div>

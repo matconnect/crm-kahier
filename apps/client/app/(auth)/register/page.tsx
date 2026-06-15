@@ -13,6 +13,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
+const PLAN_PRICING = {
+    starter: { label: "Démarrage", monthly: 0, yearly: 0 },
+    pro: { label: "Professionnel", monthly: 29, yearly: 24 },
+    enterprise: { label: "Entreprise", monthly: 79, yearly: 65 },
+} as const;
+
 function RegisterForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -149,14 +155,31 @@ function RegisterForm() {
         (mode === "join" && !companyCode.trim()) || (mode === "create" && !companyName.trim());
     const disabled =
         pending || !firstName || !lastName || !email || !password || !confirmPassword || companyInvalid;
+    const selectedPlan = PLAN_PRICING[planId];
+    const selectedPrice = selectedPlan[billingCycle];
+    const monthlyReference = selectedPlan.monthly;
+    const yearlyTotal = selectedPlan.yearly * 12;
+    const monthlyTotalAnnualized = monthlyReference * 12;
+    const yearlySavings = monthlyTotalAnnualized - yearlyTotal;
+    const yearlyDiscountPercent =
+        monthlyReference > 0 ? Math.round((yearlySavings / monthlyTotalAnnualized) * 100) : 0;
 
     return (
-        <div className="min-h-screen bg-[#eef0f6] px-6 py-10">
-            <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[440px_minmax(0,1fr)] lg:items-center">
+        <div className="min-h-screen bg-[#eef0f6]">
+            <header className="border-b border-white/70 px-6 py-4">
+                <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
+                    <Link href="/" className="text-sm font-semibold uppercase  text-[#2f3344]">
+                        KAHIER CRM
+                    </Link>
+                </div>
+            </header>
+
+            <main className="px-6 py-10">
+                <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[440px_minmax(0,1fr)] lg:items-center">
                 <div className="w-full max-w-md justify-self-center">
                     <Card className="rounded-[28px] border border-white/70 bg-white shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                         <CardHeader className="space-y-2">
-                            <CardTitle className="text-2xl font-bold tracking-tight text-[#1f2335]">Créer un compte</CardTitle>
+                            <CardTitle className="text-2xl font-bold  text-[#1f2335]">Créer un compte</CardTitle>
                             <CardDescription className="text-[#6f7488]">
                                 Rejoignez votre entreprise ou créez-en une nouvelle.
                             </CardDescription>
@@ -262,43 +285,76 @@ function RegisterForm() {
                                         ) : (
                                             <p className="text-xs text-muted-foreground">Plan Commencement: validation ponctuelle via Stripe.</p>
                                         )}
+
+                                        <div className="rounded-xl border border-slate-200 bg-[#f8f9fd] px-3 py-3 text-sm text-slate-700">
+                                            <p className="font-medium text-slate-900">Tarif sélectionné : {selectedPlan.label}</p>
+                                            {selectedPrice === 0 ? (
+                                                <p className="mt-1">0€ HT / mois</p>
+                                            ) : billingCycle === "monthly" ? (
+                                                <p className="mt-1">{selectedPrice}€ HT / mois</p>
+                                            ) : (
+                                                <>
+                                                    <p className="mt-1">{selectedPrice}€ HT / mois, facturé {yearlyTotal}€ HT / an</p>
+                                                    <p className="mt-1 text-emerald-700">
+                                                        Réduction annuelle : -{yearlyDiscountPercent}% (vous économisez {yearlySavings}€ HT / an)
+                                                    </p>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
 
                                 <Button type="submit" className="w-full rounded-full border-0 bg-[#111322] text-white hover:bg-[#191d2e] cursor-pointer" disabled={disabled}>
                                     {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Création...</> : "Créer un compte"}
                                 </Button>
+
+                                <p className="text-center text-xs text-muted-foreground">
+                                    En créant un compte, vous acceptez nos{" "}
+                                    <Link href="/cgu" className="underline">CGU</Link>,{" "}
+                                    <Link href="/cgv" className="underline">CGV</Link> et notre{" "}
+                                    <Link href="/confidentialite" className="underline">politique de confidentialité</Link>.
+                                </p>
                             </form>
 
-                            <div className="text-center text-sm text-muted-foreground">
-                                Déjà un compte ?{" "}
-                                <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="underline">
-                                    Se connecter
-                                </Link>
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t border-muted" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-white px-2 text-muted-foreground">Déjà un compte ?</span>
+                                </div>
                             </div>
+
+                            <Button asChild variant="outline" className="w-full rounded-full border border-[#d7dced] bg-white text-[#2f3344] hover:bg-[#f8f9fd]">
+                                <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}>Se connecter</Link>
+                            </Button>
                         </CardContent>
                     </Card>
                 </div>
                 <section className="hidden rounded-[28px] border border-white/70 bg-[#f8f9fd] p-8 shadow-[0_20px_50px_rgba(29,33,49,0.08)] lg:block">
                     <div className="relative max-w-xl space-y-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8f93a9]">Onboarding</p>
-                        <h1 className="text-5xl font-bold leading-tight tracking-tight text-[#1f2335]">Créez votre espace CRM.</h1>
+                        <p className="text-xs font-semibold uppercase  text-[#8f93a9]">Onboarding</p>
+                        <h1 className="text-5xl font-bold leading-tight  text-[#1f2335]">Créez votre espace CRM.</h1>
                         <p className="text-base text-[#6f7488]">
                             Rejoignez une entreprise existante ou créez votre structure avec le même style produit que le dashboard.
                         </p>
-                        <div className="grid gap-3">
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <p className="text-xs uppercase tracking-[0.22em] text-[#8f93a9]">Rejoindre</p>
-                                <p className="mt-2 text-xl font-semibold text-[#2f3344]">Entrez le code entreprise pour accéder à votre CRM</p>
-                            </div>
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <p className="text-xs uppercase tracking-[0.22em] text-[#8f93a9]">Créer</p>
-                                <p className="mt-2 text-xl font-semibold text-[#2f3344]">Créez une entreprise si vous démarrez de zéro</p>
-                            </div>
-                        </div>
                     </div>
                 </section>
             </div>
+            </main>
+
+            <footer className="px-6 pb-8 text-center text-xs text-[#7f859b]">
+                <div>© {new Date().getFullYear()} KAHIER CRM</div>
+                <div className="mt-2 space-x-2">
+                    <Link href="/confidentialite" className="hover:underline">Politique de confidentialité</Link>
+                    <span>•</span>
+                    <Link href="/mentions-legales" className="hover:underline">Mentions légales</Link>
+                    <span>•</span>
+                    <Link href="/cgu" className="hover:underline">CGU</Link>
+                    <span>•</span>
+                    <Link href="/cgv" className="hover:underline">CGV</Link>
+                </div>
+            </footer>
         </div>
     );
 }

@@ -50,7 +50,7 @@ export function UpcomingInteractionsNotice({
             </PopoverTrigger>
             <PopoverContent className="w-80 p-3 max-h-60 overflow-auto" align="end">
                 <div className="space-y-2">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <div className="text-xs font-semibold uppercase  text-muted-foreground">
                         Interactions à venir ({alertWindowDays} jours)
                     </div>
                     <div className="space-y-1">

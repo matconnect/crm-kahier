@@ -22,6 +22,8 @@ const nextConfig = {
             { source: "/users/:path*", destination: `${apiInternal}/users/:path*` },
             { source: "/profile", destination: `${apiInternal}/profile` },
             { source: "/profile/:path*", destination: `${apiInternal}/profile/:path*` },
+            { source: "/kahier-link", destination: `${apiInternal}/kahier-link` },
+            { source: "/kahier-link/:path*", destination: `${apiInternal}/kahier-link/:path*` },
             { source: "/kahier", destination: `${apiInternal}/kahier` },
             { source: "/kahier/:path*", destination: `${apiInternal}/kahier/:path*` },
         ];

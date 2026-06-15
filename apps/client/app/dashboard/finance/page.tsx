@@ -173,7 +173,7 @@ export default async function FinancePage() {
                                     Connecté : {session.user?.email}
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Finance</h1>
+                                    <h1 className="text-2xl font-bold  md:text-3xl">Finance</h1>
                                     <p className="text-sm text-[#6f7488]">
                                         Suivi consolidé des revenus, coûts, marges et encaissements du portefeuille projet.
                                     </p>
@@ -203,21 +203,21 @@ export default async function FinancePage() {
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <TrendingUp className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Revenu prévisionnel</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Revenu prévisionnel</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(plannedRevenue)}</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <TrendingDown className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Coût projet</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Coût projet</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(plannedCost)}</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <Wallet className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Marge estimée</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Marge estimée</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(plannedMargin)}</p>
                                 <p className="mt-1 text-xs text-[#6f7488]">Taux de marge: {formatPercent(marginRate)}</p>
                             </div>
@@ -225,21 +225,21 @@ export default async function FinancePage() {
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <ReceiptText className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Facturé</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Facturé</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(invoiced)}</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <HandCoins className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Encaissé</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Encaissé</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(received)}</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <Banknote className="h-5 w-5" />
                                 </div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-[#8f93a9]">Reste à encaisser</p>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Reste à encaisser</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(outstanding)}</p>
                                 <p className="mt-1 text-xs text-[#6f7488]">{activeProjects} projet(s) actif(s)</p>
                             </div>

@@ -67,3 +67,13 @@ export type KahierCreateLegendPayload = {
     selectedPlanningId: number;
     agenda_principal?: boolean;
 };
+
+export type KahierCreateTabPayload = {
+    name: string;
+    zoneId: number;
+};
+
+export type KahierCreateCategoryPayload = {
+    name: string;
+    tabId: number;
+};

@@ -145,12 +145,10 @@ services:
         SERVICE_FILTER: "@kahier/kahier-service"
     environment:
       KAHIER_API_BASE_FILE: "/run/secrets/kahier_api_base"
-      KAHIER_API_KEY_FILE: "/run/secrets/kahier_api_key"
       NODE_ENV: production
       PORT_FILE: "/run/secrets/port_kahier"
     secrets:
       - kahier_api_base
-      - kahier_api_key
       - port_kahier
     networks:
       - app-net
@@ -220,8 +218,6 @@ secrets:
     file: ./secrets/gateway/kahier_service_url.txt
   kahier_api_base:
     file: ./secrets/kahier/api_base.txt
-  kahier_api_key:
-    file: ./secrets/kahier/api_key.txt
   better_auth:
     file: ./secrets/root/better_auth.txt
   aws_access_key_id:

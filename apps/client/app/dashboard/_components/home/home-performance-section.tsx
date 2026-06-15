@@ -136,7 +136,7 @@ export function HomePerformanceSection({ summary, projects, period }: HomePerfor
             <article className="rounded-[28px] border border-white/70 bg-[#f8f9fd] p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-7">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h2 className="text-[38px] font-bold leading-none tracking-tight">Performance d’équipe</h2>
+                        <h2 className="text-[38px] font-bold leading-none ">Performance d’équipe</h2>
                         <p className="mt-1 text-xs font-medium text-[#8f93a9]">
                             Basé sur les dates de projets (démarrages et échéances)
                         </p>
@@ -180,7 +180,7 @@ export function HomePerformanceSection({ summary, projects, period }: HomePerfor
 
             <div className="space-y-5">
                 <article className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Démarrages planifiés</p>
+                    <p className="text-xs uppercase  text-[#8f93a9]">Démarrages planifiés</p>
                     <p className="mt-3 text-6xl font-black leading-none text-[#1f2335]">{startsCount}</p>
                     <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#efe9ff] px-3 py-1 text-sm font-semibold text-[#6a42db]">
                         {getTrend(startsTrend)} · {formatPeriodLabel(period)}
@@ -188,7 +188,7 @@ export function HomePerformanceSection({ summary, projects, period }: HomePerfor
                 </article>
 
                 <article className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Échéances planifiées</p>
+                    <p className="text-xs uppercase  text-[#8f93a9]">Échéances planifiées</p>
                     <p className="mt-3 text-6xl font-black leading-none text-[#1f2335]">{deadlinesCount}</p>
                     <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#e7f7ef] px-3 py-1 text-sm font-semibold text-[#1d8b5e]">
                         {getTrend(deadlinesTrend)} · Base portefeuille {activeClientsAndProspects}

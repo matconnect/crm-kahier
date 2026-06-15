@@ -148,32 +148,31 @@ function LoginForm() {
 
     //NOTE - Return principal
     return (
-        <div className="min-h-screen bg-[#eef0f6] px-6 py-10">
-            <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[minmax(0,1.1fr)_440px] lg:items-center">
+        <div className="min-h-screen bg-[#eef0f6]">
+            <header className="border-b border-white/70 px-6 py-4">
+                <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
+                    <Link href="/" className="text-sm font-semibold uppercase  text-[#2f3344]">
+                        KAHIER CRM
+                    </Link>
+                </div>
+            </header>
+
+            <main className="px-6 py-10">
+                <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[minmax(0,1.1fr)_440px] lg:items-center">
                 <section className="hidden rounded-[28px] border border-white/70 bg-[#f8f9fd] p-8 shadow-[0_20px_50px_rgba(29,33,49,0.08)] lg:block">
                     <div className="relative max-w-xl space-y-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8f93a9]">Connexion</p>
-                        <h1 className="text-5xl font-bold leading-tight tracking-tight text-[#1f2335]">Retrouvez votre espace CRM.</h1>
+                        <p className="text-xs font-semibold uppercase  text-[#8f93a9]">Connexion</p>
+                        <h1 className="text-5xl font-bold leading-tight  text-[#1f2335]">Retrouvez votre espace CRM.</h1>
                         <p className="text-base text-[#6f7488]">
                             Accédez à vos clients, projets et indicateurs dans la même interface que le dashboard.
                         </p>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <p className="text-xs uppercase tracking-[0.22em] text-[#8f93a9]">Suivi</p>
-                                <p className="mt-2 text-xl font-semibold text-[#2f3344]">Clients et interactions</p>
-                            </div>
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <p className="text-xs uppercase tracking-[0.22em] text-[#8f93a9]">Accès</p>
-                                <p className="mt-2 text-xl font-semibold text-[#2f3344]">Rôles et organisation</p>
-                            </div>
-                        </div>
                     </div>
                 </section>
 
                 <div className="w-full max-w-md justify-self-center">
                     <Card className="rounded-[28px] border border-white/70 bg-white shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                         <CardHeader className="space-y-2">
-                            <CardTitle className="text-2xl font-bold tracking-tight text-[#1f2335]">Connexion</CardTitle>
+                            <CardTitle className="text-2xl font-bold  text-[#1f2335]">Connexion</CardTitle>
                             <CardDescription className="text-[#6f7488]">Connectez-vous pour accéder à votre espace.</CardDescription>
                         </CardHeader>
 
@@ -270,16 +269,38 @@ function LoginForm() {
                             </Button>
 
                             <div className="text-center text-xs text-muted-foreground">
-                                En vous connectant, vous acceptez les conditions d’utilisation.
+                                En vous connectant, vous acceptez nos{" "}
+                                <Link href="/cgu" className="underline">
+                                    CGU
+                                </Link>
+                                ,{" "}
+                                <Link href="/cgv" className="underline">
+                                    CGV
+                                </Link>{" "}
+                                et notre{" "}
+                                <Link href="/confidentialite" className="underline">
+                                    politique de confidentialité
+                                </Link>
+                                .
                             </div>
                         </CardContent>
                     </Card>
-
-                    <div className="mt-6 text-center text-xs text-[#7f859b]">
-                        © {new Date().getFullYear()} KAHIER - CRM
-                    </div>
                 </div>
             </div>
+            </main>
+
+            <footer className="px-6 pb-8 text-center text-xs text-[#7f859b]">
+                <div>© {new Date().getFullYear()} KAHIER CRM</div>
+                <div className="mt-2 space-x-2">
+                    <Link href="/confidentialite" className="hover:underline">Politique de confidentialité</Link>
+                    <span>•</span>
+                    <Link href="/mentions-legales" className="hover:underline">Mentions légales</Link>
+                    <span>•</span>
+                    <Link href="/cgu" className="hover:underline">CGU</Link>
+                    <span>•</span>
+                    <Link href="/cgv" className="hover:underline">CGV</Link>
+                </div>
+            </footer>
         </div>
     );
 }

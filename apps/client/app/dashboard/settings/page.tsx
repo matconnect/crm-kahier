@@ -37,8 +37,8 @@ export default async function SettingsPage() {
                     <section className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
                         <div className="relative flex flex-col gap-3">
                             <div>
-                                <p className="text-xs uppercase tracking-[0.18em] text-[#8f93a9]">Configuration</p>
-                                <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Paramètres organisation</h1>
+                                <p className="text-xs uppercase  text-[#8f93a9]">Configuration</p>
+                                <h1 className="text-2xl font-bold  md:text-3xl">Paramètres organisation</h1>
                                 <p className="text-sm text-[#6f7488]">
                                     Gérez l&apos;entreprise, partagez le code d&apos;invitation et consultez les rôles des membres.
                                 </p>
