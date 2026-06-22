@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowUpRight, BriefcaseBusiness, CalendarRange, Clock3, Layers3, Plus, Target } from "lucide-react";
-
 import { requireAuth } from "@/lib/authz";
 import { getServerApiBase } from "@/lib/api-base";
 import { MotionReveal } from "@/components/motion/reveal";
@@ -46,18 +45,18 @@ type ProjectsResponse = {
 const STATUS_META = {
     DRAFT: {
         label: "En cadrage",
-        columnTone: "bg-sky-100 text-sky-700",
-        badgeTone: "bg-sky-50 text-sky-700",
+        columnTone: "bg-slate-100 text-slate-700",
+        badgeTone: "bg-slate-50 text-slate-700",
     },
     IN_PROGRESS: {
         label: "En production",
-        columnTone: "bg-amber-100 text-amber-700",
-        badgeTone: "bg-amber-50 text-amber-700",
+        columnTone: "bg-slate-100 text-slate-700",
+        badgeTone: "bg-slate-50 text-slate-700",
     },
     ON_HOLD: {
         label: "En pause",
-        columnTone: "bg-rose-100 text-rose-700",
-        badgeTone: "bg-rose-50 text-rose-700",
+        columnTone: "bg-slate-100 text-slate-700",
+        badgeTone: "bg-slate-50 text-slate-700",
     },
     COMPLETED: {
         label: "Clôturé",
@@ -164,35 +163,27 @@ export default async function ProjectsPage() {
             searchInteractions={interactions}
             searchProjects={searchProjects}
         >
-            <main className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+            <main className="mx-auto flex w-full max-w-7xl flex-col gap-6">
                 <MotionReveal>
-                    <section className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-8 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8 lg:px-10">
+                    <section className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
                         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                             <div className="space-y-3">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-[#e1e4ef] bg-white px-3 py-1 text-xs text-[#6f7488]">
-                                    Vue projets
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    Connecté : {session.user?.email}
-                                </div>
                                 <div>
                                     <h1 className="text-2xl font-bold  md:text-3xl">Projets</h1>
-                                    <p className="text-sm text-[#6f7488]">
-                                        Une lecture propre du pipeline, des échéances et de la charge réelle.
-                                    </p>
                                 </div>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
                                 <Link
                                     href="/dashboard/clients"
-                                    className="inline-flex items-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 py-2 text-sm font-medium text-[#2f3344]"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
                                 >
                                     Voir les clients
                                     <ArrowUpRight className="h-4 w-4" />
                                 </Link>
                                 <Link
                                     href="/dashboard/projects/new"
-                                    className="inline-flex items-center gap-2 rounded-full bg-[#111322] px-4 py-2 text-sm font-medium text-white"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#111322] px-4 text-sm font-medium text-white hover:bg-[#191d2e]"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Nouveau projet
@@ -201,56 +192,48 @@ export default async function ProjectsPage() {
                         </div>
 
                         <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <div className="mb-3 inline-flex rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
+                                <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
                                     <BriefcaseBusiness className="h-4 w-4" />
                                 </div>
                                 <p className="text-sm font-medium text-slate-500">Actifs</p>
                                 <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{activeProjects}</p>
-                                <p className="mt-2 text-sm leading-6 text-[#6f7488]">Projets ouverts, hors éléments clôturés.</p>
                             </div>
 
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <div className="mb-3 inline-flex rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
+                                <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
                                     <Target className="h-4 w-4" />
                                 </div>
                                 <p className="text-sm font-medium text-slate-500">Avancement moyen</p>
                                 <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{deliveryRate}%</p>
-                                <p className="mt-2 text-sm leading-6 text-[#6f7488]">Moyenne réelle calculée sur les projets chargés.</p>
                             </div>
 
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <div className="mb-3 inline-flex rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
+                                <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
                                     <Clock3 className="h-4 w-4" />
                                 </div>
                                 <p className="text-sm font-medium text-slate-500">Priorité haute</p>
                                 <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{summary.highPriority}</p>
-                                <p className="mt-2 text-sm leading-6 text-[#6f7488]">Dossiers à surveiller de près.</p>
                             </div>
 
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <div className="mb-3 inline-flex rounded-2xl bg-slate-950 p-2 text-amber-300 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
+                                <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
                                     <CalendarRange className="h-4 w-4" />
                                 </div>
                                 <p className="text-sm font-medium text-slate-500">Échéances proches</p>
                                 <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{summary.dueSoon}</p>
-                                <p className="mt-2 text-sm leading-6 text-[#6f7488]">Livrables planifiés sur les prochains jours.</p>
                             </div>
                         </div>
                     </section>
                 </MotionReveal>
 
-                <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
-                    <div className="space-y-8">
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+                    <div className="space-y-6">
                         <MotionReveal delay={70}>
                             <section id="projects-overview" className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
                                 <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                                     <div>
-                                        <p className="section-kicker">Vue d’ensemble</p>
-                                        <h2 className="mt-2 text-2xl font-semibold text-slate-950">Charge et exécution</h2>
-                                        <p className="mt-2 text-sm text-slate-600">
-                                            Données réelles issues du CRM projet, sans blocs de démonstration.
-                                        </p>
+                                        <h2 className="text-2xl font-semibold text-slate-950">Vue d’ensemble</h2>
                                     </div>
                                     <Badge variant="secondary" className="border border-[#d7dced] bg-[#f7f8fc] text-[#2f3344]">
                                         {summary.total} projets
@@ -259,11 +242,11 @@ export default async function ProjectsPage() {
 
                                 {hasApiIssue ? (
                                     <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-600">
-                                        Les données projets ne sont pas disponibles pour le moment. Vérifie le gateway et le service CRM.
+                                        Données indisponibles.
                                     </div>
                                 ) : projects.length === 0 ? (
                                     <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-600">
-                                        Aucun projet enregistré. Ouvre la page dédiée pour créer la première fiche projet.
+                                        Aucun projet.
                                     </div>
                                 ) : (
                                     <>
@@ -271,22 +254,18 @@ export default async function ProjectsPage() {
                                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
                                                 <p className="text-xs uppercase  text-slate-500">En cadrage</p>
                                                 <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.draft}</p>
-                                                <p className="mt-2 text-sm text-slate-600">Projets encore en phase de structuration.</p>
                                             </div>
                                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
                                                 <p className="text-xs uppercase  text-slate-500">En production</p>
                                                 <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.inProgress}</p>
-                                                <p className="mt-2 text-sm text-slate-600">Dossiers en cours d’exécution active.</p>
                                             </div>
                                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
                                                 <p className="text-xs uppercase  text-slate-500">En pause</p>
                                                 <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.onHold}</p>
-                                                <p className="mt-2 text-sm text-slate-600">Éléments à relancer ou arbitrer.</p>
                                             </div>
                                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
                                                 <p className="text-xs uppercase  text-slate-500">Clôturés</p>
                                                 <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.completed}</p>
-                                                <p className="mt-2 text-sm text-slate-600">Projets terminés côté CRM.</p>
                                             </div>
                                         </div>
 
@@ -318,9 +297,6 @@ export default async function ProjectsPage() {
                                                                 </Badge>
                                                             </div>
                                                         </div>
-                                                        {project.description ? (
-                                                            <p className="mt-3 text-sm text-slate-600">{project.description}</p>
-                                                        ) : null}
                                                         <p className="mt-2 text-xs text-slate-500">
                                                             Revenu {formatAmount(project.revenueAmount)} · Coût {formatAmount(project.costAmount)}
                                                         </p>
@@ -331,7 +307,7 @@ export default async function ProjectsPage() {
                                                             </div>
                                                             <div className="h-2 rounded-full bg-slate-100">
                                                                 <div
-                                                                    className="h-2 rounded-full bg-[linear-gradient(90deg,#f97316,#f59e0b)]"
+                                                                    className="h-2 rounded-full bg-slate-950"
                                                                     style={{ width: `${project.progress}%` }}
                                                                 />
                                                             </div>
@@ -348,8 +324,7 @@ export default async function ProjectsPage() {
                         <MotionReveal delay={130}>
                             <section id="projects-pipeline" className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
                                 <div className="mb-5">
-                                    <p className="section-kicker">Flux projets</p>
-                                    <h2 className="mt-2 text-2xl font-semibold text-slate-950">État des projets</h2>
+                                        <h2 className="text-2xl font-semibold text-slate-950">État des projets</h2>
                                 </div>
 
                                 {hasApiIssue ? (
@@ -371,7 +346,7 @@ export default async function ProjectsPage() {
 
                                                     {items.length === 0 ? (
                                                         <div className="rounded-[1.25rem] border border-dashed border-slate-200 bg-white/70 p-4 text-sm text-slate-500">
-                                                            Aucun projet dans cette colonne.
+                                                            Vide.
                                                         </div>
                                                     ) : (
                                                         <div className="space-y-3">
@@ -400,7 +375,7 @@ export default async function ProjectsPage() {
                                                                         </div>
                                                                         <div className="h-2 rounded-full bg-slate-100">
                                                                             <div
-                                                                                className="h-2 rounded-full bg-[linear-gradient(90deg,#f97316,#f59e0b)]"
+                                                                                className="h-2 rounded-full bg-slate-950"
                                                                                 style={{ width: `${project.progress}%` }}
                                                                             />
                                                                         </div>
@@ -432,17 +407,16 @@ export default async function ProjectsPage() {
                             <section className="h-fit rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                                 <div className="space-y-5">
                                     <div>
-                                        <p className="section-kicker">Planning</p>
-                                        <h2 className="mt-2 text-2xl font-semibold text-slate-950">Échéances proches</h2>
+                                        <h2 className="text-2xl font-semibold text-slate-950">Échéances proches</h2>
                                     </div>
 
                                     {hasApiIssue ? (
                                         <div className="rounded-[1.25rem] border border-dashed border-slate-300 bg-white/70 px-4 py-3 text-sm text-slate-600">
-                                            Les échéances ne sont pas disponibles pour le moment.
+                                            Indisponible.
                                         </div>
                                     ) : upcomingProjects.length === 0 ? (
                                         <div className="rounded-[1.25rem] border border-dashed border-slate-300 bg-white/70 px-4 py-3 text-sm text-slate-600">
-                                            Aucune échéance planifiée sur les projets actifs.
+                                            Aucune échéance.
                                         </div>
                                     ) : (
                                         <div className="space-y-3">
@@ -469,21 +443,15 @@ export default async function ProjectsPage() {
                                     )}
 
                                     <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#f7f8fc] px-4 py-4">
-                                        <p className="text-xs uppercase  text-[#8f93a9]">Cadence</p>
-                                        <p className="mt-3 text-sm font-medium text-[#1e2234]">{summary.dueSoon} échéance(s) proche(s)</p>
-                                        <p className="mt-1 text-sm text-[#6f7488]">
-                                            Lecture en temps réel des fins prévues sur les projets non clôturés.
-                                        </p>
+                                        <p className="text-sm font-medium text-[#1e2234]">{summary.dueSoon} échéance(s)</p>
                                     </div>
 
                                     <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
                                         <div className="flex items-center gap-2 text-slate-950">
-                                            <Layers3 className="h-4 w-4 text-emerald-600" />
-                                            <span className="text-sm font-medium">Lecture CRM</span>
+                                            <Layers3 className="h-4 w-4 text-slate-700" />
+                                            <span className="text-sm font-medium">CRM</span>
                                         </div>
-                                        <p className="mt-2 text-sm text-slate-600">
-                                            {summary.inProgress} en production, {summary.onHold} en pause, {summary.completed} clôturé(s).
-                                        </p>
+                                        <p className="mt-2 text-sm text-slate-600">{summary.inProgress} production · {summary.completed} clôturé(s)</p>
                                     </div>
                                 </div>
                             </section>
@@ -491,15 +459,11 @@ export default async function ProjectsPage() {
                             <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                                 <div className="space-y-4">
                                     <div>
-                                        <p className="section-kicker">Création</p>
-                                        <h2 className="mt-2 text-2xl font-semibold text-slate-950">Nouvelle fiche projet</h2>
-                                        <p className="mt-2 text-sm text-slate-600">
-                                            Ouvre la page dédiée pour renseigner une fiche projet complète et exploitable.
-                                        </p>
+                                        <h2 className="text-2xl font-semibold text-slate-950">Nouvelle fiche projet</h2>
                                     </div>
                                     <Link
                                         href="/dashboard/projects/new"
-                                        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#111322] px-4 py-3 text-sm font-medium text-white"
+                                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#111322] px-4 text-sm font-medium text-white hover:bg-[#191d2e]"
                                     >
                                         <Plus className="h-4 w-4" />
                                         Créer un projet détaillé

@@ -108,11 +108,11 @@ export function HomeDashboardOverview({ summary, interactions, clients, projects
 
     return (
         <div className="space-y-5">
-            <div className="flex justify-end">
-                <label className="inline-flex items-center gap-2 rounded-xl border border-[#d7dced] bg-white px-3 py-2 text-sm font-semibold text-[#434965]">
-                    Période
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <h1 className="text-3xl font-semibold tracking-normal text-[#11131d]">Tableau de bord</h1>
+                <label className="inline-flex items-center gap-2 rounded-lg border border-[#dfe3ec] bg-white px-3 py-2 text-sm font-semibold text-[#434965] shadow-[0_8px_22px_rgba(28,35,54,0.04)]">
                     <Select value={period} onValueChange={(value) => setPeriod(value as PeriodKey)}>
-                        <SelectTrigger className="h-8 w-[190px] bg-white text-[#2f3344]">
+                        <SelectTrigger className="h-8 w-[170px] border-0 bg-white px-0 text-[#2f3344] shadow-none">
                             <SelectValue placeholder="Choisir la période" />
                         </SelectTrigger>
                         <SelectContent>
@@ -126,7 +126,13 @@ export function HomeDashboardOverview({ summary, interactions, clients, projects
                 </label>
             </div>
 
-            <HomePerformanceSection summary={filteredSummary} projects={filteredProjects} period={period} />
+            <HomePerformanceSection
+                summary={filteredSummary}
+                interactions={filteredInteractions}
+                clients={filteredClients}
+                projects={filteredProjects}
+                period={period}
+            />
             <HomeInsightsSection
                 summary={filteredSummary}
                 interactions={filteredInteractions}

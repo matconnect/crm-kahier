@@ -5,7 +5,7 @@ export function DashboardPreview() {
         <aside className="border-r border-slate-200 bg-[#f7f8fc] p-3">
           <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
             <div className="text-[0.62rem] uppercase  text-slate-500">CRM</div>
-            <div className="display-title text-sm text-slate-900">KAHIER</div>
+            <div className="font-black text-sm text-slate-900">KAHIER</div>
           </div>
 
           <div className="mt-3 space-y-2">

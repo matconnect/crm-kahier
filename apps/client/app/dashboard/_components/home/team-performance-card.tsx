@@ -29,10 +29,6 @@ export function TeamPerformanceCard({ summary }: TeamPerformanceCardProps) {
                     <p className="mt-3 text-4xl font-bold">{summary.interactions}</p>
                 </div>
             </div>
-
-            <div className="mt-6 h-40 rounded-2xl border border-dashed border-[#d7dced] bg-white/65 p-4 text-sm text-[#7f859b]">
-                Vue graphique dédiée (courbe de performance) à brancher sur ton module analytics.
-            </div>
         </section>
     );
 }

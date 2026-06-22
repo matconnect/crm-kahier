@@ -2,12 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, MapPin, Search, SlidersHorizontal, Tag } from "lucide-react";
+import { MapPin, Search, SlidersHorizontal, Tag } from "lucide-react";
 import { CLIENT_SEGMENT_OPTIONS, CLIENT_STATUS_OPTIONS } from "@/lib/client-enums";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -108,16 +107,9 @@ export function ClientsFilters({ searchParams }: FiltersProps) {
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                     <h2 className="text-lg font-semibold text-slate-950">Filtres</h2>
-                    <p className="text-sm text-slate-600">Affinez par statut, segment.</p>
                 </div>
-                <Badge variant="secondary" className="gap-1 bg-orange-50 text-orange-700">
-                    <Filter className="h-3 w-3" />
-                    Vue filtrée
-                </Badge>
             </div>
-
-            <Card className="crm-card">
-                <CardContent className="flex gap-4 p-4 sm:flex-row flex-col">
+                <div className="flex gap-4 p-4 sm:flex-row flex-col">
                     <div className="space-y-2">
                         <Label htmlFor="search">Recherche</Label>
                         <div className="relative">
@@ -164,7 +156,7 @@ export function ClientsFilters({ searchParams }: FiltersProps) {
                             </Select>
                         </div>
                     </div>
-                </CardContent>
+                </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 px-4 py-3">
                     <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -182,12 +174,11 @@ export function ClientsFilters({ searchParams }: FiltersProps) {
                                 {f.value}
                             </Badge>
                         ))}
-                        <Button variant="ghost" size="sm" className="rounded-full" onClick={resetFilters} disabled={pending}>
+                        <Button variant="outline" size="sm" className="rounded-full" onClick={resetFilters} disabled={pending}>
                             Réinitialiser
                         </Button>
                     </div>
                 </div>
-            </Card>
         </section>
     );
 }

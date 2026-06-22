@@ -22,9 +22,10 @@ import { MultiInput } from "@/components/ui/multi-input";
 type Props = {
     clientId: string;
     currentUserId: string;
+    triggerClassName?: string;
 };
 
-export function AddContactDialog({ clientId, currentUserId }: Props) {
+export function AddContactDialog({ clientId, currentUserId, triggerClassName }: Props) {
     const apiBase = getBrowserApiBase();
     const [open, setOpen] = React.useState(false);
     const [pending, setPending] = React.useState(false);
@@ -114,7 +115,7 @@ export function AddContactDialog({ clientId, currentUserId }: Props) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 text-black">
+                <Button variant="outline" size="sm" className={["gap-2 text-black", triggerClassName ?? ""].filter(Boolean).join(" ")}>
                     <UserPlus className="h-4 w-4" />
                     Ajouter un contact
                 </Button>

@@ -132,7 +132,7 @@ export async function DashboardTopBar({
                                 Accueil
                             </Link>
                         </Button>
-                        <Button asChild size="sm" className="btn-dark gap-2 rounded-full border-0">
+                        <Button asChild size="sm" className="gap-2 rounded-full border border-slate-800 bg-slate-950 text-white hover:bg-black">
                             <Link href="/dashboard/settings">
                                 <Settings className="h-4 w-4" />
                                 Paramètres
@@ -148,7 +148,7 @@ export async function DashboardTopBar({
                             <a
                                 key={link.href}
                                 href={link.href}
-                                className="nav-pill rounded-full px-3 py-1 transition"
+                                className="border border-slate-200 bg-white/80 text-slate-600 backdrop-blur-sm hover:bg-white hover:text-slate-950 rounded-full px-3 py-1 transition"
                             >
                                 {link.label}
                             </a>

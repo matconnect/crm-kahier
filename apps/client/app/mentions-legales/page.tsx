@@ -9,7 +9,7 @@ export default function MentionsLegalesPage() {
   return (
     <main className="min-h-screen bg-[#dfe1ea] px-4 py-8 md:px-6 md:py-10">
       <div className="mx-auto max-w-4xl rounded-[2rem] border border-slate-200/80 bg-white p-6 md:p-8">
-        <h1 className="display-title text-3xl text-slate-950">Mentions légales</h1>
+        <h1 className="font-black text-3xl text-slate-950">Mentions légales</h1>
         <p className="mt-4 text-sm text-slate-600">Dernière mise à jour : 26 mai 2026</p>
 
         <div className="mt-8 space-y-6 text-sm leading-7 text-slate-700">

@@ -14,7 +14,7 @@ import { getServerApiBase } from "@/lib/api-base";
 import { requireAuth } from "@/lib/authz";
 import { MotionReveal } from "@/components/motion/reveal";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardShell, fetchDashboardData } from "../../_components";
 
 type DetailPageProps = {
@@ -50,9 +50,9 @@ type ProjectDetail = {
 };
 
 const STATUS_META = {
-    DRAFT: { label: "En cadrage", tone: "bg-sky-50 text-sky-700 border-sky-200" },
-    IN_PROGRESS: { label: "En production", tone: "bg-amber-50 text-amber-700 border-amber-200" },
-    ON_HOLD: { label: "En pause", tone: "bg-rose-50 text-rose-700 border-rose-200" },
+    DRAFT: { label: "En cadrage", tone: "bg-slate-50 text-slate-700 border-slate-200" },
+    IN_PROGRESS: { label: "En production", tone: "bg-slate-50 text-slate-700 border-slate-200" },
+    ON_HOLD: { label: "En pause", tone: "bg-slate-50 text-slate-700 border-slate-200" },
     COMPLETED: { label: "Clôturé", tone: "bg-slate-100 text-slate-700 border-slate-200" },
 } as const;
 
@@ -164,9 +164,6 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                 </div>
                                 <div>
                                     <h1 className="text-2xl font-bold  text-[#1f2335] md:text-3xl">{project.name}</h1>
-                                    <p className="mt-2 max-w-3xl text-sm text-[#6f7488]">
-                                        {project.description || "Projet sans résumé renseigné pour le moment."}
-                                    </p>
                                 </div>
                                 <div className="flex flex-wrap gap-5 text-sm text-[#6f7488]">
                                     <span>Client : {project.client?.name ?? "Sans client"}</span>
@@ -178,7 +175,7 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                             <div className="flex flex-wrap items-center gap-2">
                                 <Link
                                     href="/dashboard/projects"
-                                    className="inline-flex items-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 py-2 text-sm font-medium text-[#2f3344]"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
                                 >
                                     <ArrowLeft className="h-4 w-4" />
                                     Retour liste
@@ -186,7 +183,7 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                 {canEdit ? (
                                     <Link
                                         href={`/dashboard/projects/${project.id}/edit`}
-                                        className="inline-flex items-center gap-2 rounded-full bg-[#111322] px-4 py-2 text-sm font-medium text-white"
+                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#111322] px-4 text-sm font-medium text-white hover:bg-[#191d2e]"
                                     >
                                         <FilePenLine className="h-4 w-4" />
                                         Modifier la fiche
@@ -255,10 +252,9 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
                     <MotionReveal delay={80}>
                         <section className="space-y-6" id="project-details">
-                            <Card className="surface-panel rounded-[2rem] border-0">
+                            <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
                                 <CardHeader>
                                     <CardTitle className="text-xl text-slate-950">Détail du projet</CardTitle>
-                                    <CardDescription>Lecture complète de la fiche projet enregistrée dans le CRM.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="grid gap-4 md:grid-cols-2">
                                     <DetailBlock title="Contexte" content={project.context} />
@@ -275,10 +271,9 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
 
                     <MotionReveal delay={120}>
                         <aside className="space-y-6 xl:sticky xl:top-28" id="project-insights">
-                            <Card className="surface-panel rounded-[2rem] border-0">
+                            <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-slate-950">Lecture rapide</CardTitle>
-                                    <CardDescription>Les points opérationnels utiles sans ouvrir le formulaire.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
@@ -301,7 +296,7 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                         <p className="mt-2 text-sm font-medium text-slate-950">{project.progress}% réalisé</p>
                                         <div className="mt-3 h-2 rounded-full bg-slate-100">
                                             <div
-                                                className="h-2 rounded-full bg-[linear-gradient(90deg,#f97316,#f59e0b)]"
+                                                className="h-2 rounded-full bg-slate-950"
                                                 style={{ width: `${project.progress}%` }}
                                             />
                                         </div>
@@ -313,16 +308,15 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                 </CardContent>
                             </Card>
 
-                            <Card className="surface-panel rounded-[2rem] border-0">
+                            <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-slate-950">Repères projet</CardTitle>
-                                    <CardDescription>Les champs qui donnent le cadre de pilotage.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     {canEdit ? (
                                         <Link
                                             href={`/dashboard/projects/${project.id}/edit`}
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border-0 bg-[#111322] px-4 py-3 text-sm font-medium text-white hover:bg-[#191d2e]"
+                                            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border-0 bg-[#111322] px-4 text-sm font-medium text-white hover:bg-[#191d2e]"
                                         >
                                             <FilePenLine className="h-4 w-4" />
                                             Modifier le projet
@@ -334,14 +328,14 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                                     )}
                                     <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-slate-700">
                                         <div className="flex items-center gap-2 text-slate-950">
-                                            <Target className="h-4 w-4 text-amber-600" />
+                                            <Target className="h-4 w-4 text-slate-700" />
                                             <span className="text-sm font-medium">Cadrage</span>
                                         </div>
                                         <p className="mt-2 text-sm leading-6">{project.goals?.trim() || "Aucun objectif formalisé pour le moment."}</p>
                                     </div>
                                     <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-slate-700">
                                         <div className="flex items-center gap-2 text-slate-950">
-                                            <Target className="h-4 w-4 text-emerald-600" />
+                                            <Target className="h-4 w-4 text-slate-700" />
                                             <span className="text-sm font-medium">Livrables attendus</span>
                                         </div>
                                         <p className="mt-2 text-sm leading-6">{project.deliverables?.trim() || "Aucun livrable renseigné."}</p>

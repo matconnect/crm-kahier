@@ -5,7 +5,6 @@ import { Loader2, User } from "lucide-react";
 import { toast } from "sonner";
 import { getBrowserApiBase } from "@/lib/public-api-base";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -102,12 +101,11 @@ export function ProfileSection({ userId, email: initialEmail, initialFirstName =
     if (loading) return null;
 
     return (
-        <Card className="border-muted/60">
-            <CardHeader>
-                <CardTitle className="text-base">Profil</CardTitle>
-                <CardDescription>Mettez à jour votre nom, email et mot de passe.</CardDescription>
-            </CardHeader>
-            <CardContent>
+        <div>
+            <div>
+                <div className="text-lg">Profil</div>
+            </div>
+            <div className="mt-4">
                 <form className="grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
                     <div className="space-y-2">
                         <Label>Prénom</Label>
@@ -145,7 +143,7 @@ export function ProfileSection({ userId, email: initialEmail, initialFirstName =
                         </Button>
                     </div>
                 </form>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

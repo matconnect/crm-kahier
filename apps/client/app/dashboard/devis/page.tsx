@@ -6,7 +6,6 @@ export default async function DevisPage() {
     return (
         <FutureModulePage
             title="Devis"
-            description="Le module devis permettra de générer, valider et historiser les propositions commerciales liées aux clients et aux projets."
             activeMenu="devis"
         />
     );

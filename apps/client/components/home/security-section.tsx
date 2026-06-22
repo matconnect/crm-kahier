@@ -8,7 +8,7 @@ export function SecuritySection() {
       <div className="mb-6 grid gap-4 lg:grid-cols-2 lg:items-end">
         <div className="space-y-2">
           <p className="text-xs uppercase  text-slate-500">Organisation</p>
-          <h2 className="display-title text-2xl text-slate-950 md:text-3xl">Une structure claire pour l’équipe</h2>
+          <h2 className="font-black text-2xl text-slate-950 md:text-3xl">Une structure claire pour l’équipe</h2>
         </div>
       </div>
 

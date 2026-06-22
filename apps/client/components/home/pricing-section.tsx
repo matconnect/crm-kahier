@@ -82,7 +82,7 @@ export function PricingSection() {
       <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 md:p-8">
         <div className="text-center">
           <p className="text-xs uppercase  text-slate-500">Tarifs</p>
-          <h2 className="mt-2 display-title text-3xl text-slate-950 md:text-4xl">Choisissez votre plan</h2>
+          <h2 className="mt-2 font-black text-3xl text-slate-950 md:text-4xl">Choisissez votre plan</h2>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-600">
             Une grille claire, sans surprise, avec le même design que le dashboard.
           </p>

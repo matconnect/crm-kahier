@@ -15,7 +15,7 @@ export function TopBar({ session }: { session: SessionData }) {
             <Image src="/icons/jwin-1.png" alt="Logo KAHIER" width={36} height={36} className="rounded-lg" priority />
             <div className="leading-tight">
               <div className="text-[0.68rem] uppercase  text-slate-500">CRM</div>
-              <div className="display-title text-base text-slate-950">KAHIER</div>
+              <div className="font-black text-base text-slate-950">KAHIER</div>
             </div>
           </Link>
 

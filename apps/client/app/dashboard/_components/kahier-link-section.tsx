@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { RefreshCcw } from "lucide-react";
 import { getBrowserApiBase } from "@/lib/public-api-base";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -233,13 +232,10 @@ export function KahierLinkSection({ userId, role }: Props) {
     const canManage = role !== "USER";
 
     return (
-        <Card className="border-muted/60">
-            <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <div>
+            <div className="flex flex-row items-center justify-between gap-4">
                 <div className="space-y-1">
-                    <CardTitle className="text-base">Intégration Kahier</CardTitle>
-                    <CardDescription>
-                        Renseignez uniquement la clé API de l&apos;établissement Kahier pour activer les requêtes.
-                    </CardDescription>
+                    <h2 className="text-base">Intégration Kahier</h2>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => void loadStatus()} disabled={loading}>
@@ -247,11 +243,10 @@ export function KahierLinkSection({ userId, role }: Props) {
                         Actualiser
                     </Button>
                 </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="rounded-lg border border-muted/60 px-4 py-3">
+            </div>
+            <div className="space-y-4">
+                <div className="">
                     <div className="space-y-3">
-                        <div className="text-xs font-medium uppercase text-muted-foreground">Statut clé API établissement</div>
                         {hasSavedApiKey ? (
                             <p className="text-sm text-slate-700">Clé API enregistrée et masquée.</p>
                         ) : (
@@ -295,7 +290,7 @@ export function KahierLinkSection({ userId, role }: Props) {
                                 </Button>
                             ) : null}
                         </div>
-                        {scopesError ? <p className="text-xs text-amber-700">{scopesError}</p> : null}
+                        {scopesError ? <p className="text-xs text-slate-700">{scopesError}</p> : null}
                         {scopes.length > 0 ? (
                             <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
                                 <p className="mb-3 font-medium text-slate-900">Permissions API ({scopes.length})</p>
@@ -311,7 +306,7 @@ export function KahierLinkSection({ userId, role }: Props) {
                         ) : null}
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

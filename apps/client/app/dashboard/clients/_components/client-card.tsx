@@ -13,7 +13,6 @@ import { Separator } from "@/components/ui/separator";
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -85,13 +84,13 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
     );
 
     return (
-        <Card className="crm-card h-full">
+        <Card className="rounded-lg border border-slate-200 bg-white/95 shadow-[0_16px_42px_rgba(28,35,54,0.06)] backdrop-blur-sm transition hover:-translate-y-px hover:shadow-[0_20px_54px_rgba(28,35,54,0.08)] h-full">
             <CardHeader className="space-y-2">
                 <div className="flex items-start justify-between">
                     <div className="space-y-1">
                         <div className="inline-flex items-center gap-2">
                             <Badge variant="outline" className="border-slate-300 bg-white/70">{segmentLabel}</Badge>
-                            <Badge variant="secondary" className="bg-orange-50 text-orange-700">{statusLabel}</Badge>
+                            <Badge variant="secondary" className="bg-slate-100 text-slate-700">{statusLabel}</Badge>
                         </div>
                         <CardTitle className="text-lg text-slate-950">
                             <Link href={`/dashboard/clients/${client.id}`} className="hover:underline">
@@ -118,10 +117,6 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                     <Mail className="h-4 w-4" />
                     Dernière interaction : <span className="text-slate-950">{lastActivity}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    Source de revenu : <span className="text-slate-950">{revenueSourceLabel}</span>
-                </div>
                 <Separator className="bg-slate-200/70" />
                 <ContactFlash
                     primaryPhone={primaryPhone}
@@ -136,60 +131,63 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                             Voir les interactions
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="w-[calc(100vw-2rem)] max-w-xl max-h-[90vh] overflow-hidden rounded-2xl">
-                        <div className="flex max-h-[90vh] flex-col gap-3">
-                            <DialogHeader>
-                                <DialogTitle>Interactions récentes</DialogTitle>
-                                <DialogDescription>Les interactions les plus récentes enregistrées pour ce client.</DialogDescription>
-                            </DialogHeader>
-                            <div className="flex-1 max-h-[20vh] space-y-2 overflow-y-auto pr-1">
-                                {client.interactions.length === 0 && (
-                                    <p className="text-sm text-muted-foreground">Aucune interaction enregistrée.</p>
-                                )}
-                                {pagedInteractions.map((interaction) => (
-                                    <div key={interaction.id} className="rounded-[1.25rem] border border-dashed border-slate-300 px-3 py-2">
-                                        <div className="flex flex-col gap-1 text-sm font-medium sm:flex-row sm:items-center sm:justify-between">
-                                            <span className="truncate">{interaction.type}</span>
-                                            <span className="text-xs text-slate-500 sm:shrink-0">
-                                                {format(new Date(interaction.occurredAt), "Pp", { locale: fr })}
-                                            </span>
+                    <DialogContent className="w-[calc(100vw-2rem)] max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl p-0">
+                        <div className="grid max-h-[92vh] min-h-0 gap-0 lg:grid-cols-[minmax(0,1fr)_520px]">
+                            <section className="flex min-h-0 flex-col border-b border-slate-200 bg-white p-5 lg:border-b-0 lg:border-r lg:p-6">
+                                <DialogHeader className="shrink-0">
+                                    <DialogTitle>Interactions</DialogTitle>
+                                </DialogHeader>
+                                <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+                                    {client.interactions.length === 0 && (
+                                        <p className="rounded-[1.25rem] border border-dashed border-slate-300 px-3 py-4 text-sm text-muted-foreground">
+                                            Aucune interaction.
+                                        </p>
+                                    )}
+                                    {pagedInteractions.map((interaction) => (
+                                        <div key={interaction.id} className="rounded-[1.25rem] border border-dashed border-slate-300 px-3 py-2">
+                                            <div className="flex flex-col gap-1 text-sm font-medium sm:flex-row sm:items-center sm:justify-between">
+                                                <span className="truncate">{interaction.type}</span>
+                                                <span className="text-xs text-slate-500 sm:shrink-0">
+                                                    {format(new Date(interaction.occurredAt), "Pp", { locale: fr })}
+                                                </span>
+                                            </div>
+                                            {interaction.summary && (
+                                                <p className="mt-1 text-sm text-slate-500 line-clamp-3 break-words">
+                                                    {interaction.summary}
+                                                </p>
+                                            )}
+                                            {interaction.type === "Réunion" && interaction.meetingStart && interaction.meetingEnd && (
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    {format(new Date(interaction.meetingStart), "Pp", { locale: fr })} →{" "}
+                                                    {format(new Date(interaction.meetingEnd), "Pp", { locale: fr })}
+                                                </p>
+                                            )}
+                                            {interaction.user && (
+                                                <p className="mt-1 text-xs text-slate-500 line-clamp-2 break-words">
+                                                    Par{" "}
+                                                    {`${interaction.user.firstName ?? ""} ${interaction.user.lastName ?? ""}`.trim() ||
+                                                        interaction.user.email ||
+                                                        "Utilisateur"}
+                                                </p>
+                                            )}
+                                            {interaction.collaborators && interaction.collaborators.length > 0 && (
+                                                <p className="text-xs text-slate-500 line-clamp-2 break-words">
+                                                    Avec{" "}
+                                                    {interaction.collaborators
+                                                        .map(
+                                                            (collaborator) =>
+                                                                `${collaborator.firstName ?? ""} ${collaborator.lastName ?? ""}`.trim() ||
+                                                                collaborator.email ||
+                                                                "Collaborateur",
+                                                        )
+                                                        .join(", ")}
+                                                </p>
+                                            )}
                                         </div>
-                                        {interaction.summary && (
-                                            <p className="mt-1 text-sm text-slate-500 line-clamp-3 break-words">
-                                                {interaction.summary}
-                                            </p>
-                                        )}
-                                        {interaction.type === "Réunion" && interaction.meetingStart && interaction.meetingEnd && (
-                                            <p className="mt-1 text-xs text-slate-500">
-                                                {format(new Date(interaction.meetingStart), "Pp", { locale: fr })} →{" "}
-                                                {format(new Date(interaction.meetingEnd), "Pp", { locale: fr })}
-                                            </p>
-                                        )}
-                                        {interaction.user && (
-                                            <p className="mt-1 text-xs text-slate-500 line-clamp-2 break-words">
-                                                Par{" "}
-                                                {`${interaction.user.firstName ?? ""} ${interaction.user.lastName ?? ""}`.trim() ||
-                                                    interaction.user.email ||
-                                                    "Utilisateur"}
-                                            </p>
-                                        )}
-                                        {interaction.collaborators && interaction.collaborators.length > 0 && (
-                                            <p className="text-xs text-slate-500 line-clamp-2 break-words">
-                                                Avec{" "}
-                                                {interaction.collaborators
-                                                    .map(
-                                                        (collaborator) =>
-                                                            `${collaborator.firstName ?? ""} ${collaborator.lastName ?? ""}`.trim() ||
-                                                            collaborator.email ||
-                                                            "Collaborateur",
-                                                    )
-                                                    .join(", ")}
-                                            </p>
-                                        )}
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                                 {client.interactions.length > 0 && (
-                                    <div className="flex items-center justify-between pt-1 text-xs text-slate-500">
+                                    <div className="mt-4 flex shrink-0 items-center justify-between border-t border-slate-200 pt-3 text-xs text-slate-500">
                                         <span>
                                             Page {page} / {totalPages}
                                         </span>
@@ -215,12 +213,12 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                            {interactionDialogOpen ? (
-                                <div className="max-h-[40vh] overflow-y-auto pr-1 pt-1">
+                            </section>
+                            <section className="min-h-0 overflow-y-auto bg-[#f8f9fd] p-5 lg:p-6">
+                                {interactionDialogOpen ? (
                                     <LogInteraction clientId={client.id} currentUserId={currentUserId} enabled={interactionDialogOpen} />
-                                </div>
-                            ) : null}
+                                ) : null}
+                            </section>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -246,7 +244,7 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                         currentUserId={currentUserId}
                         triggerClassName="w-full justify-center gap-2"
                     />
-                    <Button asChild variant="outline" size="sm" className="gap-2 w-full rounded-full border-slate-300 bg-white/80">
+                    <Button asChild variant="outline" size="sm" className="gap-2 w-full bg-white/80">
                         <Link href={`/dashboard/clients/${client.id}`} className="text-slate-950">
                             Voir le détail
                         </Link>

@@ -153,36 +153,26 @@ export default async function EditProjectPage({ params }: EditPageProps) {
                 <MotionReveal>
                     <div className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
                         <div className="relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div className="space-y-2">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-[#e1e4ef] bg-white px-3 py-1 text-xs text-[#6f7488]">
-                                    Édition projet
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    Connecté : {session.user?.email}
-                                </div>
-                                <div>
-                                    <h1 className="text-2xl font-bold  text-[#1f2335] md:text-3xl">Modifier {project.name}</h1>
-                                    <p className="text-sm text-[#6f7488]">
-                                        Mets à jour la fiche projet complète sans mélanger lecture et édition sur la même page.
-                                    </p>
-                                </div>
+                            <div>
+                                <h1 className="text-2xl font-bold  text-[#1f2335] md:text-3xl">Modifier {project.name}</h1>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
                                 <Link
                                     href={`/dashboard/projects/${project.id}`}
-                                    className="inline-flex items-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 py-2 text-sm font-medium text-[#2f3344]"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
                                 >
                                     <ArrowLeft className="h-4 w-4" />
                                     Retour fiche
                                 </Link>
                                 <Link
                                     href="/dashboard/projects"
-                                    className="inline-flex items-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 py-2 text-sm font-medium text-[#2f3344]"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
                                 >
                                     <LayoutGrid className="h-4 w-4" />
                                     Retour liste
                                 </Link>
-                                <Button asChild className="gap-2 rounded-full border-0 bg-[#111322] text-white hover:bg-[#191d2e]">
+                                <Button asChild className="h-10 gap-2 rounded-full border-0 bg-[#111322] px-4 text-white hover:bg-[#191d2e]">
                                     <button type="submit" form="project-form">
                                         <Save className="h-4 w-4" />
                                         Enregistrer les modifications

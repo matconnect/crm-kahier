@@ -187,21 +187,6 @@ export function CreateClientForm({ currentUserId, currentUserLabel, currentUserE
 
     return (
         <form id="client-create-form" onSubmit={handleSubmit} className="space-y-6">
-            <Card className="crm-card border-dashed">
-                <CardContent className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm text-slate-500">
-                    <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                        Assigné à :{" "}
-                        <span className="font-medium text-slate-950">
-                            {owners.find((o) => o.id === form.ownerIds[0])?.label ?? "Moi"}
-                        </span>
-                    </div>
-                    <div className="text-xs md:text-sm">
-                        Les notes restent internes. Plusieurs contacts peuvent être ajoutés dès maintenant.
-                    </div>
-                </CardContent>
-            </Card>
-
             <div className="grid gap-6">
                 <ClientInfoCard
                     form={form}

@@ -54,7 +54,7 @@ export function FocusCard({ summary, interactions }: FocusCardProps) {
     const focus = getFocus(summary, portfolioSize);
 
     return (
-        <section className="rounded-[28px] border border-white/70 bg-gradient-to-br from-[#fefeff] to-[#f7f2ff] p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-7">
+        <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-7">
             <p className="text-xs uppercase  text-[#8f93a9]">Portefeuille total</p>
             <p className="mt-3 text-6xl font-black leading-none">{portfolioSize}</p>
             <p className="mt-1 text-sm text-[#6d7288]">

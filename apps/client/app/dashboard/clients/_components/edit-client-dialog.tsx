@@ -179,7 +179,6 @@ export function EditClientDialog(props: Props) {
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Modifier le client</DialogTitle>
-                    <DialogDescription>Met à jour les informations principales.</DialogDescription>
                 </DialogHeader>
                 <form className="space-y-3" onSubmit={onSubmit}>
                     <div className="space-y-2">

@@ -57,7 +57,7 @@ export function InteractionDetailsPanel({
 
                     <Link
                         href={`/dashboard/clients/${selectedInteraction.clientId}`}
-                        className="inline-flex items-center rounded-full border border-[#d7dced] bg-white px-4 py-2 text-sm font-semibold text-[#2f3344]"
+                        className="inline-flex h-10 items-center justify-center rounded-full border border-[#d7dced] bg-white px-4 text-sm font-semibold text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
                     >
                         Ouvrir la fiche client
                     </Link>

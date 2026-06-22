@@ -32,9 +32,8 @@ export async function DashboardShell({
     searchProjects = [],
     children,
 }: DashboardShellProps) {
-    // TODO(modules): brancher les vrais compteurs devis/factures quand les modules seront implémentés.
     const devisCount = 0;
-    const facturesCount = 0;
+    let facturesCount = 0;
 
     const session = await auth();
     let subscriptionType = session?.user?.subscriptionType ?? "STARTER_FREE";
@@ -42,13 +41,23 @@ export async function DashboardShell({
     const apiBase = getServerApiBase();
     if (userId && apiBase) {
         try {
-            const response = await fetch(`${apiBase}/profile/subscription`, {
-                cache: "no-store",
-                headers: { "x-user-id": userId },
-            });
-            if (response.ok) {
-                const data = (await response.json()) as { company?: { subscriptionType?: string | null } };
+            const [subscriptionResponse, invoicesResponse] = await Promise.all([
+                fetch(`${apiBase}/profile/subscription`, {
+                    cache: "no-store",
+                    headers: { "x-user-id": userId },
+                }),
+                fetch(`${apiBase}/invoices/summary`, {
+                    cache: "no-store",
+                    headers: { "x-user-id": userId },
+                }),
+            ]);
+            if (subscriptionResponse.ok) {
+                const data = (await subscriptionResponse.json()) as { company?: { subscriptionType?: string | null } };
                 subscriptionType = data.company?.subscriptionType ?? subscriptionType;
+            }
+            if (invoicesResponse.ok) {
+                const data = (await invoicesResponse.json()) as { total?: number };
+                facturesCount = data.total ?? 0;
             }
         } catch {
             // Fallback silencieux sur la session locale.
@@ -56,8 +65,8 @@ export async function DashboardShell({
     }
 
     return (
-        <div className="min-h-screen w-full bg-[#eef0f6] text-[#14151b]">
-            <div className="grid min-h-screen w-full lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="min-h-screen w-full bg-[#e8edf2] p-0 text-[#10121a] lg:p-5">
+            <div className="mx-auto grid min-h-screen w-full max-w-[1720px] overflow-hidden bg-[#fbfcff] shadow-[0_24px_80px_rgba(31,38,58,0.10)] lg:min-h-[calc(100vh-2.5rem)] lg:grid-cols-[300px_minmax(0,1fr)] lg:rounded-[28px] lg:border lg:border-white">
                 <SidebarMenu
                     email={email}
                     activeClients={summary.active}
@@ -70,7 +79,7 @@ export async function DashboardShell({
                     subscriptionType={subscriptionType}
                 />
 
-                <section className="flex min-w-0 flex-col">
+                <section className="flex min-w-0 flex-col bg-[#f7f8fc]">
                     <DashboardTopHeader
                         firstName={firstName}
                         searchValue={searchValue}
@@ -78,7 +87,7 @@ export async function DashboardShell({
                         searchInteractions={searchInteractions}
                         searchProjects={searchProjects}
                     />
-                    <div className="min-h-0 flex-1 bg-[#edf0f7] p-4 md:p-8">{children}</div>
+                    <div className="min-h-0 flex-1 border-t border-[#e6e9f0] bg-[#f7f8fc] p-4 md:p-7">{children}</div>
                 </section>
             </div>
         </div>

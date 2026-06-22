@@ -261,7 +261,6 @@ export function ClientDocumentsCard({ clientId, currentUserId, canEdit }: Props)
         <Card className="border-muted/60">
             <CardHeader>
                 <CardTitle className="text-base">Documents</CardTitle>
-                <CardDescription>Ajoute et conserve les fichiers liés à ce client.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 {canEdit && (

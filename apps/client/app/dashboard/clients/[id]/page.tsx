@@ -8,7 +8,7 @@ import type { Role } from "@/lib/roles";
 import { MotionReveal } from "@/components/motion/reveal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LogInteraction } from "../_components/log-interaction";
 import { InteractionsList } from "../_components/interactions-list";
@@ -23,6 +23,9 @@ import { DashboardShell, fetchDashboardData } from "../../_components";
 type DetailPageProps = {
     params: Promise<{ id: string }>;
 };
+
+const actionButtonClass =
+    "h-10 rounded-full border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]";
 
 type ClientDetail = {
     id: string;
@@ -75,9 +78,9 @@ type ClientDetail = {
 };
 
 const PROJECT_STATUS_META = {
-    DRAFT: { label: "En cadrage", tone: "bg-sky-50 text-sky-700 border-sky-200" },
-    IN_PROGRESS: { label: "En production", tone: "bg-amber-50 text-amber-700 border-amber-200" },
-    ON_HOLD: { label: "En pause", tone: "bg-rose-50 text-rose-700 border-rose-200" },
+    DRAFT: { label: "En cadrage", tone: "bg-slate-50 text-slate-700 border-slate-200" },
+    IN_PROGRESS: { label: "En production", tone: "bg-slate-50 text-slate-700 border-slate-200" },
+    ON_HOLD: { label: "En pause", tone: "bg-slate-50 text-slate-700 border-slate-200" },
     COMPLETED: { label: "Clôturé", tone: "bg-slate-100 text-slate-700 border-slate-200" },
 } as const;
 
@@ -190,19 +193,15 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                     <div className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
                         <div className="relative flex flex-wrap items-start justify-between gap-4">
                             <div className="space-y-1" id="client-summary">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-[#e1e4ef] bg-white px-3 py-1 text-xs text-[#6f7488]">
-                                    Vue client
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    Segment : {client.segment}
-                                </div>
                                 <h1 className="mt-2 text-2xl font-bold  text-[#1f2335] md:text-3xl">{client.name}</h1>
-                                <p className="text-sm text-[#6f7488]">
-                                    Statut : {statusLabel} · Gestionnaire principal : {ownerDisplay}
-                                    {managerNames.length > 0 ? ` · Assignés : ${managerNames.join(", ")}` : ""}
-                                </p>
-                                <p className="text-sm text-[#6f7488]">
-                                    Source de revenu : {revenueSourceLabel}
-                                </p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{statusLabel}</Badge>
+                                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{ownerDisplay}</Badge>
+                                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{revenueSourceLabel}</Badge>
+                                    {managerNames.length > 0 ? (
+                                        <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{managerNames.length} assigné(s)</Badge>
+                                    ) : null}
+                                </div>
                                 <div className="flex flex-wrap items-center gap-3 text-sm text-[#6f7488]">
                                     {client.location && (
                                         <span className="inline-flex items-center gap-1">
@@ -255,12 +254,12 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                 )}
                             </div>
                             {nextInteraction && (
-                                <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                                <Alert className="border-slate-200 bg-white text-slate-900">
                                     <AlertTriangle />
-                                    <AlertTitle>Interaction planifiée bientôt</AlertTitle>
+                                    <AlertTitle>À venir</AlertTitle>
                                     <AlertDescription>
                                         <p>
-                                            Prochaine interaction : {nextInteraction.type}{" "}
+                                            {nextInteraction.type}{" "}
                                             {new Date(nextInteraction.upcomingAt).toLocaleString("fr-FR", {
                                                 dateStyle: "medium",
                                                 timeStyle: "short",
@@ -278,7 +277,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                             <div className="ml-auto flex flex-wrap items-center gap-2">
                                 <Link
                                     href="/dashboard/clients"
-                                    className="inline-flex items-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 py-2 text-sm font-medium text-[#2f3344]"
+                                    className={`inline-flex items-center justify-center gap-2 border ${actionButtonClass}`}
                                 >
                                     <ArrowLeft className="h-4 w-4" />
                                     Retour liste
@@ -302,14 +301,15 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                                 ...(client.owners ?? []).map((o) => o.userId),
                                             ]}
                                             currentUserId={currentUserId}
+                                            triggerClassName={actionButtonClass}
                                         />
-                                        <AddContactDialog clientId={client.id} currentUserId={currentUserId} />
+                                        <AddContactDialog clientId={client.id} currentUserId={currentUserId} triggerClassName={actionButtonClass} />
                                         <DeleteClientDialog
                                             clientId={client.id}
                                             clientName={client.name}
                                             currentUserId={currentUserId}
                                             redirectTo="/dashboard/clients"
-                                            triggerClassName="gap-2"
+                                            triggerClassName={`gap-2 ${actionButtonClass}`}
                                         />
                                     </>
                                 )}
@@ -321,10 +321,9 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                 <div className="grid gap-6 lg:grid-cols-3">
                     <MotionReveal delay={80} className="lg:col-span-2">
                         <div className="space-y-6">
-                            <Card className="crm-card-strong lg:col-span-2">
+                            <Card className="rounded-lg border border-slate-200 bg-white/95 shadow-[0_16px_42px_rgba(28,35,54,0.06)] backdrop-blur-sm transition hover:-translate-y-px hover:shadow-[0_20px_54px_rgba(28,35,54,0.08)] lg:col-span-2">
                                 <CardHeader>
                                     <CardTitle className="text-base text-slate-950">Notes & dernières interactions</CardTitle>
-                                    <CardDescription className="text-slate-600">Vue d’ensemble des notes et échanges récents.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2">
@@ -346,12 +345,9 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                 </CardContent>
                             </Card>
 
-                            <Card className="crm-card-strong lg:col-span-2" id="client-projects">
+                            <Card className="rounded-lg border border-slate-200 bg-white/95 shadow-[0_16px_42px_rgba(28,35,54,0.06)] backdrop-blur-sm transition hover:-translate-y-px hover:shadow-[0_20px_54px_rgba(28,35,54,0.08)] lg:col-span-2" id="client-projects">
                                 <CardHeader>
                                     <CardTitle className="text-base text-slate-950">Projets liés</CardTitle>
-                                    <CardDescription className="text-slate-600">
-                                        Accès direct aux projets rattachés à ce client, sans entrer dans le détail ici.
-                                    </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     {client.projects.length === 0 ? (
@@ -366,7 +362,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="space-y-2">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="rounded-2xl bg-slate-950 p-2 text-amber-300">
+                                                            <div className="rounded-2xl bg-slate-950 p-2 text-white">
                                                                 <BriefcaseBusiness className="h-4 w-4" />
                                                             </div>
                                                             <div>
@@ -398,7 +394,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                                     </div>
                                                     <div className="h-2 rounded-full bg-slate-100">
                                                         <div
-                                                            className="h-2 rounded-full bg-[linear-gradient(90deg,#f97316,#f59e0b)]"
+                                                            className="h-2 rounded-full bg-slate-950"
                                                             style={{ width: `${project.progress}%` }}
                                                         />
                                                     </div>
@@ -412,10 +408,9 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                     </MotionReveal>
 
                     <MotionReveal delay={130}>
-                        <Card className="crm-card-strong" id="client-contacts">
+                        <Card className="rounded-lg border border-slate-200 bg-white/95 shadow-[0_16px_42px_rgba(28,35,54,0.06)] backdrop-blur-sm transition hover:-translate-y-px hover:shadow-[0_20px_54px_rgba(28,35,54,0.08)]" id="client-contacts">
                             <CardHeader>
                                 <CardTitle className="text-base text-slate-950">Contacts</CardTitle>
-                                <CardDescription className="text-slate-600">Liste des personnes liées au compte.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {client.contacts.length === 0 && (

@@ -21,7 +21,7 @@ export function HeroSection({ session }: { session: SessionData }) {
             ))}
           </div>
 
-          <h1 className="display-title text-3xl text-slate-950 md:text-4xl">Le CRM KAHIER pour centraliser vos clients et projets.</h1>
+          <h1 className="font-black text-3xl text-slate-950 md:text-4xl">Le CRM KAHIER pour centraliser vos clients et projets.</h1>
           <p className="mt-3 max-w-xl text-slate-600">Une base claire, lisible et prête à évoluer avec la même logique visuelle que votre dashboard.</p>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">

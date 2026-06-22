@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, ChevronDown, Mail, MessageSquare, PhoneCall, Plus, Send } from "lucide-react";
 import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { getBrowserApiBase } from "@/lib/public-api-base";
 
@@ -742,7 +743,6 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
         <Card className="border my-1">
             <CardHeader>
                 <CardTitle className="text-base">Nouvelle interaction</CardTitle>
-                <CardDescription>Log un email, appel, réunion ou note avec ce client.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form className="flex flex-col gap-4" onSubmit={onSubmit}>
@@ -813,7 +813,7 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
                                                 <Popover open={meetingOpen} onOpenChange={setMeetingOpen}>
                                                     <PopoverTrigger asChild>
                                                         <Button variant="outline" className="w-full justify-between font-normal">
-                                                            {meetingDate ? format(meetingDate, "P") : "Choisir une date"}
+                                                            {meetingDate ? format(meetingDate, "P", { locale: fr }) : "Choisir une date"}
                                                             <ChevronDown className="h-4 w-4 opacity-60" />
                                                         </Button>
                                                     </PopoverTrigger>
@@ -861,7 +861,7 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
                                                 <Popover open={occurredOpen} onOpenChange={setOccurredOpen}>
                                                     <PopoverTrigger asChild>
                                                         <Button variant="outline" className="w-full justify-between font-normal">
-                                                            {occurredDate ? format(occurredDate, "P") : "Choisir une date"}
+                                                            {occurredDate ? format(occurredDate, "P", { locale: fr }) : "Choisir une date"}
                                                             <ChevronDown className="h-4 w-4 opacity-60" />
                                                         </Button>
                                                     </PopoverTrigger>
@@ -1002,7 +1002,7 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
                                                 <Popover open={taskEndOpen} onOpenChange={setTaskEndOpen}>
                                                     <PopoverTrigger asChild>
                                                         <Button variant="outline" className="w-full justify-between font-normal">
-                                                            {taskEndDate ? format(taskEndDate, "P") : "Choisir une date"}
+                                                            {taskEndDate ? format(taskEndDate, "P", { locale: fr }) : "Choisir une date"}
                                                             <ChevronDown className="h-4 w-4 opacity-60" />
                                                         </Button>
                                                     </PopoverTrigger>

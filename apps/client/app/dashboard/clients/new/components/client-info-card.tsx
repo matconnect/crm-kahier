@@ -3,7 +3,7 @@
 import type { ClientSegment, ClientStatus, RevenueSource } from "@/lib/client-enums";
 import { MapPin } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,10 +33,9 @@ export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOp
     }));
 
     return (
-        <Card className="crm-card">
+        <Card className="rounded-lg border border-slate-200 bg-white/95 shadow-[0_16px_42px_rgba(28,35,54,0.06)] backdrop-blur-sm transition hover:-translate-y-px hover:shadow-[0_20px_54px_rgba(28,35,54,0.08)]">
             <CardHeader className="space-y-1">
                 <CardTitle className="text-base text-slate-950">Informations client</CardTitle>
-                <CardDescription className="text-slate-600">Nom, statut, segment, localisation et coordonnées principales.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">

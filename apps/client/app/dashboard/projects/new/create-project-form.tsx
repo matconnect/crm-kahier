@@ -589,7 +589,7 @@ export function ProjectForm({
 
     return (
         <form id="project-form" className="space-y-6" onSubmit={handleSubmit}>
-            <Card className="surface-panel rounded-[2rem] border-0">
+            <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
                 <CardHeader>
                     <CardTitle className="text-lg text-slate-950">Identification</CardTitle>
                     <CardDescription>Nom, référence, client et pilotage principal.</CardDescription>
@@ -753,7 +753,7 @@ export function ProjectForm({
                                     <p className="text-xs text-slate-500">
                                         Si une catégorie est choisie, une tâche Kahier sera créée automatiquement à la création du projet.
                                     </p>
-                                    {kahierError ? <p className="text-xs text-amber-700">{kahierError}</p> : null}
+                                    {kahierError ? <p className="text-xs text-slate-700">{kahierError}</p> : null}
                                 </>
                             ) : null}
                         </div>
@@ -761,7 +761,7 @@ export function ProjectForm({
                 </CardContent>
             </Card>
 
-            <Card className="surface-panel rounded-[2rem] border-0">
+            <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
                 <CardHeader>
                     <CardTitle className="text-lg text-slate-950">Pilotage</CardTitle>
                     <CardDescription>Statut, priorité, budget, rythme et dates de référence.</CardDescription>
@@ -891,7 +891,7 @@ export function ProjectForm({
                 </CardContent>
             </Card>
 
-            <Card className="surface-panel rounded-[2rem] border-0">
+            <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
                 <CardHeader>
                     <CardTitle className="text-lg text-slate-950">Cadrage</CardTitle>
                     <CardDescription>Contexte, objectifs, livrables attendus et critères de réussite.</CardDescription>
@@ -944,7 +944,7 @@ export function ProjectForm({
                 </CardContent>
             </Card>
 
-            <Card className="surface-panel rounded-[2rem] border-0">
+            <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
                 <CardHeader>
                     <CardTitle className="text-lg text-slate-950">Risques et notes</CardTitle>
                     <CardDescription>Points de vigilance, dépendances et notes internes de suivi.</CardDescription>
@@ -976,7 +976,7 @@ export function ProjectForm({
             </Card>
 
             <div className="flex justify-end">
-                <Button type="submit" className="btn-brand rounded-full border-0 px-6" disabled={pending}>
+                <Button type="submit" className="h-10 rounded-full border border-[#11131d] bg-[#11131d] px-6 text-white hover:bg-black" disabled={pending}>
                     {pending ? (mode === "edit" ? "Mise à jour..." : "Création...") : mode === "edit" ? "Mettre à jour le projet" : "Créer le projet"}
                 </Button>
             </div>

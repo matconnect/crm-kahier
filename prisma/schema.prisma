@@ -36,6 +36,8 @@ model Company {
   users             User[]
   clients           Client[]
   projects          Project[]
+  invoices          Invoice[]
+  invoiceSequences  InvoiceSequence[]
   kahierConnection  KahierConnection?
   kahierLinkTokens  KahierLinkToken[]
 }
@@ -126,6 +128,7 @@ model User {
   collaboratingInteractions ClientInteraction[] @relation("InteractionCollaborators")
   uploadedClientDocuments   ClientDocument[]
   projectsOwned             Project[]
+  invoicesCreated           Invoice[]           @relation("InvoiceCreatedBy")
 }
 
 model Client {
@@ -153,6 +156,7 @@ model Client {
   interactions ClientInteraction[]
   documents    ClientDocument[]
   projects     Project[]
+  invoices     Invoice[]
 
   @@index([status])
   @@index([segment])
@@ -162,6 +166,76 @@ model Client {
   @@index([name])
   @@index([primaryEmail])
   @@index([primaryPhone])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model InvoiceSequence {
+  id        String   @id @default(cuid())
+  companyId String
+  year      Int
+  value     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, year])
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  number          String
+  status          InvoiceStatus @default(DRAFT)
+  issueDate       DateTime
+  dueDate         DateTime
+  paidAt          DateTime?
+  notes           String?       @db.Text
+  subtotalCents   Int
+  vatCents        Int
+  totalCents      Int
+  companyId       String
+  clientId        String
+  createdById     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client    Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  createdBy User?         @relation("InvoiceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  lines     InvoiceLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, issueDate])
+  @@index([clientId])
+  @@index([createdById])
+}
+
+model InvoiceLine {
+  id              String   @id @default(cuid())
+  invoiceId       String
+  position        Int
+  description     String
+  quantityMilli   Int
+  unitPriceCents  Int
+  vatRateBps      Int
+  subtotalCents   Int
+  vatCents        Int
+  totalCents      Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@unique([invoiceId, position])
+  @@index([invoiceId])
 }
 
 model ClientOwner {

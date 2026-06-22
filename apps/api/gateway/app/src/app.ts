@@ -157,6 +157,7 @@ app.use(
 );
 mountServiceProxy("/clients", crmServiceUrl);
 mountServiceProxy("/projects", crmServiceUrl);
+mountServiceProxy("/invoices", crmServiceUrl);
 mountServiceProxy("/kahier-link", crmServiceUrl);
 mountServiceProxy("/company", companyServiceUrl);
 mountServiceProxy("/users", companyServiceUrl);

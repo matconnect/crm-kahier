@@ -71,7 +71,7 @@ const getStatusConfig = (value: string | null) => {
     switch (value) {
         case "active":
         case "paid":
-            return { label: "Actif", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" };
+            return { label: "Actif", color: "bg-slate-950/10 text-slate-700 border-emerald-500/20" };
         case "trialing":
             return { label: "Essai", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" };
         case "past_due":
@@ -161,16 +161,15 @@ export function CompanySection({ userId }: Props) {
     const { company: companyData, stripe, viewerRole, creatorId } = company;
 
     return (
-        <Card className="border-muted/60 shadow-sm">
-            <CardHeader>
+        <div>
+            <div>
                 <CardTitle className="text-lg">Organisation</CardTitle>
-                <CardDescription>Gérez les informations, l&apos;abonnement et les membres de votre entreprise.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8">
+            </div>
+            <div className="space-y-8 mt-4">
 
                 {/* Section : Code d'invitation */}
                 <section className="space-y-2">
-                    <h3 className="text-[22px] font-semibold leading-none">Code d&apos;invitation</h3>
+                    <h3 className="text-sm font-semibold leading-none">Code d&apos;invitation</h3>
                     <p className="text-sm text-muted-foreground">
                         Partagez ce code pour permettre à vos collaborateurs de rejoindre l&apos;organisation.
                     </p>
@@ -228,7 +227,7 @@ export function CompanySection({ userId }: Props) {
                             )}
                         </div>
 
-                        <div className="grid gap-4 rounded-xl border border-muted/60 px-4 py-4 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-4 rounded-xl border px-4 py-4 md:grid-cols-2 lg:grid-cols-4">
                             <div className="space-y-1">
                                 <p className="text-xs text-muted-foreground">Offre actuelle</p>
                                 <p className="text-sm font-medium">{planLabel(stripe.subscriptionType)}</p>
@@ -363,7 +362,7 @@ export function CompanySection({ userId }: Props) {
                                     <div className="flex items-center gap-3">
                                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
                                             {user.role === "ADMIN" ? (
-                                                <Crown className="h-4 w-4 text-amber-500" />
+                                                <Crown className="h-4 w-4 text-slate-700" />
                                             ) : (
                                                 <Users className="h-4 w-4 text-muted-foreground" />
                                             )}
@@ -429,7 +428,7 @@ export function CompanySection({ userId }: Props) {
                     </div>
                 </section>
 
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

@@ -44,13 +44,6 @@ export function ContactFlash({ primaryPhone, primaryEmail, emails = [], phones =
                     <PhoneCall className="h-4 w-4 text-primary" />
                     Contact flash
                 </div>
-                <div className="text-xs text-muted-foreground">
-                    {resolvedEmail
-                        ? "Email dispo"
-                        : resolvedPhone
-                            ? `Téléphone dispo (${resolvedPhone})`
-                            : "Aucune coordonnée"}
-                </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
                 <Dialog>
@@ -75,11 +68,6 @@ export function ContactFlash({ primaryPhone, primaryEmail, emails = [], phones =
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Coordonnées du contact</DialogTitle>
-                                <DialogDescription>
-                                    {callCapable
-                                        ? "Lancement d’un appel direct."
-                                        : "Appel direct indisponible sur cet appareil. Utilise le numéro ci-dessous."}
-                                </DialogDescription>
                             </DialogHeader>
                             <div className="rounded-md border bg-muted/50 p-3 text-sm">
                                 <div className="font-medium text-foreground">Téléphone</div>
@@ -136,7 +124,6 @@ export function ContactFlash({ primaryPhone, primaryEmail, emails = [], phones =
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Email du contact</DialogTitle>
-                                <DialogDescription>Ouvre ou copie l&apos;adresse pour écrire rapidement.</DialogDescription>
                             </DialogHeader>
                             <div className="rounded-md border bg-muted/50 p-3 text-sm">
                                 <div className="font-medium text-foreground">Email</div>

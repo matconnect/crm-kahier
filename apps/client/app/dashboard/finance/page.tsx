@@ -162,35 +162,27 @@ export default async function FinancePage() {
             searchInteractions={dashboardData.interactions}
             searchProjects={dashboardData.projects}
         >
-            <main className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+            <main className="mx-auto flex w-full max-w-7xl flex-col gap-6">
                 <MotionReveal>
-                    <section className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-8 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
+                    <section className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                             <div className="space-y-3">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-[#e1e4ef] bg-white px-3 py-1 text-xs text-[#6f7488]">
-                                    Vue finance
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    Connecté : {session.user?.email}
-                                </div>
                                 <div>
                                     <h1 className="text-2xl font-bold  md:text-3xl">Finance</h1>
-                                    <p className="text-sm text-[#6f7488]">
-                                        Suivi consolidé des revenus, coûts, marges et encaissements du portefeuille projet.
-                                    </p>
                                 </div>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
                                 <Link
                                     href="/dashboard/projects/new"
-                                    className="inline-flex items-center gap-2 rounded-full bg-[#111322] px-4 py-2 text-sm font-medium text-white"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#111322] px-4 text-sm font-medium text-white hover:bg-[#191d2e]"
                                 >
                                     <CircleDollarSign className="h-4 w-4" />
                                     Nouveau projet
                                 </Link>
                                 <Link
                                     href="/dashboard/projects"
-                                    className="inline-flex items-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 py-2 text-sm font-medium text-[#2f3344]"
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
                                 >
                                     Voir les projets
                                     <ArrowUpRight className="h-4 w-4" />
@@ -199,21 +191,21 @@ export default async function FinancePage() {
                         </div>
 
                         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <TrendingUp className="h-5 w-5" />
                                 </div>
                                 <p className="text-xs uppercase  text-[#8f93a9]">Revenu prévisionnel</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(plannedRevenue)}</p>
                             </div>
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <TrendingDown className="h-5 w-5" />
                                 </div>
                                 <p className="text-xs uppercase  text-[#8f93a9]">Coût projet</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(plannedCost)}</p>
                             </div>
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <Wallet className="h-5 w-5" />
                                 </div>
@@ -221,21 +213,21 @@ export default async function FinancePage() {
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(plannedMargin)}</p>
                                 <p className="mt-1 text-xs text-[#6f7488]">Taux de marge: {formatPercent(marginRate)}</p>
                             </div>
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <ReceiptText className="h-5 w-5" />
                                 </div>
                                 <p className="text-xs uppercase  text-[#8f93a9]">Facturé</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(invoiced)}</p>
                             </div>
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <HandCoins className="h-5 w-5" />
                                 </div>
                                 <p className="text-xs uppercase  text-[#8f93a9]">Encaissé</p>
                                 <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(received)}</p>
                             </div>
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <Banknote className="h-5 w-5" />
                                 </div>
@@ -247,13 +239,12 @@ export default async function FinancePage() {
                     </section>
                 </MotionReveal>
 
-                <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
                     <MotionReveal delay={70}>
                         <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
                             <div className="mb-5 flex items-center justify-between">
                                 <div>
-                                    <p className="section-kicker">Marge projet</p>
-                                    <h2 className="mt-2 text-2xl font-semibold text-slate-950">Top rentabilité</h2>
+                                    <h2 className="text-2xl font-semibold text-slate-950">Top rentabilité</h2>
                                 </div>
                                 <Badge variant="secondary" className="border border-[#d7dced] bg-[#f7f8fc] text-[#2f3344]">
                                     {projects.length} projets
@@ -262,11 +253,11 @@ export default async function FinancePage() {
 
                             {hasApiIssue ? (
                                 <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-600">
-                                    Les données finance ne sont pas disponibles pour le moment.
+                                    Données indisponibles.
                                 </div>
                             ) : topProjects.length === 0 ? (
                                 <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-600">
-                                    Aucun projet avec données financières pour l’instant.
+                                    Aucun projet.
                                 </div>
                             ) : (
                                 <div className="space-y-3">
@@ -300,8 +291,7 @@ export default async function FinancePage() {
                     <MotionReveal delay={120}>
                         <aside className="space-y-6 xl:sticky xl:top-28">
                             <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <p className="section-kicker">Origine revenu</p>
-                                <h2 className="mt-2 text-2xl font-semibold text-slate-950">Sources</h2>
+                                <h2 className="text-2xl font-semibold text-slate-950">Sources</h2>
                                 <div className="mt-4 space-y-3">
                                     {revenueBreakdown.map((item) => (
                                         <div key={item.source} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3">
@@ -318,12 +308,11 @@ export default async function FinancePage() {
                             </section>
 
                             <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <p className="section-kicker">Risque cash</p>
-                                <h2 className="mt-2 text-2xl font-semibold text-slate-950">À encaisser</h2>
+                                <h2 className="text-2xl font-semibold text-slate-950">À encaisser</h2>
                                 <div className="mt-4 space-y-3">
                                     {outstandingProjects.length === 0 ? (
                                         <p className="rounded-[1.25rem] border border-dashed border-slate-300 bg-white/70 px-4 py-3 text-sm text-slate-600">
-                                            Aucun reste à encaisser détecté.
+                                            Aucun reste.
                                         </p>
                                     ) : (
                                         outstandingProjects.map((project) => (

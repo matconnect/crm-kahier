@@ -105,7 +105,6 @@ export async function ClientsList({ searchParams, currentUserId, currentUserRole
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-lg font-semibold text-slate-950">Clients</h2>
-                    <p className="text-sm text-slate-600">Liste des clients et derniers échanges.</p>
                 </div>
                 <Badge variant="secondary" className="bg-slate-950 text-white">
                     {total} client{total > 1 ? "s" : ""}

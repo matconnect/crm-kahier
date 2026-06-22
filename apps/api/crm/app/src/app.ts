@@ -3,6 +3,8 @@ import cors from "cors";
 import clientsRouter from "./routes/clients.route.js";
 import projectsRouter from "./routes/projects.route.js";
 import kahierLinkRouter from "./routes/kahier-link.route.js";
+import { createInvoicesRouter } from "./routes/invoices.route.js";
+import * as invoicesController from "./controllers/invoices.controller.js";
 
 const splitUrls = (csv?: string) =>
   (csv ?? "")
@@ -24,5 +26,6 @@ app.get("/health", (_req, res) => res.json({ ok: true, service: "crm-service" })
 app.use("/clients", clientsRouter);
 app.use("/projects", projectsRouter);
 app.use("/kahier-link", kahierLinkRouter);
+app.use("/invoices", createInvoicesRouter(invoicesController));
 
 export default app;

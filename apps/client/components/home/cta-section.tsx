@@ -13,7 +13,7 @@ export function CtaSection({ session }: { session: SessionData }) {
         <CardContent className="flex flex-col items-start justify-between gap-5 p-6 md:flex-row md:items-center md:p-8">
           <div className="space-y-2">
             <div className="text-[0.68rem] font-medium uppercase text-slate-500">Prêt à démarrer</div>
-            <div className="display-title text-2xl text-slate-950">Accédez à votre espace</div>
+            <div className="font-black text-2xl text-slate-950">Accédez à votre espace</div>
             <div className="text-sm text-slate-600">
               {session ? "Continuez sur votre dashboard." : "Créez votre compte et commencez en quelques secondes."}
             </div>
