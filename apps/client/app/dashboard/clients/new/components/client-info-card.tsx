@@ -13,6 +13,14 @@ import { UserPicker, type PickerOption } from "@/components/ui/user-picker";
 import type { FormState, OwnerOption } from "../types";
 import React from "react";
 
+function RequiredLabel({ htmlFor, children }: { htmlFor?: string; children: React.ReactNode }) {
+    return (
+        <Label htmlFor={htmlFor}>
+            {children} <span className="text-red-600">*</span>
+        </Label>
+    );
+}
+
 type Props = {
     form: FormState;
     pending: boolean;
@@ -36,11 +44,12 @@ export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOp
         <Card className="rounded-lg border border-slate-200 bg-white/95 shadow-[0_16px_42px_rgba(28,35,54,0.06)] backdrop-blur-sm transition hover:-translate-y-px hover:shadow-[0_20px_54px_rgba(28,35,54,0.08)]">
             <CardHeader className="space-y-1">
                 <CardTitle className="text-base text-slate-950">Informations client</CardTitle>
+                <p className="text-xs text-slate-500">Les champs obligatoires sont signalés par *</p>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Nom du client</Label>
+                        <RequiredLabel htmlFor="name">Nom du client</RequiredLabel>
                         <Input
                             id="name"
                             placeholder="Ex : ACME Industries"
@@ -125,6 +134,76 @@ export function ClientInfoCard({ form, pending, owners, statusOptions, segmentOp
                                 disabled={pending}
                             />
                         </div>
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="addressLine1">Adresse</Label>
+                        <Input
+                            id="addressLine1"
+                            placeholder="12 rue des Fleurs"
+                            value={form.addressLine1}
+                            onChange={(e) => onChange("addressLine1", e.target.value)}
+                            disabled={pending}
+                        />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="addressLine2">Complément d’adresse</Label>
+                        <Input
+                            id="addressLine2"
+                            placeholder="Bâtiment, étage..."
+                            value={form.addressLine2}
+                            onChange={(e) => onChange("addressLine2", e.target.value)}
+                            disabled={pending}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="postalCode">Code postal</Label>
+                        <Input
+                            id="postalCode"
+                            placeholder="75000"
+                            value={form.postalCode}
+                            onChange={(e) => onChange("postalCode", e.target.value)}
+                            disabled={pending}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="city">Ville</Label>
+                        <Input
+                            id="city"
+                            placeholder="Paris"
+                            value={form.city}
+                            onChange={(e) => onChange("city", e.target.value)}
+                            disabled={pending}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="country">Pays</Label>
+                        <Input
+                            id="country"
+                            placeholder="France"
+                            value={form.country}
+                            onChange={(e) => onChange("country", e.target.value)}
+                            disabled={pending}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="siren">SIREN</Label>
+                        <Input
+                            id="siren"
+                            placeholder="123456789"
+                            value={form.siren}
+                            onChange={(e) => onChange("siren", e.target.value)}
+                            disabled={pending}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="vatNumber">TVA intracom</Label>
+                        <Input
+                            id="vatNumber"
+                            placeholder="FR..."
+                            value={form.vatNumber}
+                            onChange={(e) => onChange("vatNumber", e.target.value)}
+                            disabled={pending}
+                        />
                     </div>
                     <MultiInput
                         label="Emails"

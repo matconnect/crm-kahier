@@ -22,6 +22,11 @@ type Props = {
     currentUserId: string;
     redirectTo?: string;
     triggerClassName?: string;
+    triggerVariant?: React.ComponentProps<typeof Button>["variant"];
+    triggerSize?: React.ComponentProps<typeof Button>["size"];
+    triggerLabel?: string;
+    triggerTitle?: string;
+    triggerIconOnly?: boolean;
 };
 
 export function DeleteClientDialog({
@@ -30,6 +35,11 @@ export function DeleteClientDialog({
     currentUserId,
     redirectTo,
     triggerClassName,
+    triggerVariant,
+    triggerSize,
+    triggerLabel,
+    triggerTitle,
+    triggerIconOnly,
 }: Props) {
     const apiBase = getBrowserApiBase();
     const [open, setOpen] = React.useState(false);
@@ -74,9 +84,20 @@ export function DeleteClientDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className={["text-black", triggerClassName ?? ""].filter(Boolean).join(" ")}>
+                <Button
+                    variant={triggerVariant ?? "outline"}
+                    size={triggerSize ?? "sm"}
+                    title={triggerTitle ?? triggerLabel ?? "Supprimer"}
+                    className={[
+                        "text-black",
+                        triggerIconOnly ? "h-10 w-10 rounded-full" : "",
+                        triggerClassName ?? "",
+                    ]
+                        .filter(Boolean)
+                        .join(" ")}
+                >
                     <Trash2 className="h-4 w-4" />
-                    Supprimer
+                    {triggerIconOnly ? <span className="sr-only">{triggerLabel ?? "Supprimer"}</span> : triggerLabel ?? "Supprimer"}
                 </Button>
             </DialogTrigger>
             <DialogContent>

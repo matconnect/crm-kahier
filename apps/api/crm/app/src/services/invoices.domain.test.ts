@@ -79,6 +79,10 @@ describe("invoice numbering", () => {
         expect(formatInvoiceNumber(2026, 1)).toBe("FAC-2026-0001");
         expect(formatInvoiceNumber(2026, 12_345)).toBe("FAC-2026-12345");
     });
+
+    it("keeps leading zeroes for small sequence numbers", () => {
+        expect(formatInvoiceNumber(2027, 9)).toBe("FAC-2027-0009");
+    });
 });
 
 describe("invoice statuses", () => {
@@ -86,11 +90,27 @@ describe("invoice statuses", () => {
         expect(isInvoiceStatusTransitionAllowed("DRAFT", "SENT")).toBe(true);
         expect(isInvoiceStatusTransitionAllowed("SENT", "PAID")).toBe(true);
         expect(isInvoiceStatusTransitionAllowed("PAID", "DRAFT")).toBe(false);
-        expect(isInvoiceStatusTransitionAllowed("CANCELLED", "SENT")).toBe(false);
+        expect(isInvoiceStatusTransitionAllowed("CANCELLED", "SENT")).toBe(true);
     });
 
     it("marks a sent invoice overdue after its due date", () => {
         expect(getEffectiveInvoiceStatus("SENT", new Date("2026-06-20"), new Date("2026-06-22"))).toBe("OVERDUE");
         expect(getEffectiveInvoiceStatus("PAID", new Date("2026-06-20"), new Date("2026-06-22"))).toBe("PAID");
+    });
+
+    it("keeps draft and cancelled invoices untouched", () => {
+        expect(getEffectiveInvoiceStatus("DRAFT", new Date("2026-06-20"), new Date("2026-06-22"))).toBe("DRAFT");
+        expect(getEffectiveInvoiceStatus("CANCELLED", new Date("2026-06-20"), new Date("2026-06-22"))).toBe("CANCELLED");
+    });
+
+    it("accepts the full paid and overdue transition path", () => {
+        expect(isInvoiceStatusTransitionAllowed("SENT", "OVERDUE")).toBe(true);
+        expect(isInvoiceStatusTransitionAllowed("OVERDUE", "PAID")).toBe(true);
+        expect(isInvoiceStatusTransitionAllowed("OVERDUE", "SENT")).toBe(true);
+    });
+
+    it("allows edits among non-draft invoice statuses", () => {
+        expect(isInvoiceStatusTransitionAllowed("PAID", "OVERDUE")).toBe(true);
+        expect(isInvoiceStatusTransitionAllowed("CANCELLED", "PAID")).toBe(true);
     });
 });

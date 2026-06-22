@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarIcon, Eye, LockKeyhole, Plus, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, CalendarIcon, Download, Eye, LockKeyhole, Plus, Save, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getBrowserApiBase } from "@/lib/public-api-base";
+import { StickyDetailHeader } from "../../_components/layout/sticky-detail-header";
 import {
     calculateFormLine,
     calculateFormTotals,
@@ -47,11 +48,35 @@ type FormState = {
     dueDate: string;
     paidAt: string;
     notes: string;
+    clientLocation: string;
+    clientAddressLine1: string;
+    clientAddressLine2: string;
+    clientPostalCode: string;
+    clientCity: string;
+    clientCountry: string;
+    clientSiren: string;
+    clientVatNumber: string;
+    clientPrimaryEmail: string;
+    clientPrimaryPhone: string;
     lines: InvoiceFormLine[];
 };
 
 const fieldClass =
     "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+
+function RequiredLabel({
+    htmlFor,
+    children,
+}: {
+    htmlFor?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <Label htmlFor={htmlFor}>
+            {children} <span className="text-red-600">*</span>
+        </Label>
+    );
+}
 
 function defaultDates() {
     const issueDate = new Date();
@@ -86,6 +111,16 @@ function initialState(invoice?: Invoice): FormState {
             dueDate: dates.dueDate,
             paidAt: "",
             notes: "",
+            clientLocation: "",
+            clientAddressLine1: "",
+            clientAddressLine2: "",
+            clientPostalCode: "",
+            clientCity: "",
+            clientCountry: "",
+            clientSiren: "",
+            clientVatNumber: "",
+            clientPrimaryEmail: "",
+            clientPrimaryPhone: "",
             lines: [{ description: "", quantity: "1", unitPrice: "", vatRate: "20" }],
         };
     }
@@ -96,6 +131,16 @@ function initialState(invoice?: Invoice): FormState {
         dueDate: toDateInput(invoice.dueDate),
         paidAt: toDateInput(invoice.paidAt),
         notes: invoice.notes ?? "",
+        clientLocation: invoice.client.location ?? "",
+        clientAddressLine1: invoice.client.addressLine1 ?? "",
+        clientAddressLine2: invoice.client.addressLine2 ?? "",
+        clientPostalCode: invoice.client.postalCode ?? "",
+        clientCity: invoice.client.city ?? "",
+        clientCountry: invoice.client.country ?? "",
+        clientSiren: invoice.client.siren ?? "",
+        clientVatNumber: invoice.client.vatNumber ?? "",
+        clientPrimaryEmail: invoice.client.primaryEmail ?? "",
+        clientPrimaryPhone: invoice.client.primaryPhone ?? "",
         lines: invoice.lines.map((line) => ({
             description: line.description,
             quantity: String(line.quantity),
@@ -128,16 +173,18 @@ function DateField({
     value,
     onChange,
     placeholder,
+    required = false,
 }: {
     id: string;
     label: string;
     value: string;
     onChange: (value: string) => void;
     placeholder: string;
+    required?: boolean;
 }) {
     return (
         <div className="space-y-2">
-            <Label htmlFor={id}>{label}</Label>
+            {required ? <RequiredLabel htmlFor={id}>{label}</RequiredLabel> : <Label htmlFor={id}>{label}</Label>}
             <Popover>
                 <PopoverTrigger asChild>
                     <Button
@@ -173,8 +220,10 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
     const [previewOpen, setPreviewOpen] = React.useState(false);
     const [pdfPreviewUrl, setPdfPreviewUrl] = React.useState<string | null>(null);
     const [pdfPreviewLoading, setPdfPreviewLoading] = React.useState(false);
+    const [validateConfirmOpen, setValidateConfirmOpen] = React.useState(false);
     const [form, setForm] = React.useState<FormState>(() => initialState(invoice));
     const totals = React.useMemo(() => calculateFormTotals(form.lines), [form.lines]);
+    const clientsById = React.useMemo(() => new Map(clients.map((client) => [client.id, client])), [clients]);
 
     React.useEffect(() => {
         if (initialPreviewOpen) {
@@ -233,6 +282,56 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
         }));
     }
 
+    async function persistClientDetails() {
+        if (!apiBase || !form.clientId) return;
+        const selectedClient = clientsById.get(form.clientId);
+        if (!selectedClient) return;
+
+        const nextLocation = form.clientLocation.trim();
+        const nextAddressLine1 = form.clientAddressLine1.trim();
+        const nextAddressLine2 = form.clientAddressLine2.trim();
+        const nextPostalCode = form.clientPostalCode.trim();
+        const nextCity = form.clientCity.trim();
+        const nextCountry = form.clientCountry.trim();
+        const nextSiren = form.clientSiren.trim();
+        const nextVatNumber = form.clientVatNumber.trim();
+        const nextPrimaryEmail = form.clientPrimaryEmail.trim();
+        const nextPrimaryPhone = form.clientPrimaryPhone.trim();
+
+        const hasChanges =
+            (selectedClient.location ?? "") !== nextLocation ||
+            (selectedClient.addressLine1 ?? "") !== nextAddressLine1 ||
+            (selectedClient.addressLine2 ?? "") !== nextAddressLine2 ||
+            (selectedClient.postalCode ?? "") !== nextPostalCode ||
+            (selectedClient.city ?? "") !== nextCity ||
+            (selectedClient.country ?? "") !== nextCountry ||
+            (selectedClient.siren ?? "") !== nextSiren ||
+            (selectedClient.vatNumber ?? "") !== nextVatNumber ||
+            (selectedClient.primaryEmail ?? "") !== nextPrimaryEmail ||
+            (selectedClient.primaryPhone ?? "") !== nextPrimaryPhone;
+
+        if (!hasChanges) return;
+
+        const response = await fetch(`${apiBase}/clients/${form.clientId}`, {
+            method: "PATCH",
+            headers: { "content-type": "application/json", "x-user-id": currentUserId },
+            body: JSON.stringify({
+                location: nextLocation || null,
+                addressLine1: nextAddressLine1 || null,
+                addressLine2: nextAddressLine2 || null,
+                postalCode: nextPostalCode || null,
+                city: nextCity || null,
+                country: nextCountry || null,
+                siren: nextSiren || null,
+                vatNumber: nextVatNumber || null,
+                primaryEmail: nextPrimaryEmail || null,
+                primaryPhone: nextPrimaryPhone || null,
+            }),
+        });
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        if (!response.ok) throw new Error(data?.error ?? "Mise à jour du client impossible.");
+    }
+
     async function persistDraft(): Promise<string | null> {
         const error = validate(form);
         if (error) {
@@ -246,6 +345,7 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
 
         setPending(true);
         try {
+            await persistClientDetails();
             const response = await fetch(`${apiBase}/invoices${invoice ? `/${invoice.id}` : ""}`, {
                 method: invoice ? "PATCH" : "POST",
                 headers: { "content-type": "application/json", "x-user-id": currentUserId },
@@ -273,13 +373,17 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
         }
     }
 
-    async function submit(event: React.FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+    async function saveDraftWithToast() {
         const id = await persistDraft();
         if (!id) return;
         toast.success(invoice ? "Brouillon mis à jour." : "Brouillon créé.");
         if (!invoice) router.push(`/dashboard/factures/${id}`);
         else router.refresh();
+    }
+
+    async function submit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        await saveDraftWithToast();
     }
 
     async function validateAndLock() {
@@ -296,6 +400,7 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
             if (!response.ok) throw new Error(data?.error ?? "Validation impossible.");
             toast.success("Facture validée et verrouillée.");
             setPreviewOpen(false);
+            setValidateConfirmOpen(false);
             router.refresh();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Validation impossible.");
@@ -314,6 +419,28 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
             return;
         }
         setPreviewOpen(true);
+    }
+
+    async function downloadPdf() {
+        if (!apiBase || !invoice?.id) {
+            toast.error("PDF indisponible.");
+            return;
+        }
+        try {
+            const response = await fetch(`${apiBase}/invoices/${invoice.id}/pdf`, {
+                headers: { "x-user-id": currentUserId },
+            });
+            if (!response.ok) throw new Error("Téléchargement impossible.");
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = `${invoice.number}.pdf`;
+            anchor.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Téléchargement impossible.");
+        }
     }
 
     if (invoice && invoice.storedStatus !== "DRAFT") {
@@ -340,13 +467,93 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
 
     return (
         <>
+            {invoice && invoice.storedStatus === "DRAFT" ? (
+                <StickyDetailHeader
+                    title={invoice.number}
+                    subtitle={invoice.client.name}
+                    badgeLabel="Brouillon"
+                    returnHref="/dashboard/factures"
+                    returnLabel="Retour"
+                    actions={
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-10 rounded-full bg-white px-4"
+                                onClick={() => {
+                                    setValidateConfirmOpen(true);
+                                }}
+                                disabled={pending}
+                            >
+                                <LockKeyhole className="h-4 w-4" />
+                                Valider
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-10 rounded-full bg-white px-4"
+                                onClick={() => {
+                                    void saveDraftWithToast();
+                                }}
+                                disabled={pending}
+                            >
+                                <Save className="h-4 w-4" />
+                                Enregistrer le brouillon
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-10 rounded-full bg-white px-4"
+                                onClick={() => {
+                                    void openPreview();
+                                }}
+                            >
+                                <Eye className="h-4 w-4" />
+                                Aperçu PDF
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-10 rounded-full bg-white px-4"
+                                onClick={() => {
+                                    void downloadPdf();
+                                }}
+                            >
+                                <Download className="h-4 w-4" />
+                                PDF
+                            </Button>
+                        </div>
+                    }
+                />
+            ) : null}
             <form onSubmit={submit} className="space-y-6">
                 <section className="grid gap-6 rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:grid-cols-2 md:p-7">
+                    <div className="md:col-span-2">
+                        <p className="text-xs text-slate-500">Les champs obligatoires sont signalés par *</p>
+                    </div>
                     <div className="space-y-2">
-                        <Label htmlFor="clientId">Client</Label>
+                        <RequiredLabel htmlFor="clientId">Client</RequiredLabel>
                         <Select
                             value={form.clientId}
-                            onValueChange={(value) => setForm((current) => ({ ...current, clientId: value }))}
+                            onValueChange={(value) =>
+                                setForm((current) => {
+                                    const selectedClient = clientsById.get(value);
+                                    return {
+                                        ...current,
+                                        clientId: value,
+                                        clientLocation: selectedClient?.location ?? "",
+                                        clientAddressLine1: selectedClient?.addressLine1 ?? "",
+                                        clientAddressLine2: selectedClient?.addressLine2 ?? "",
+                                        clientPostalCode: selectedClient?.postalCode ?? "",
+                                        clientCity: selectedClient?.city ?? "",
+                                        clientCountry: selectedClient?.country ?? "",
+                                        clientSiren: selectedClient?.siren ?? "",
+                                        clientVatNumber: selectedClient?.vatNumber ?? "",
+                                        clientPrimaryEmail: selectedClient?.primaryEmail ?? "",
+                                        clientPrimaryPhone: selectedClient?.primaryPhone ?? "",
+                                    };
+                                })
+                            }
                         >
                             <SelectTrigger id="clientId" className="h-10 w-full rounded-xl bg-white">
                                 <SelectValue placeholder="Sélectionner" />
@@ -366,6 +573,7 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                         value={form.issueDate}
                         onChange={(value) => setForm((current) => ({ ...current, issueDate: value }))}
                         placeholder="Sélectionner une date"
+                        required
                     />
                     <DateField
                         id="dueDate"
@@ -373,7 +581,94 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                         value={form.dueDate}
                         onChange={(value) => setForm((current) => ({ ...current, dueDate: value }))}
                         placeholder="Sélectionner une date"
+                        required
                     />
+                    <div className="space-y-2">
+                        <Label htmlFor="clientLocation">Localisation client</Label>
+                        <Input
+                            id="clientLocation"
+                            value={form.clientLocation}
+                            onChange={(event) => setForm((current) => ({ ...current, clientLocation: event.target.value }))}
+                            placeholder="Ville, pays"
+                        />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="clientAddressLine1">Adresse client</Label>
+                        <Input
+                            id="clientAddressLine1"
+                            value={form.clientAddressLine1}
+                            onChange={(event) => setForm((current) => ({ ...current, clientAddressLine1: event.target.value }))}
+                            placeholder="Adresse"
+                        />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="clientAddressLine2">Complément d’adresse</Label>
+                        <Input
+                            id="clientAddressLine2"
+                            value={form.clientAddressLine2}
+                            onChange={(event) => setForm((current) => ({ ...current, clientAddressLine2: event.target.value }))}
+                            placeholder="Bâtiment, étage..."
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="clientPostalCode">Code postal</Label>
+                        <Input
+                            id="clientPostalCode"
+                            value={form.clientPostalCode}
+                            onChange={(event) => setForm((current) => ({ ...current, clientPostalCode: event.target.value }))}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="clientCity">Ville</Label>
+                        <Input
+                            id="clientCity"
+                            value={form.clientCity}
+                            onChange={(event) => setForm((current) => ({ ...current, clientCity: event.target.value }))}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="clientCountry">Pays</Label>
+                        <Input
+                            id="clientCountry"
+                            value={form.clientCountry}
+                            onChange={(event) => setForm((current) => ({ ...current, clientCountry: event.target.value }))}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="clientSiren">SIREN client</Label>
+                        <Input
+                            id="clientSiren"
+                            value={form.clientSiren}
+                            onChange={(event) => setForm((current) => ({ ...current, clientSiren: event.target.value }))}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="clientVatNumber">TVA client</Label>
+                        <Input
+                            id="clientVatNumber"
+                            value={form.clientVatNumber}
+                            onChange={(event) => setForm((current) => ({ ...current, clientVatNumber: event.target.value }))}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="clientPrimaryEmail">Email client</Label>
+                        <Input
+                            id="clientPrimaryEmail"
+                            type="email"
+                            value={form.clientPrimaryEmail}
+                            onChange={(event) => setForm((current) => ({ ...current, clientPrimaryEmail: event.target.value }))}
+                            placeholder="contact@client.fr"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="clientPrimaryPhone">Téléphone client</Label>
+                        <Input
+                            id="clientPrimaryPhone"
+                            value={form.clientPrimaryPhone}
+                            onChange={(event) => setForm((current) => ({ ...current, clientPrimaryPhone: event.target.value }))}
+                            placeholder="+33 ..."
+                        />
+                    </div>
                     {form.status === "PAID" ? (
                         <DateField
                             id="paidAt"
@@ -384,7 +679,7 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                         />
                     ) : null}
                     <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="notes">Notes</Label>
+                        <Label htmlFor="notes">Note de fin de page</Label>
                         <textarea
                             id="notes"
                             className={`${fieldClass} min-h-24 resize-y py-3`}
@@ -422,7 +717,7 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                                     className="grid gap-3 rounded-2xl border border-slate-200 bg-[#fafbff] p-4 md:grid-cols-[minmax(220px,1fr)_100px_140px_100px_130px_40px] md:items-end"
                                 >
                                     <div className="space-y-2">
-                                        <Label htmlFor={`description-${index}`}>Désignation</Label>
+                                        <RequiredLabel htmlFor={`description-${index}`}>Désignation</RequiredLabel>
                                         <Input
                                             id={`description-${index}`}
                                             value={line.description}
@@ -430,7 +725,7 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor={`quantity-${index}`}>Quantité</Label>
+                                        <RequiredLabel htmlFor={`quantity-${index}`}>Quantité</RequiredLabel>
                                         <Input
                                             id={`quantity-${index}`}
                                             inputMode="decimal"
@@ -439,7 +734,7 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor={`unit-price-${index}`}>Prix HT</Label>
+                                        <RequiredLabel htmlFor={`unit-price-${index}`}>Prix HT</RequiredLabel>
                                         <Input
                                             id={`unit-price-${index}`}
                                             inputMode="decimal"
@@ -448,7 +743,7 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor={`vat-${index}`}>TVA %</Label>
+                                        <RequiredLabel htmlFor={`vat-${index}`}>TVA %</RequiredLabel>
                                         <Input
                                             id={`vat-${index}`}
                                             inputMode="decimal"
@@ -498,18 +793,20 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                     </div>
                 </section>
 
-                <div className="flex flex-wrap justify-end gap-2">
-                    <Button type="button" variant="outline" className="h-11 rounded-full px-6" onClick={() => {
-                        void openPreview();
-                    }}>
-                        <Eye className="h-4 w-4" />
-                        Aperçu
-                    </Button>
-                    <Button disabled={pending} className="h-11 rounded-full bg-[#111322] px-6 text-white hover:bg-[#191d2e]">
-                        <Save className="h-4 w-4" />
-                        {pending ? "Enregistrement…" : invoice ? "Enregistrer le brouillon" : "Créer le brouillon"}
-                    </Button>
-                </div>
+                {!invoice ? (
+                    <div className="flex flex-wrap justify-end gap-2">
+                        <Button type="button" variant="outline" className="h-11 rounded-full px-6" onClick={() => {
+                            void openPreview();
+                        }}>
+                            <Eye className="h-4 w-4" />
+                            Aperçu
+                        </Button>
+                        <Button disabled={pending} className="h-11 rounded-full bg-[#111322] px-6 text-white hover:bg-[#191d2e]">
+                            <Save className="h-4 w-4" />
+                            {pending ? "Enregistrement…" : "Créer le brouillon"}
+                        </Button>
+                    </div>
+                ) : null}
             </form>
             <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
                 <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto p-0">
@@ -538,7 +835,7 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                     <DialogFooter className="border-t px-6 py-5">
                         <Button type="button" variant="outline" onClick={() => setPreviewOpen(false)}>Corriger</Button>
                         {invoice ? (
-                            <Button type="button" variant="destructive" disabled={pending} onClick={validateAndLock}>
+                            <Button type="button" variant="destructive" disabled={pending} onClick={() => setValidateConfirmOpen(true)}>
                                 <LockKeyhole className="h-4 w-4" />
                                 Valider et verrouiller
                             </Button>
@@ -560,6 +857,32 @@ export function InvoiceForm({ currentUserId, clients, invoice, initialPreviewOpe
                             Après validation, la facture ne pourra plus être modifiée.
                         </div>
                     ) : null}
+                </DialogContent>
+            </Dialog>
+            <Dialog open={validateConfirmOpen} onOpenChange={setValidateConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Valider la facture ?</DialogTitle>
+                        <DialogDescription>
+                            La facture sera verrouillée après validation et ne pourra plus être modifiée.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setValidateConfirmOpen(false)} disabled={pending}>
+                            Annuler
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            disabled={pending}
+                            onClick={() => {
+                                void validateAndLock();
+                            }}
+                        >
+                            <LockKeyhole className="h-4 w-4" />
+                            Valider
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>

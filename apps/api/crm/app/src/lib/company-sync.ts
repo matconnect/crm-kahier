@@ -16,6 +16,22 @@ type CompanyContext = {
         id: string;
         name: string;
         code: string;
+        legalForm?: string | null;
+        capitalSocialCents?: number | null;
+        siren?: string | null;
+        siret?: string | null;
+        vatNumber?: string | null;
+        rcsCity?: string | null;
+        addressLine1?: string | null;
+        addressLine2?: string | null;
+        postalCode?: string | null;
+        city?: string | null;
+        country?: string | null;
+        contactEmail?: string | null;
+        contactPhone?: string | null;
+        paymentTerms?: string | null;
+        latePenaltyRateBps?: number | null;
+        fixedCompensationCents?: number | null;
         subscriptionType?: string | null;
     };
 };
@@ -82,11 +98,43 @@ export async function syncCompanySnapshot(context: CompanyContext, users: Compan
             id: context.company.id,
             name: context.company.name,
             code: context.company.code,
+            legalForm: context.company.legalForm ?? null,
+            capitalSocialCents: context.company.capitalSocialCents ?? null,
+            siren: context.company.siren ?? null,
+            siret: context.company.siret ?? null,
+            vatNumber: context.company.vatNumber ?? null,
+            rcsCity: context.company.rcsCity ?? null,
+            addressLine1: context.company.addressLine1 ?? null,
+            addressLine2: context.company.addressLine2 ?? null,
+            postalCode: context.company.postalCode ?? null,
+            city: context.company.city ?? null,
+            country: context.company.country ?? null,
+            contactEmail: context.company.contactEmail ?? null,
+            contactPhone: context.company.contactPhone ?? null,
+            paymentTerms: context.company.paymentTerms ?? null,
+            latePenaltyRateBps: context.company.latePenaltyRateBps ?? null,
+            fixedCompensationCents: context.company.fixedCompensationCents ?? 4000,
             subscriptionType: context.company.subscriptionType ?? "STARTER_FREE",
         },
         update: {
             name: context.company.name,
             code: context.company.code,
+            legalForm: context.company.legalForm ?? null,
+            capitalSocialCents: context.company.capitalSocialCents ?? null,
+            siren: context.company.siren ?? null,
+            siret: context.company.siret ?? null,
+            vatNumber: context.company.vatNumber ?? null,
+            rcsCity: context.company.rcsCity ?? null,
+            addressLine1: context.company.addressLine1 ?? null,
+            addressLine2: context.company.addressLine2 ?? null,
+            postalCode: context.company.postalCode ?? null,
+            city: context.company.city ?? null,
+            country: context.company.country ?? null,
+            contactEmail: context.company.contactEmail ?? null,
+            contactPhone: context.company.contactPhone ?? null,
+            paymentTerms: context.company.paymentTerms ?? null,
+            latePenaltyRateBps: context.company.latePenaltyRateBps ?? null,
+            fixedCompensationCents: context.company.fixedCompensationCents ?? 4000,
             subscriptionType: context.company.subscriptionType ?? "STARTER_FREE",
         },
     });

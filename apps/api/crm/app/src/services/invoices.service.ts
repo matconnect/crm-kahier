@@ -21,11 +21,39 @@ const invoiceInclude = {
             id: true,
             name: true,
             location: true,
+            addressLine1: true,
+            addressLine2: true,
+            postalCode: true,
+            city: true,
+            country: true,
+            siren: true,
+            vatNumber: true,
             primaryEmail: true,
             primaryPhone: true,
         },
     },
-    company: { select: { id: true, name: true } },
+    company: {
+        select: {
+            id: true,
+            name: true,
+            legalForm: true,
+            capitalSocialCents: true,
+            siren: true,
+            siret: true,
+            vatNumber: true,
+            rcsCity: true,
+            addressLine1: true,
+            addressLine2: true,
+            postalCode: true,
+            city: true,
+            country: true,
+            contactEmail: true,
+            contactPhone: true,
+            paymentTerms: true,
+            latePenaltyRateBps: true,
+            fixedCompensationCents: true,
+        },
+    },
     createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
     lines: { orderBy: { position: "asc" as const } },
 } satisfies Prisma.InvoiceInclude;
@@ -87,6 +115,44 @@ function invoiceToInput(invoice: InvoiceWithRelations): InvoiceMutationInput {
             unitPrice: line.unitPriceCents / 100,
             vatRate: line.vatRateBps / 100,
         })),
+    };
+}
+
+function buildIssuerSnapshot(company: InvoiceWithRelations["company"]) {
+    return {
+        name: company.name,
+        legalForm: company.legalForm,
+        capitalSocialCents: company.capitalSocialCents,
+        siren: company.siren,
+        siret: company.siret,
+        vatNumber: company.vatNumber,
+        rcsCity: company.rcsCity,
+        addressLine1: company.addressLine1,
+        addressLine2: company.addressLine2,
+        postalCode: company.postalCode,
+        city: company.city,
+        country: company.country,
+        contactEmail: company.contactEmail,
+        contactPhone: company.contactPhone,
+        paymentTerms: company.paymentTerms,
+        latePenaltyRateBps: company.latePenaltyRateBps,
+        fixedCompensationCents: company.fixedCompensationCents,
+    };
+}
+
+function buildClientSnapshot(client: InvoiceWithRelations["client"]) {
+    return {
+        name: client.name,
+        location: client.location,
+        addressLine1: client.addressLine1,
+        addressLine2: client.addressLine2,
+        postalCode: client.postalCode,
+        city: client.city,
+        country: client.country,
+        siren: client.siren,
+        vatNumber: client.vatNumber,
+        primaryEmail: client.primaryEmail,
+        primaryPhone: client.primaryPhone,
     };
 }
 
@@ -170,8 +236,20 @@ export async function summary(actor: InvoiceActor) {
     const activeAmountsWhere: Prisma.InvoiceWhereInput = {
         AND: [base, { status: { not: InvoiceStatus.CANCELLED } }],
     };
+    const outstandingAmountsWhere: Prisma.InvoiceWhereInput = {
+        AND: [
+            base,
+            {
+                OR: [
+                    { status: InvoiceStatus.SENT, dueDate: { gte: now } },
+                    { status: InvoiceStatus.OVERDUE },
+                    { status: InvoiceStatus.SENT, dueDate: { lt: now } },
+                ],
+            },
+        ],
+    };
 
-    const [total, draft, sent, paid, overdue, cancelled, amounts, paidAmounts] = await Promise.all([
+    const [total, draft, sent, paid, overdue, cancelled, amounts, paidAmounts, outstandingAmounts] = await Promise.all([
         prisma.invoice.count({ where: base }),
         prisma.invoice.count({ where: { AND: [base, { status: InvoiceStatus.DRAFT }] } }),
         prisma.invoice.count({
@@ -192,6 +270,10 @@ export async function summary(actor: InvoiceActor) {
             where: { AND: [base, { status: InvoiceStatus.PAID }] },
             _sum: { totalCents: true },
         }),
+        prisma.invoice.aggregate({
+            where: outstandingAmountsWhere,
+            _sum: { totalCents: true },
+        }),
     ]);
 
     const totalCents = amounts._sum.totalCents ?? 0;
@@ -207,7 +289,7 @@ export async function summary(actor: InvoiceActor) {
         vatCents: amounts._sum.vatCents ?? 0,
         totalCents,
         paidCents,
-        outstandingCents: totalCents - paidCents,
+        outstandingCents: outstandingAmounts._sum.totalCents ?? 0,
     };
 }
 
@@ -216,6 +298,10 @@ export async function create(actor: InvoiceActor, input: InvoiceMutationInput) {
 
     const invoice = await prisma.$transaction(async (transaction) => {
         await assertClientAccess(transaction, data.clientId, actor);
+        const [company, client] = await Promise.all([
+            transaction.company.findUniqueOrThrow({ where: { id: actor.companyId } }),
+            transaction.client.findUniqueOrThrow({ where: { id: data.clientId } }),
+        ]);
         const year = data.issueDate.getUTCFullYear();
         const sequence = await transaction.invoiceSequence.upsert({
             where: { companyId_year: { companyId: actor.companyId, year } },
@@ -232,6 +318,8 @@ export async function create(actor: InvoiceActor, input: InvoiceMutationInput) {
                 dueDate: data.dueDate,
                 paidAt: data.paidAt,
                 notes: data.notes,
+                issuerSnapshot: buildIssuerSnapshot(company as InvoiceWithRelations["company"]),
+                clientSnapshot: buildClientSnapshot(client as InvoiceWithRelations["client"]),
                 subtotalCents: data.subtotalCents,
                 vatCents: data.vatCents,
                 totalCents: data.totalCents,
@@ -273,6 +361,10 @@ export async function update(id: string, actor: InvoiceActor, patch: InvoiceMuta
 
     const invoice = await prisma.$transaction(async (transaction) => {
         await assertClientAccess(transaction, data.clientId, actor);
+        const [company, client] = await Promise.all([
+            transaction.company.findUniqueOrThrow({ where: { id: actor.companyId } }),
+            transaction.client.findUniqueOrThrow({ where: { id: data.clientId } }),
+        ]);
         await transaction.invoiceLine.deleteMany({ where: { invoiceId: id } });
         return transaction.invoice.update({
             where: { id },
@@ -282,6 +374,8 @@ export async function update(id: string, actor: InvoiceActor, patch: InvoiceMuta
                 dueDate: data.dueDate,
                 paidAt: data.status === "PAID" ? data.paidAt : null,
                 notes: data.notes,
+                issuerSnapshot: buildIssuerSnapshot(company as InvoiceWithRelations["company"]),
+                clientSnapshot: buildClientSnapshot(client as InvoiceWithRelations["client"]),
                 subtotalCents: data.subtotalCents,
                 vatCents: data.vatCents,
                 totalCents: data.totalCents,

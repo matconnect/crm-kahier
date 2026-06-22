@@ -18,6 +18,8 @@ const nextConfig = {
             { source: "/projects/:path*", destination: `${apiInternal}/projects/:path*` },
             { source: "/invoices", destination: `${apiInternal}/invoices` },
             { source: "/invoices/:path*", destination: `${apiInternal}/invoices/:path*` },
+            { source: "/quotes", destination: `${apiInternal}/quotes` },
+            { source: "/quotes/:path*", destination: `${apiInternal}/quotes/:path*` },
             { source: "/company", destination: `${apiInternal}/company` },
             { source: "/company/:path*", destination: `${apiInternal}/company/:path*` },
             { source: "/users", destination: `${apiInternal}/users` },

@@ -22,6 +22,22 @@ model Company {
   id        String   @id @default(cuid())
   name      String
   code      String   @unique @default(cuid())
+  legalForm String?
+  capitalSocialCents Int?
+  siren     String?
+  siret     String?
+  vatNumber String?
+  rcsCity   String?
+  addressLine1 String?
+  addressLine2 String?
+  postalCode String?
+  city       String?
+  country    String?
+  contactEmail String?
+  contactPhone String?
+  paymentTerms String?
+  latePenaltyRateBps Int?
+  fixedCompensationCents Int @default(4000)
   subscriptionType String @default("STARTER_FREE")
   stripeCustomerId String? @unique
   stripeSubscriptionId String? @unique
@@ -38,6 +54,8 @@ model Company {
   projects          Project[]
   invoices          Invoice[]
   invoiceSequences  InvoiceSequence[]
+  quotes            Quote[]
+  quoteSequences    QuoteSequence[]
   kahierConnection  KahierConnection?
   kahierLinkTokens  KahierLinkToken[]
 }
@@ -129,6 +147,7 @@ model User {
   uploadedClientDocuments   ClientDocument[]
   projectsOwned             Project[]
   invoicesCreated           Invoice[]           @relation("InvoiceCreatedBy")
+  quotesCreated             Quote[]             @relation("QuoteCreatedBy")
 }
 
 model Client {
@@ -138,6 +157,13 @@ model Client {
   segment      ClientSegment @default(OTHER)
   revenueSource RevenueSource?
   location     String?
+  addressLine1 String?
+  addressLine2 String?
+  postalCode   String?
+  city         String?
+  country      String?
+  siren        String?
+  vatNumber    String?
   companyId    String?
   ownerId      String?
   notes        String?
@@ -157,6 +183,7 @@ model Client {
   documents    ClientDocument[]
   projects     Project[]
   invoices     Invoice[]
+  quotes       Quote[]
 
   @@index([status])
   @@index([segment])
@@ -174,6 +201,12 @@ enum InvoiceStatus {
   PAID
   OVERDUE
   CANCELLED
+}
+
+enum InvoiceOperationType {
+  SALE
+  SERVICE
+  MIXED
 }
 
 model InvoiceSequence {
@@ -194,9 +227,15 @@ model Invoice {
   number          String
   status          InvoiceStatus @default(DRAFT)
   issueDate       DateTime
+  serviceDate     DateTime?
   dueDate         DateTime
   paidAt          DateTime?
+  purchaseOrderNumber String?
+  operationType   InvoiceOperationType?
+  deliveryAddress String?       @db.Text
   notes           String?       @db.Text
+  issuerSnapshot  Json?
+  clientSnapshot  Json?
   subtotalCents   Int
   vatCents        Int
   totalCents      Int
@@ -236,6 +275,82 @@ model InvoiceLine {
 
   @@unique([invoiceId, position])
   @@index([invoiceId])
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+model QuoteSequence {
+  id        String   @id @default(cuid())
+  companyId String
+  year      Int
+  value     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, year])
+}
+
+model Quote {
+  id            String      @id @default(cuid())
+  number        String
+  status        QuoteStatus @default(DRAFT)
+  issueDate     DateTime
+  expiryDate    DateTime
+  acceptedAt    DateTime?
+  executionLocation String?
+  isFree        Boolean     @default(true)
+  quoteCostCents Int?
+  notes         String?     @db.Text
+  issuerSnapshot Json?
+  clientSnapshot Json?
+  subtotalCents Int
+  vatCents      Int
+  totalCents    Int
+  companyId     String
+  clientId      String
+  createdById   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client    Client     @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  createdBy User?      @relation("QuoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  lines     QuoteLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, issueDate])
+  @@index([clientId])
+  @@index([createdById])
+}
+
+model QuoteLine {
+  id             String   @id @default(cuid())
+  quoteId        String
+  position       Int
+  description    String
+  quantityMilli  Int
+  unitPriceCents Int
+  vatRateBps     Int
+  subtotalCents  Int
+  vatCents       Int
+  totalCents     Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteId, position])
+  @@index([quoteId])
 }
 
 model ClientOwner {

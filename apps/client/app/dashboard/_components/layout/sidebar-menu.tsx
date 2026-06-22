@@ -17,7 +17,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 import type { ActiveMenuKey } from "./types";
 import { hasBillingFeature } from "@/lib/subscription";
 
-type SidebarMenuProps = {
+export type SidebarMenuProps = {
     email?: string | null;
     activeClients: number;
     prospects: number;
@@ -112,6 +112,7 @@ function MainNavLink({
     badge,
     highlighted = false,
     locked = false,
+    onClick,
 }: {
     href: string;
     icon: LucideIcon;
@@ -119,10 +120,12 @@ function MainNavLink({
     badge?: string | number;
     highlighted?: boolean;
     locked?: boolean;
+    onClick?: () => void;
 }) {
     return (
         <Link
             href={href}
+            onClick={onClick}
             className={`flex min-h-11 items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition ${
                 highlighted
                     ? "bg-[#f0f2f7] text-[#10121a]"
@@ -147,7 +150,12 @@ function MainNavLink({
     );
 }
 
-export function SidebarMenu({
+type SidebarMenuPanelProps = SidebarMenuProps & {
+    onNavigate?: () => void;
+    className?: string;
+};
+
+export function SidebarMenuPanel({
     email,
     activeClients,
     prospects,
@@ -157,11 +165,13 @@ export function SidebarMenu({
     facturesCount,
     activeMenu,
     subscriptionType,
-}: SidebarMenuProps) {
+    onNavigate,
+    className,
+}: SidebarMenuPanelProps) {
     const badgeValues = { activeClients, prospects, interactionsCount, projectsCount, devisCount, facturesCount };
 
     return (
-        <aside className="border-b border-[#e6e9f0] bg-white p-4 lg:border-r lg:border-b-0 lg:p-5">
+        <div className={className}>
             <div className="flex items-center justify-between px-3 py-3">
                 <p className="text-4xl font-bold leading-none text-[#11131d]">Kahier</p>
                 <div className="rounded-xl border border-[#e6e9f0] bg-[#fafbfe] p-2.5 text-[#798294]">
@@ -189,6 +199,7 @@ export function SidebarMenu({
                                             icon={item.icon}
                                             label={item.label}
                                             badge={badge}
+                                            onClick={onNavigate}
                                             locked={locked}
                                             highlighted={activeMenu === item.key}
                                         />
@@ -206,6 +217,7 @@ export function SidebarMenu({
                 <div className="mt-4 flex items-center justify-between gap-3">
                     <Link
                         href="/dashboard/settings"
+                        onClick={onNavigate}
                         className="inline-flex items-center gap-2 rounded-xl border border-[#dfe3ec] bg-white px-3 py-2 text-xs font-semibold text-[#2f3344]"
                     >
                         <Settings className="h-3.5 w-3.5" />
@@ -214,6 +226,14 @@ export function SidebarMenu({
                     <LogoutButton size="sm">Déconnexion</LogoutButton>
                 </div>
             </div>
+        </div>
+    );
+}
+
+export function SidebarMenu(props: SidebarMenuProps) {
+    return (
+        <aside className="hidden border-r border-[#e6e9f0] bg-white p-5 lg:sticky lg:top-0 lg:block lg:h-screen lg:self-start lg:overflow-y-auto">
+            <SidebarMenuPanel {...props} />
         </aside>
     );
 }

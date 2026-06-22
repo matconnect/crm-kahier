@@ -36,6 +36,11 @@ type Props = {
     revenueSource?: RevenueSource | null;
     ownerIds?: string[];
     triggerClassName?: string;
+    triggerVariant?: React.ComponentProps<typeof Button>["variant"];
+    triggerSize?: React.ComponentProps<typeof Button>["size"];
+    triggerLabel?: string;
+    triggerTitle?: string;
+    triggerIconOnly?: boolean;
     currentUserId: string;
 };
 
@@ -171,9 +176,20 @@ export function EditClientDialog(props: Props) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className={["gap-2 text-black", props.triggerClassName ?? ""].filter(Boolean).join(" ")}>
+                <Button
+                    variant={props.triggerVariant ?? "outline"}
+                    size={props.triggerSize ?? "sm"}
+                    title={props.triggerTitle ?? props.triggerLabel ?? "Modifier le client"}
+                    className={[
+                        "text-black",
+                        props.triggerIconOnly ? "h-10 w-10 rounded-full" : "gap-2",
+                        props.triggerClassName ?? "",
+                    ]
+                        .filter(Boolean)
+                        .join(" ")}
+                >
                     <Pencil className="h-4 w-4" />
-                    Modifier le client
+                    {props.triggerIconOnly ? <span className="sr-only">{props.triggerLabel ?? "Modifier le client"}</span> : props.triggerLabel ?? "Modifier le client"}
                 </Button>
             </DialogTrigger>
             <DialogContent>

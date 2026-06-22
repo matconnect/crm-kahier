@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, BriefcaseBusiness, Mail, MapPin, Phone } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BriefcaseBusiness, Mail, MapPin, Pencil, Phone, Save, X } from "lucide-react";
 import { getRevenueSourceLabel, type ClientSegment, type ClientStatus, type RevenueSource } from "@/lib/client-enums";
 import { getServerApiBase } from "@/lib/api-base";
 import { requireAuth } from "@/lib/authz";
@@ -12,16 +12,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LogInteraction } from "../_components/log-interaction";
 import { InteractionsList } from "../_components/interactions-list";
-import { EditClientDialog } from "../_components/edit-client-dialog";
 import { AddContactDialog } from "../_components/add-contact-dialog";
 import { EditContactDialog } from "../_components/edit-contact-dialog";
 import { DeleteContactDialog } from "../_components/delete-contact-dialog";
 import { DeleteClientDialog } from "../_components/delete-client-dialog";
 import { ClientDocumentsCard } from "../_components/client-documents-card";
 import { DashboardShell, fetchDashboardData } from "../../_components";
+import { EditClientPageForm } from "./edit-client-page-form";
+import type { FormState } from "../new/types";
 
 type DetailPageProps = {
     params: Promise<{ id: string }>;
+    searchParams: Promise<{ edit?: string }>;
 };
 
 const actionButtonClass =
@@ -34,6 +36,13 @@ type ClientDetail = {
     status: ClientStatus;
     revenueSource: RevenueSource | null;
     location: string | null;
+    addressLine1?: string | null;
+    addressLine2?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+    country?: string | null;
+    siren?: string | null;
+    vatNumber?: string | null;
     primaryEmail: string | null;
     primaryPhone: string | null;
     ownerId: string | null;
@@ -120,7 +129,7 @@ async function fetchClient(id: string, currentUserId: string): Promise<ClientDet
     };
 }
 
-export default async function ClientDetailPage({ params }: DetailPageProps) {
+export default async function ClientDetailPage({ params, searchParams }: DetailPageProps) {
     const session = await requireAuth();
     const currentUserId = session.user?.id ?? "";
     const currentUserRole = (session.user?.role ?? "USER") as Role;
@@ -128,6 +137,7 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
     const dashboardData = await fetchDashboardData(currentUserId);
 
     const { id } = await params;
+    const sp = await searchParams;
     if (!id) {
         notFound();
     }
@@ -176,6 +186,28 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
         ...(client.owners ?? []).map((o) => o.userId),
     ]);
     const canEdit = currentUserRole === "ADMIN" || assignedUserIds.has(currentUserId);
+    const isEditing = canEdit && sp.edit === "1";
+    const currentUserLabel =
+        `${session.user?.firstName ?? ""} ${session.user?.lastName ?? ""}`.trim() || session.user?.email || "Utilisateur";
+    const editForm: FormState = {
+        name: client.name,
+        ownerIds: Array.from(assignedUserIds),
+        status: client.status,
+        segment: client.segment,
+        revenueSource: client.revenueSource ?? "OTHER",
+        location: client.location ?? "",
+        addressLine1: client.addressLine1 ?? "",
+        addressLine2: client.addressLine2 ?? "",
+        postalCode: client.postalCode ?? "",
+        city: client.city ?? "",
+        country: client.country ?? "",
+        siren: client.siren ?? "",
+        vatNumber: client.vatNumber ?? "",
+        emails: client.emails?.length ? client.emails : [client.primaryEmail ?? ""],
+        phones: client.phones?.length ? client.phones : [client.primaryPhone ?? ""],
+        notes: client.notes ?? "",
+        contacts: [],
+    };
 
     return (
         <DashboardShell
@@ -284,25 +316,33 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                                 </Link>
                                 {canEdit && (
                                     <>
-                                        <EditClientDialog
-                                            clientId={client.id}
-                                            name={client.name}
-                                            status={client.status}
-                                            segment={client.segment}
-                                            location={client.location}
-                                            primaryEmail={client.primaryEmail}
-                                            primaryPhone={client.primaryPhone}
-                                            emails={client.emails ?? []}
-                                            phones={client.phones ?? []}
-                                            notes={client.notes}
-                                            revenueSource={client.revenueSource}
-                                            ownerIds={[
-                                                ...(client.ownerId ? [client.ownerId] : []),
-                                                ...(client.owners ?? []).map((o) => o.userId),
-                                            ]}
-                                            currentUserId={currentUserId}
-                                            triggerClassName={actionButtonClass}
-                                        />
+                                        {isEditing ? (
+                                            <>
+                                                <Link
+                                                    href={`/dashboard/clients/${client.id}`}
+                                                    className={`inline-flex items-center justify-center gap-2 border ${actionButtonClass}`}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                    Annuler
+                                                </Link>
+                                                <button
+                                                    type="submit"
+                                                    form="client-edit-form"
+                                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#111322] px-4 text-sm font-medium text-white shadow-sm hover:bg-[#191d2e]"
+                                                >
+                                                    <Save className="h-4 w-4" />
+                                                    Enregistrer
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <Link
+                                                href={`/dashboard/clients/${client.id}?edit=1`}
+                                                className={`inline-flex items-center justify-center gap-2 border ${actionButtonClass}`}
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                                Modifier
+                                            </Link>
+                                        )}
                                         <AddContactDialog clientId={client.id} currentUserId={currentUserId} triggerClassName={actionButtonClass} />
                                         <DeleteClientDialog
                                             clientId={client.id}
@@ -317,6 +357,18 @@ export default async function ClientDetailPage({ params }: DetailPageProps) {
                         </div>
                     </div>
                 </MotionReveal>
+
+                {isEditing && (
+                    <MotionReveal delay={40}>
+                        <EditClientPageForm
+                            clientId={client.id}
+                            currentUserId={currentUserId}
+                            currentUserLabel={currentUserLabel}
+                            currentUserEmail={session.user?.email}
+                            initialForm={editForm}
+                        />
+                    </MotionReveal>
+                )}
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <MotionReveal delay={80} className="lg:col-span-2">

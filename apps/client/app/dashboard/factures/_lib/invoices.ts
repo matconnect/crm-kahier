@@ -7,7 +7,20 @@ export const INVOICE_STATUS_OPTIONS = [
 ] as const;
 
 export type InvoiceStatus = (typeof INVOICE_STATUS_OPTIONS)[number]["value"];
-export type ClientOption = { id: string; name: string };
+export type ClientOption = {
+    id: string;
+    name: string;
+    location?: string | null;
+    addressLine1?: string | null;
+    addressLine2?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+    country?: string | null;
+    siren?: string | null;
+    vatNumber?: string | null;
+    primaryEmail?: string | null;
+    primaryPhone?: string | null;
+};
 
 export type InvoiceLine = {
     id?: string;
@@ -32,7 +45,20 @@ export type Invoice = {
     subtotalCents: number;
     vatCents: number;
     totalCents: number;
-    client: { id: string; name: string; location: string | null; primaryEmail: string | null };
+    client: {
+        id: string;
+        name: string;
+        location: string | null;
+        addressLine1: string | null;
+        addressLine2: string | null;
+        postalCode: string | null;
+        city: string | null;
+        country: string | null;
+        siren: string | null;
+        vatNumber: string | null;
+        primaryEmail: string | null;
+        primaryPhone: string | null;
+    };
     company: { id: string; name: string };
     lines: InvoiceLine[];
     createdAt: string;

@@ -15,8 +15,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getBrowserApiBase } from "@/lib/public-api-base";
-import type { InvoiceStatus } from "../_lib/invoices";
+import { INVOICE_STATUS_OPTIONS, type InvoiceStatus } from "../_lib/invoices";
 
 type Props = {
     invoiceId: string;
@@ -34,9 +35,14 @@ export function InvoiceTableActions({ invoiceId, invoiceNumber, currentUserId, s
     const [pdfLoading, setPdfLoading] = React.useState(false);
     const [pending, setPending] = React.useState(false);
 
+    function revokePdfUrl(url: string | null) {
+        if (!url || typeof URL.revokeObjectURL !== "function") return;
+        URL.revokeObjectURL(url);
+    }
+
     React.useEffect(
         () => () => {
-            if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+            revokePdfUrl(pdfUrl);
         },
         [pdfUrl],
     );
@@ -55,13 +61,13 @@ export function InvoiceTableActions({ invoiceId, invoiceNumber, currentUserId, s
                 if (cancelled) return;
                 const nextUrl = URL.createObjectURL(blob);
                 setPdfUrl((current) => {
-                    if (current) URL.revokeObjectURL(current);
+                    revokePdfUrl(current);
                     return nextUrl;
                 });
             } catch {
                 if (!cancelled) {
                     setPdfUrl((current) => {
-                        if (current) URL.revokeObjectURL(current);
+                        revokePdfUrl(current);
                         return null;
                     });
                 }
@@ -116,6 +122,26 @@ export function InvoiceTableActions({ invoiceId, invoiceNumber, currentUserId, s
         }
     }
 
+    async function updateStatus(nextStatus: InvoiceStatus) {
+        if (!apiBase) return toast.error("API indisponible.");
+        setPending(true);
+        try {
+            const response = await fetch(`${apiBase}/invoices/${invoiceId}/status`, {
+                method: "PATCH",
+                headers: { "content-type": "application/json", "x-user-id": currentUserId },
+                body: JSON.stringify({ status: nextStatus }),
+            });
+            const data = (await response.json().catch(() => null)) as { error?: string } | null;
+            if (!response.ok) throw new Error(data?.error ?? "Modification impossible.");
+            toast.success("Statut de la facture mis à jour.");
+            router.refresh();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Modification impossible.");
+        } finally {
+            setPending(false);
+        }
+    }
+
     async function downloadPdf() {
         if (!apiBase) return toast.error("API indisponible.");
         setPending(true);
@@ -130,13 +156,15 @@ export function InvoiceTableActions({ invoiceId, invoiceNumber, currentUserId, s
             anchor.href = url;
             anchor.download = `${invoiceNumber}.pdf`;
             anchor.click();
-            URL.revokeObjectURL(url);
+            revokePdfUrl(url);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Téléchargement impossible.");
         } finally {
             setPending(false);
         }
     }
+
+    const editableStatuses = INVOICE_STATUS_OPTIONS.filter((option) => option.value !== "DRAFT");
 
     return (
         <>
@@ -164,13 +192,13 @@ export function InvoiceTableActions({ invoiceId, invoiceNumber, currentUserId, s
                         <Download className="h-4 w-4" />
                     </Button>
                 )}
-                <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full" title={status === "DRAFT" ? "Modifier" : "Consulter"}>
-                    <Link href={`/dashboard/factures/${invoiceId}`}>
-                        <PencilLine className="h-4 w-4" />
-                    </Link>
-                </Button>
                 {status === "DRAFT" ? (
                     <>
+                        <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full" title="Modifier">
+                            <Link href={`/dashboard/factures/${invoiceId}`}>
+                                <PencilLine className="h-4 w-4" />
+                            </Link>
+                        </Button>
                         <Button
                             type="button"
                             variant="ghost"
@@ -192,7 +220,32 @@ export function InvoiceTableActions({ invoiceId, invoiceNumber, currentUserId, s
                             <Trash2 className="h-4 w-4" />
                         </Button>
                     </>
-                ) : null}
+                ) : (
+                    <>
+                        <Select value={status} onValueChange={(value) => updateStatus(value as InvoiceStatus)}>
+                            <SelectTrigger className="h-10 w-44 rounded-full bg-white">
+                                <SelectValue placeholder="Changer le statut" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {editableStatuses.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 rounded-full"
+                            title="Télécharger"
+                            onClick={downloadPdf}
+                        >
+                            <Download className="h-4 w-4" />
+                        </Button>
+                    </>
+                )}
             </div>
 
             <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>

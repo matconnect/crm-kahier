@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Command, Plus, Search } from "lucide-react";
 import type { ClientSearchItem, InteractionItem, ProjectSearchItem } from "../shared/types";
@@ -15,6 +16,7 @@ type DashboardTopHeaderProps = {
     searchClients?: ClientSearchItem[];
     searchInteractions?: InteractionItem[];
     searchProjects?: ProjectSearchItem[];
+    mobileSidebar?: ReactNode;
 };
 
 export function DashboardTopHeader({
@@ -23,6 +25,7 @@ export function DashboardTopHeader({
     searchClients,
     searchInteractions,
     searchProjects,
+    mobileSidebar,
 }: DashboardTopHeaderProps) {
     const router = useRouter();
     const [query, setQuery] = useState(searchValue ?? "");
@@ -38,6 +41,30 @@ export function DashboardTopHeader({
             setNow(new Date());
         }, 1000);
         return () => window.clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        const element = document.getElementById("dashboard-top-header");
+        if (!element) return;
+
+        const updateHeight = () => {
+            document.documentElement.style.setProperty("--dashboard-top-header-height", `${element.offsetHeight}px`);
+        };
+
+        updateHeight();
+
+        if (typeof ResizeObserver !== "undefined") {
+            const observer = new ResizeObserver(updateHeight);
+            observer.observe(element);
+            window.addEventListener("resize", updateHeight);
+            return () => {
+                observer.disconnect();
+                window.removeEventListener("resize", updateHeight);
+            };
+        }
+
+        window.addEventListener("resize", updateHeight);
+        return () => window.removeEventListener("resize", updateHeight);
     }, []);
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -103,11 +130,16 @@ export function DashboardTopHeader({
     const upcomingMore = upcomingInteractions.slice(1, 8);
 
     return (
-        <div className="bg-white px-4 py-4 md:px-7">
+        <div id="dashboard-top-header" className="sticky top-0 z-50 border-b border-[#e6e9f0] bg-white/95 px-4 py-4 backdrop-blur md:px-7">
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="min-w-0">
-                    <p className="truncate text-lg font-semibold text-[#141722]">{getGreetingAt(now)}, {firstName}</p>
-                    <p className="text-xs text-[#8b91a1]">{formatNowLabelAt(now)}</p>
+                    <div className="flex items-start gap-3">
+                        {mobileSidebar}
+                        <div className="min-w-0">
+                            <p className="truncate text-lg font-semibold text-[#141722]">{getGreetingAt(now)}, {firstName}</p>
+                            <p className="text-xs text-[#8b91a1]">{formatNowLabelAt(now)}</p>
+                        </div>
+                    </div>
                     {nextInteraction ? (
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                             <span className="rounded-lg bg-[#e8fbf8] px-2.5 py-1 text-[11px] font-semibold text-[#1b9b8f]">
@@ -161,7 +193,7 @@ export function DashboardTopHeader({
                 </div>
 
                 <div className="flex w-full items-center gap-3 md:w-auto">
-                    <div className="relative flex-1 md:min-w-[420px]">
+                    <div className="relative flex-1 md:min-w-[360px] lg:min-w-[420px]">
                         <form onSubmit={handleSubmit} className="flex h-12 items-center gap-2 rounded-xl border border-[#dde2eb] bg-white px-4 shadow-[0_8px_22px_rgba(28,35,54,0.04)]">
                             <Search className="h-4 w-4 text-[#10121a]" />
                             <input
@@ -235,7 +267,7 @@ export function DashboardTopHeader({
                     </div>
                     <Link
                         href="/dashboard/clients/new"
-                        className="inline-flex h-12 items-center gap-2 rounded-xl border border-[#dde2eb] bg-white px-3 text-sm font-semibold text-[#11131d] shadow-[0_8px_22px_rgba(28,35,54,0.04)] hover:bg-[#f8f9fc]"
+                        className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[#dde2eb] bg-white px-3 text-sm font-semibold text-[#11131d] shadow-[0_8px_22px_rgba(28,35,54,0.04)] hover:bg-[#f8f9fc]"
                     >
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">Client</span>

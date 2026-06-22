@@ -18,6 +18,13 @@ export type ListItem = {
     segment: ClientSegment;
     revenueSource: RevenueSource | null;
     location: string | null;
+    addressLine1: string | null;
+    addressLine2: string | null;
+    postalCode: string | null;
+    city: string | null;
+    country: string | null;
+    siren: string | null;
+    vatNumber: string | null;
     notes: string | null;
     contactsCount: number;
     owner: { firstName: string | null; lastName: string | null; email: string | null } | null;

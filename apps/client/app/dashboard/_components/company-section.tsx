@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Clipboard, Crown, Users, Loader2, AlertCircle } from "lucide-react";
+import { Clipboard, Crown, Users, Loader2, AlertCircle, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { getBrowserApiBase } from "@/lib/public-api-base";
 
@@ -20,7 +22,29 @@ type CompanyUser = {
 
 type CompanyResponse =
     | {
-        company: { id: string; name: string; code: string; createdAt: string; users: CompanyUser[] };
+        company: {
+            id: string;
+            name: string;
+            code: string;
+            legalForm: string | null;
+            capitalSocialCents: number | null;
+            siren: string | null;
+            siret: string | null;
+            vatNumber: string | null;
+            rcsCity: string | null;
+            addressLine1: string | null;
+            addressLine2: string | null;
+            postalCode: string | null;
+            city: string | null;
+            country: string | null;
+            contactEmail: string | null;
+            contactPhone: string | null;
+            paymentTerms: string | null;
+            latePenaltyRateBps: number | null;
+            fixedCompensationCents: number | null;
+            createdAt: string;
+            users: CompanyUser[];
+        };
         stripe: {
             subscriptionType: string;
             stripeCustomerId: string | null;
@@ -44,16 +68,6 @@ function roleLabel(role: CompanyUser["role"]) {
     if (role === "MANAGER") return "Manager";
     return "Utilisateur";
 }
-
-const formatDateTime = (value: string | null) => {
-    if (!value) return "Non défini";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "Non défini";
-    return new Intl.DateTimeFormat("fr-FR", {
-        dateStyle: "medium",
-        timeStyle: "short",
-    }).format(date);
-};
 
 const planLabel = (value: string) => {
     const plans: Record<string, string> = {
@@ -88,6 +102,14 @@ const UPGRADE_PRICING: Record<"pro", { monthly: number; yearly: number }> = {
     pro: { monthly: 29, yearly: 24 },
 };
 
+function RequiredLabel({ children }: { children: React.ReactNode }) {
+    return (
+        <Label>
+            {children} <span className="text-red-600">*</span>
+        </Label>
+    );
+}
+
 function upgradePlanLabel(planId: "pro" | "enterprise") {
     return planId === "enterprise" ? "Entreprise" : "Pro";
 }
@@ -98,6 +120,7 @@ export function CompanySection({ userId }: Props) {
     const [loading, setLoading] = React.useState(true);
     const [portalLoading, setPortalLoading] = React.useState(false);
     const [upgradeLoading, setUpgradeLoading] = React.useState(false);
+    const [legalSaving, setLegalSaving] = React.useState(false);
     const [upgradePlanId, setUpgradePlanId] = React.useState<"pro" | "enterprise">("pro");
     const [upgradeBillingCycle, setUpgradeBillingCycle] = React.useState<"monthly" | "yearly">("monthly");
     const selectedPrice = upgradePlanId === "pro" ? UPGRADE_PRICING.pro[upgradeBillingCycle] : null;
@@ -160,6 +183,34 @@ export function CompanySection({ userId }: Props) {
 
     const { company: companyData, stripe, viewerRole, creatorId } = company;
 
+    async function saveLegalInfo(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const payload = Object.fromEntries(formData.entries());
+        setLegalSaving(true);
+        try {
+            const apiBase = getBrowserApiBase() ?? "";
+            const res = await fetch(`${apiBase}/company`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json", "x-user-id": userId },
+                body: JSON.stringify({
+                    ...payload,
+                    capitalSocialCents: payload.capitalSocialCents ? Number(payload.capitalSocialCents) : null,
+                    latePenaltyRateBps: payload.latePenaltyRateBps ? Number(payload.latePenaltyRateBps) : null,
+                    fixedCompensationCents: payload.fixedCompensationCents ? Number(payload.fixedCompensationCents) : 4000,
+                }),
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok) throw new Error(data?.error ?? "Impossible d’enregistrer les informations légales.");
+            setCompany((current) => (current && !("error" in current) ? { ...current, company: { ...current.company, ...data.company } } : current));
+            toast.success("Informations légales mises à jour.");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Erreur inattendue");
+        } finally {
+            setLegalSaving(false);
+        }
+    }
+
     return (
         <div>
             <div>
@@ -190,6 +241,135 @@ export function CompanySection({ userId }: Props) {
                             Copier
                         </Button>
                     </div>
+                </section>
+
+                <section className="space-y-4">
+                    <div>
+                        <h3 className="text-sm font-semibold leading-none">Informations légales pour devis et factures</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            <span className="text-red-600">*</span> Champ obligatoire
+                        </p>
+                    </div>
+                    <form className="grid gap-4 md:grid-cols-2" onSubmit={saveLegalInfo}>
+                        <div className="space-y-2">
+                            <RequiredLabel>Raison sociale</RequiredLabel>
+                            <Input
+                                name="name"
+                                defaultValue={companyData.name}
+                                className={!companyData.name ? "border-red-300 focus-visible:ring-red-100" : undefined}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <RequiredLabel>Forme juridique</RequiredLabel>
+                            <Input
+                                name="legalForm"
+                                defaultValue={companyData.legalForm ?? ""}
+                                placeholder="SAS, SARL, EI..."
+                                className={!companyData.legalForm ? "border-red-300 focus-visible:ring-red-100" : undefined}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Capital social (€ centimes)</Label>
+                            <Input name="capitalSocialCents" defaultValue={companyData.capitalSocialCents ?? ""} inputMode="numeric" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>SIREN</Label>
+                            <Input name="siren" defaultValue={companyData.siren ?? ""} />
+                        </div>
+                        <div className="space-y-2">
+                            <RequiredLabel>SIRET</RequiredLabel>
+                            <Input
+                                name="siret"
+                                defaultValue={companyData.siret ?? ""}
+                                className={!companyData.siret ? "border-red-300 focus-visible:ring-red-100" : undefined}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>TVA intracom</Label>
+                            <Input
+                                name="vatNumber"
+                                defaultValue={companyData.vatNumber ?? ""}
+                                placeholder="Laisser vide si non concerné"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Ville RCS</Label>
+                            <Input name="rcsCity" defaultValue={companyData.rcsCity ?? ""} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Email de contact</Label>
+                            <Input name="contactEmail" defaultValue={companyData.contactEmail ?? ""} type="email" />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                            <RequiredLabel>Adresse</RequiredLabel>
+                            <Input
+                                name="addressLine1"
+                                defaultValue={companyData.addressLine1 ?? ""}
+                                placeholder="Adresse"
+                                className={!companyData.addressLine1 ? "border-red-300 focus-visible:ring-red-100" : undefined}
+                            />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                            <Label>Complément d’adresse</Label>
+                            <Input name="addressLine2" defaultValue={companyData.addressLine2 ?? ""} placeholder="Bâtiment, étage..." />
+                        </div>
+                        <div className="space-y-2">
+                            <RequiredLabel>Code postal</RequiredLabel>
+                            <Input
+                                name="postalCode"
+                                defaultValue={companyData.postalCode ?? ""}
+                                className={!companyData.postalCode ? "border-red-300 focus-visible:ring-red-100" : undefined}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <RequiredLabel>Ville</RequiredLabel>
+                            <Input
+                                name="city"
+                                defaultValue={companyData.city ?? ""}
+                                className={!companyData.city ? "border-red-300 focus-visible:ring-red-100" : undefined}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <RequiredLabel>Pays</RequiredLabel>
+                            <Input
+                                name="country"
+                                defaultValue={companyData.country ?? ""}
+                                className={!companyData.country ? "border-red-300 focus-visible:ring-red-100" : undefined}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Téléphone de contact</Label>
+                            <Input name="contactPhone" defaultValue={companyData.contactPhone ?? ""} />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                            <RequiredLabel>Conditions de paiement</RequiredLabel>
+                            <Input
+                                name="paymentTerms"
+                                defaultValue={companyData.paymentTerms ?? ""}
+                                placeholder="Paiement à 30 jours fin de mois..."
+                                className={!companyData.paymentTerms ? "border-red-300 focus-visible:ring-red-100" : undefined}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Pénalités de retard (basis points)</Label>
+                            <Input name="latePenaltyRateBps" defaultValue={companyData.latePenaltyRateBps ?? ""} inputMode="numeric" placeholder="1000 = 10%" />
+                        </div>
+                        <div className="space-y-2">
+                            <RequiredLabel>Indemnité forfaitaire (centimes)</RequiredLabel>
+                            <Input
+                                name="fixedCompensationCents"
+                                defaultValue={companyData.fixedCompensationCents ?? 4000}
+                                inputMode="numeric"
+                                className={!companyData.fixedCompensationCents ? "border-red-300 focus-visible:ring-red-100" : undefined}
+                            />
+                        </div>
+                        <div className="md:col-span-2 flex justify-end">
+                            <Button type="submit" disabled={legalSaving} className="gap-2">
+                                {legalSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                Enregistrer
+                            </Button>
+                        </div>
+                    </form>
                 </section>
 
                 {/* Section : Facturation & Abonnement (Admin uniquement) */}
@@ -227,7 +407,7 @@ export function CompanySection({ userId }: Props) {
                             )}
                         </div>
 
-                        <div className="grid gap-4 rounded-xl border px-4 py-4 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-4 rounded-xl border px-4 py-4 md:grid-cols-2 lg:grid-cols-2">
                             <div className="space-y-1">
                                 <p className="text-xs text-muted-foreground">Offre actuelle</p>
                                 <p className="text-sm font-medium">{planLabel(stripe.subscriptionType)}</p>
@@ -242,14 +422,6 @@ export function CompanySection({ userId }: Props) {
                                         </span>
                                     );
                                 })()}
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground">Date d&apos;achat</p>
-                                <p className="text-sm">{formatDateTime(stripe.stripePurchasedAt)}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground">Prochain renouvellement</p>
-                                <p className="text-sm">{formatDateTime(stripe.stripeCurrentPeriodEnd)}</p>
                             </div>
                         </div>
 

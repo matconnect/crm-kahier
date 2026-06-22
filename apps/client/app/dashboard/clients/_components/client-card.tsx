@@ -20,7 +20,6 @@ import {
 
 import { ContactFlash } from "./contact-flash";
 import { LogInteraction } from "./log-interaction";
-import { EditClientDialog } from "./edit-client-dialog";
 import { DeleteClientDialog } from "./delete-client-dialog";
 import { getRevenueSourceLabel, type ClientSegment, type ClientStatus, type RevenueSource } from "@/lib/client-enums";
 
@@ -223,21 +222,11 @@ export function ClientCard({ client, currentUserId }: ClientCardProps) {
                     </DialogContent>
                 </Dialog>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <EditClientDialog
-                        clientId={client.id}
-                        name={client.name}
-                        status={client.status}
-                        segment={client.segment}
-                        location={client.location}
-                        primaryEmail={client.primaryEmail}
-                        primaryPhone={client.primaryPhone}
-                        emails={client.emails}
-                        phones={client.phones}
-                        notes={client.notes}
-                        revenueSource={client.revenueSource}
-                        triggerClassName="w-full justify-center"
-                        currentUserId={currentUserId}
-                    />
+                    <Button asChild variant="outline" size="sm" className="gap-2 w-full bg-white/80">
+                        <Link href={`/dashboard/clients/${client.id}?edit=1`} className="text-slate-950">
+                            Modifier
+                        </Link>
+                    </Button>
                     <DeleteClientDialog
                         clientId={client.id}
                         clientName={client.name}

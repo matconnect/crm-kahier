@@ -49,9 +49,9 @@ export type ValidatedInvoiceInput = {
 const STATUS_TRANSITIONS: Record<InvoiceStatusValue, readonly InvoiceStatusValue[]> = {
     DRAFT: ["DRAFT", "SENT", "CANCELLED"],
     SENT: ["SENT", "PAID", "OVERDUE", "CANCELLED"],
-    OVERDUE: ["OVERDUE", "SENT", "PAID", "CANCELLED"],
-    PAID: ["PAID"],
-    CANCELLED: ["CANCELLED"],
+    OVERDUE: ["SENT", "PAID", "OVERDUE", "CANCELLED"],
+    PAID: ["SENT", "PAID", "OVERDUE", "CANCELLED"],
+    CANCELLED: ["SENT", "PAID", "OVERDUE", "CANCELLED"],
 };
 
 function parseScaledInteger(value: unknown, scale: number): number | null {

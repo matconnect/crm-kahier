@@ -22,6 +22,13 @@ export type FormState = {
     segment: ClientSegment;
     revenueSource: RevenueSource;
     location: string;
+    addressLine1: string;
+    addressLine2: string;
+    postalCode: string;
+    city: string;
+    country: string;
+    siren: string;
+    vatNumber: string;
     emails: string[];
     phones: string[];
     notes: string;
