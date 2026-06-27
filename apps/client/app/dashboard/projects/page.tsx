@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { ArrowUpRight, BriefcaseBusiness, CalendarRange, Clock3, Layers3, Plus, Target } from "lucide-react";
+import { BriefcaseBusiness, CalendarRange, Clock3, Eye, PencilLine, Plus, Target } from "lucide-react";
 import { requireAuth } from "@/lib/authz";
 import { getServerApiBase } from "@/lib/api-base";
 import { MotionReveal } from "@/components/motion/reveal";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { DashboardShell, fetchDashboardData } from "../_components";
+import { DeleteProjectDialog } from "./_components/delete-project-dialog";
 
 type ApiSummary = {
     total: number;
@@ -25,6 +27,8 @@ type ProjectItem = {
     progress: number;
     startDate: string | null;
     endDate: string | null;
+    kahierTabId: number | null;
+    kahierCategoryId: number | null;
     revenueAmount: number | null;
     costAmount: number | null;
     invoicedAmount: number | null;
@@ -45,30 +49,20 @@ type ProjectsResponse = {
 const STATUS_META = {
     DRAFT: {
         label: "En cadrage",
-        columnTone: "bg-slate-100 text-slate-700",
-        badgeTone: "bg-slate-50 text-slate-700",
+        badgeTone: "bg-white text-slate-700 border-slate-200",
     },
     IN_PROGRESS: {
         label: "En production",
-        columnTone: "bg-slate-100 text-slate-700",
-        badgeTone: "bg-slate-50 text-slate-700",
+        badgeTone: "bg-white text-slate-700 border-slate-200",
     },
     ON_HOLD: {
         label: "En pause",
-        columnTone: "bg-slate-100 text-slate-700",
-        badgeTone: "bg-slate-50 text-slate-700",
+        badgeTone: "bg-white text-slate-700 border-slate-200",
     },
     COMPLETED: {
         label: "Clôturé",
-        columnTone: "bg-slate-100 text-slate-700",
-        badgeTone: "bg-slate-100 text-slate-700",
+        badgeTone: "bg-white text-slate-700 border-slate-200",
     },
-} as const;
-
-const PRIORITY_META = {
-    LOW: "Basse",
-    MEDIUM: "Moyenne",
-    HIGH: "Haute",
 } as const;
 
 async function fetchProjects(apiBase: string, currentUserId: string): Promise<ProjectsResponse | null> {
@@ -97,13 +91,6 @@ async function fetchSummary(apiBase: string, currentUserId: string): Promise<Api
     }
 }
 
-function formatPerson(project: ProjectItem) {
-    const first = project.owner?.firstName?.trim() ?? "";
-    const last = project.owner?.lastName?.trim() ?? "";
-    const full = `${first} ${last}`.trim();
-    return full || project.owner?.email || "Non assigné";
-}
-
 function formatDate(value: string | null) {
     if (!value) return "Non planifiée";
     const date = new Date(value);
@@ -111,23 +98,16 @@ function formatDate(value: string | null) {
     return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-function formatAmount(value: number | null | undefined) {
-    if (typeof value !== "number" || Number.isNaN(value)) return "—";
-    return `${value.toLocaleString("fr-FR")} €`;
-}
-
 export default async function ProjectsPage() {
     const session = await requireAuth();
     const currentUserId = session.user?.id ?? "";
+    const currentUserRole = session.user?.role ?? "USER";
     const firstName = session.user?.firstName?.trim() || "équipe";
     const apiBase = getServerApiBase();
     const { summary: dashboardSummary, interactions, clients, projects: searchProjects } = await fetchDashboardData(currentUserId);
 
     const [projectsData, summaryData] = apiBase
-        ? await Promise.all([
-              fetchProjects(apiBase, currentUserId),
-              fetchSummary(apiBase, currentUserId),
-          ])
+        ? await Promise.all([fetchProjects(apiBase, currentUserId), fetchSummary(apiBase, currentUserId)])
         : [null, null];
 
     const projects = projectsData?.items ?? [];
@@ -142,14 +122,7 @@ export default async function ProjectsPage() {
     };
 
     const activeProjects = projects.filter((project) => project.status !== "COMPLETED").length;
-    const deliveryRate = projects.length ? Math.round(projects.reduce((sum, project) => sum + project.progress, 0) / projects.length) : 0;
-    const upcomingProjects = [...projects]
-        .filter((project) => project.endDate && project.status !== "COMPLETED")
-        .sort((a, b) => new Date(a.endDate ?? 0).getTime() - new Date(b.endDate ?? 0).getTime())
-        .slice(0, 4);
-    const recentlyUpdated = [...projects]
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .slice(0, 6);
+    const averageProgress = projects.length ? Math.round(projects.reduce((sum, project) => sum + project.progress, 0) / projects.length) : 0;
     const hasApiIssue = !apiBase || projectsData === null || summaryData === null;
 
     return (
@@ -166,313 +139,179 @@ export default async function ProjectsPage() {
             <main className="mx-auto flex w-full max-w-7xl flex-col gap-6">
                 <MotionReveal>
                     <section className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
-                        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="space-y-3">
-                                <div>
-                                    <h1 className="text-2xl font-bold  md:text-3xl">Projets</h1>
-                                </div>
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <h1 className="text-2xl font-bold text-[#1e2234] md:text-3xl">Projets</h1>
                             </div>
-
                             <div className="flex flex-wrap items-center gap-2">
-                                <Link
-                                    href="/dashboard/clients"
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
-                                >
-                                    Voir les clients
-                                    <ArrowUpRight className="h-4 w-4" />
-                                </Link>
-                                <Link
-                                    href="/dashboard/projects/new"
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#111322] px-4 text-sm font-medium text-white hover:bg-[#191d2e]"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    Nouveau projet
-                                </Link>
+                                <Button asChild className="h-10 rounded-full bg-[#111322] px-4 text-white hover:bg-[#191d2e]">
+                                    <Link href="/dashboard/projects/new">
+                                        <Plus className="h-4 w-4" />
+                                        Nouveau projet
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
 
-                        <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
-                                    <BriefcaseBusiness className="h-4 w-4" />
+                        <div className="mt-6 grid gap-2 sm:gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            {[
+                                { label: "Actifs", value: activeProjects, icon: BriefcaseBusiness },
+                                { label: "Avancement moyen", value: `${averageProgress}%`, icon: Target },
+                                { label: "Haute priorité", value: summary.highPriority, icon: Clock3 },
+                                { label: "Échéances", value: summary.dueSoon, icon: CalendarRange },
+                            ].map(({ label, value, icon: Icon }) => (
+                                <div key={label} className="rounded-[24px] border border-white/70 bg-white p-3 shadow-sm sm:p-5">
+                                    <Icon className="h-3.5 w-3.5 text-slate-500 sm:h-4 sm:w-4" />
+                                    <p className="mt-3 text-xs text-slate-500 sm:mt-4 sm:text-sm">{label}</p>
+                                    <p className="mt-1 text-lg font-semibold text-slate-950 sm:text-2xl">{value}</p>
                                 </div>
-                                <p className="text-sm font-medium text-slate-500">Actifs</p>
-                                <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{activeProjects}</p>
-                            </div>
-
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
-                                    <Target className="h-4 w-4" />
-                                </div>
-                                <p className="text-sm font-medium text-slate-500">Avancement moyen</p>
-                                <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{deliveryRate}%</p>
-                            </div>
-
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
-                                    <Clock3 className="h-4 w-4" />
-                                </div>
-                                <p className="text-sm font-medium text-slate-500">Priorité haute</p>
-                                <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{summary.highPriority}</p>
-                            </div>
-
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-xl bg-slate-100 p-2 text-slate-700">
-                                    <CalendarRange className="h-4 w-4" />
-                                </div>
-                                <p className="text-sm font-medium text-slate-500">Échéances proches</p>
-                                <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{summary.dueSoon}</p>
-                            </div>
+                            ))}
                         </div>
                     </section>
                 </MotionReveal>
 
-                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-                    <div className="space-y-6">
-                        <MotionReveal delay={70}>
-                            <section id="projects-overview" className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
-                                <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-                                    <div>
-                                        <h2 className="text-2xl font-semibold text-slate-950">Vue d’ensemble</h2>
-                                    </div>
-                                    <Badge variant="secondary" className="border border-[#d7dced] bg-[#f7f8fc] text-[#2f3344]">
-                                        {summary.total} projets
-                                    </Badge>
+                <MotionReveal delay={80}>
+                    <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
+                        <div className="mb-5 flex items-center justify-between gap-3">
+                            <h2 className="text-2xl font-semibold text-slate-950">Liste des projets</h2>
+                            <Badge variant="secondary" className="border border-[#d7dced] bg-[#f7f8fc] text-[#2f3344]">
+                                {summary.total} projets
+                            </Badge>
+                        </div>
+
+                        {hasApiIssue ? (
+                            <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">Données indisponibles.</div>
+                        ) : projects.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-600">Aucun projet.</div>
+                        ) : (
+                            <>
+                                <div className="hidden overflow-x-auto md:block">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
+                                            <tr>
+                                                <th className="px-3 py-3 font-medium">Projet</th>
+                                                <th className="px-3 py-3 font-medium">Client</th>
+                                                <th className="px-3 py-3 font-medium">Statut</th>
+                                                <th className="px-3 py-3 font-medium">Dernière maj</th>
+                                                <th className="px-3 py-3 font-medium">Échéance</th>
+                                                <th className="px-3 py-3 text-right font-medium">Avancement</th>
+                                                <th className="px-3 py-3 text-right font-medium">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {projects.map((project) => {
+                                                const canEditProject = currentUserRole === "ADMIN" || project.owner?.id === currentUserId;
+                                                return (
+                                                    <tr key={project.id} className="transition hover:bg-slate-50">
+                                                        <td className="px-3 py-4">
+                                                            <Link href={`/dashboard/projects/${project.id}`} className="font-semibold text-slate-950">
+                                                                {project.name}
+                                                            </Link>
+                                                        </td>
+                                                        <td className="px-3 py-4 text-slate-700">{project.client?.name ?? "Sans client"}</td>
+                                                        <td className="px-3 py-4">
+                                                            <Badge variant="outline" className={STATUS_META[project.status].badgeTone}>
+                                                                {STATUS_META[project.status].label}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="px-3 py-4 text-slate-600">{formatDate(project.updatedAt)}</td>
+                                                        <td className="px-3 py-4 text-slate-600">{formatDate(project.endDate)}</td>
+                                                        <td className="px-3 py-4 text-right font-semibold text-slate-950">{project.progress}%</td>
+                                                        <td className="px-3 py-4">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full" title="Voir le projet">
+                                                                    <Link href={`/dashboard/projects/${project.id}`}>
+                                                                        <Eye className="h-4 w-4" />
+                                                                    </Link>
+                                                                </Button>
+                                                                {canEditProject && (
+                                                                    <>
+                                                                        <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full" title="Modifier le projet">
+                                                                            <Link href={`/dashboard/projects/${project.id}/edit`}>
+                                                                                <PencilLine className="h-4 w-4" />
+                                                                            </Link>
+                                                                        </Button>
+                                                                        <DeleteProjectDialog
+                                                                            projectId={project.id}
+                                                                            projectName={project.name}
+                                                                            currentUserId={currentUserId}
+                                                                            kahierCategoryId={project.kahierCategoryId}
+                                                                            kahierTabId={project.kahierTabId}
+                                                                            redirectTo="/dashboard/projects"
+                                                                            triggerClassName="h-10 w-10 rounded-full"
+                                                                            triggerLabel="Supprimer"
+                                                                            triggerIconOnly
+                                                                        />
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
 
-                                {hasApiIssue ? (
-                                    <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-600">
-                                        Données indisponibles.
-                                    </div>
-                                ) : projects.length === 0 ? (
-                                    <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-600">
-                                        Aucun projet.
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="grid gap-4 md:grid-cols-4">
-                                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
-                                                <p className="text-xs uppercase  text-slate-500">En cadrage</p>
-                                                <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.draft}</p>
-                                            </div>
-                                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
-                                                <p className="text-xs uppercase  text-slate-500">En production</p>
-                                                <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.inProgress}</p>
-                                            </div>
-                                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
-                                                <p className="text-xs uppercase  text-slate-500">En pause</p>
-                                                <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.onHold}</p>
-                                            </div>
-                                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#fafbff] p-4">
-                                                <p className="text-xs uppercase  text-slate-500">Clôturés</p>
-                                                <p className="mt-3 text-3xl font-semibold text-slate-950">{summary.completed}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-6 space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <h3 className="text-base font-semibold text-slate-950">Dernières mises à jour</h3>
-                                                <span className="text-xs uppercase  text-slate-400">Réel</span>
-                                            </div>
-                                            <div className="space-y-3">
-                                                {recentlyUpdated.map((project) => (
-                                                    <Link
-                                                        key={project.id}
-                                                        href={`/dashboard/projects/${project.id}`}
-                                                        className="block rounded-[1.5rem] border border-slate-200 bg-white/80 p-4 transition hover:border-slate-300 hover:bg-white"
-                                                    >
-                                                        <div className="flex flex-wrap items-start justify-between gap-3">
-                                                            <div className="space-y-1">
-                                                                <h3 className="text-sm font-semibold text-slate-950">{project.name}</h3>
-                                                                <p className="text-xs text-slate-500">
-                                                                    {project.client?.name ?? "Sans client"} · {formatPerson(project)}
-                                                                </p>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <Badge variant="outline" className={STATUS_META[project.status].badgeTone}>
-                                                                    {STATUS_META[project.status].label}
-                                                                </Badge>
-                                                                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
-                                                                    {PRIORITY_META[project.priority]}
-                                                                </Badge>
-                                                            </div>
-                                                        </div>
-                                                        <p className="mt-2 text-xs text-slate-500">
-                                                            Revenu {formatAmount(project.revenueAmount)} · Coût {formatAmount(project.costAmount)}
-                                                        </p>
-                                                        <div className="mt-4 space-y-2">
-                                                            <div className="flex items-center justify-between text-xs text-slate-500">
-                                                                <span>Avancement</span>
-                                                                <span>{project.progress}%</span>
-                                                            </div>
-                                                            <div className="h-2 rounded-full bg-slate-100">
-                                                                <div
-                                                                    className="h-2 rounded-full bg-slate-950"
-                                                                    style={{ width: `${project.progress}%` }}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </section>
-                        </MotionReveal>
-
-                        <MotionReveal delay={130}>
-                            <section id="projects-pipeline" className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
-                                <div className="mb-5">
-                                        <h2 className="text-2xl font-semibold text-slate-950">État des projets</h2>
-                                </div>
-
-                                {hasApiIssue ? (
-                                    <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-600">
-                                        Impossible de charger le pipeline projet.
-                                    </div>
-                                ) : (
-                                    <div className="grid gap-4 xl:grid-cols-4">
-                                        {Object.entries(STATUS_META).map(([status, meta]) => {
-                                            const items = projects.filter((project) => project.status === status);
-                                            return (
-                                                <div key={status} className="rounded-[1.5rem] border border-slate-200 bg-white/60 p-4">
-                                                    <div className="mb-4 flex items-center justify-between">
-                                                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${meta.columnTone}`}>
-                                                            {meta.label}
-                                                        </span>
-                                                        <span className="text-xs text-slate-500">{items.length}</span>
+                                <div className="space-y-3 md:hidden">
+                                    {projects.map((project) => {
+                                        const canEditProject = currentUserRole === "ADMIN" || project.owner?.id === currentUserId;
+                                        return (
+                                            <div key={project.id} className="rounded-2xl border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <Link href={`/dashboard/projects/${project.id}`} className="truncate text-sm font-semibold text-slate-950">
+                                                            {project.name}
+                                                        </Link>
+                                                        <p className="mt-1 text-sm text-slate-600">{project.client?.name ?? "Sans client"}</p>
                                                     </div>
-
-                                                    {items.length === 0 ? (
-                                                        <div className="rounded-[1.25rem] border border-dashed border-slate-200 bg-white/70 p-4 text-sm text-slate-500">
-                                                            Vide.
-                                                        </div>
-                                                    ) : (
-                                                        <div className="space-y-3">
-                                                            {items.map((project) => (
-                                                                <Link
-                                                                    key={project.id}
-                                                                    href={`/dashboard/projects/${project.id}`}
-                                                                    className="block rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
-                                                                >
-                                                                    <div className="flex items-start justify-between gap-3">
-                                                                        <div>
-                                                                            <h3 className="text-sm font-semibold text-slate-950">{project.name}</h3>
-                                                                            <p className="mt-1 text-xs text-slate-500">
-                                                                                {project.client?.name ?? "Sans client"}
-                                                                            </p>
-                                                                        </div>
-                                                                        <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
-                                                                            {PRIORITY_META[project.priority]}
-                                                                        </Badge>
-                                                                    </div>
-
-                                                                    <div className="mt-4 space-y-2">
-                                                                        <div className="flex items-center justify-between text-xs text-slate-500">
-                                                                            <span>Avancement</span>
-                                                                            <span>{project.progress}%</span>
-                                                                        </div>
-                                                                        <div className="h-2 rounded-full bg-slate-100">
-                                                                            <div
-                                                                                className="h-2 rounded-full bg-slate-950"
-                                                                                style={{ width: `${project.progress}%` }}
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-                                                                        <span>{formatPerson(project)}</span>
-                                                                        <span>{formatDate(project.endDate)}</span>
-                                                                    </div>
-                                                                    <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                                                                        <span>Revenu {formatAmount(project.revenueAmount)}</span>
-                                                                        <span>Coût {formatAmount(project.costAmount)}</span>
-                                                                    </div>
+                                                    <Badge variant="outline" className={STATUS_META[project.status].badgeTone}>
+                                                        {STATUS_META[project.status].label}
+                                                    </Badge>
+                                                </div>
+                                                <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-500">
+                                                    <span className="rounded-full bg-slate-50 px-3 py-2">MAJ {formatDate(project.updatedAt)}</span>
+                                                    <span className="rounded-full bg-slate-50 px-3 py-2 text-right">Échéance {formatDate(project.endDate)}</span>
+                                                </div>
+                                                <div className="mt-2 h-1.5 rounded-full bg-slate-100">
+                                                    <div className="h-1.5 rounded-full bg-slate-950" style={{ width: `${project.progress}%` }} />
+                                                </div>
+                                                <div className="mt-4 flex flex-wrap gap-2">
+                                                    <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full" title="Voir le projet">
+                                                        <Link href={`/dashboard/projects/${project.id}`}>
+                                                            <Eye className="h-4 w-4" />
+                                                        </Link>
+                                                    </Button>
+                                                    {canEditProject && (
+                                                        <>
+                                                            <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full" title="Modifier le projet">
+                                                                <Link href={`/dashboard/projects/${project.id}/edit`}>
+                                                                    <PencilLine className="h-4 w-4" />
                                                                 </Link>
-                                                            ))}
-                                                        </div>
+                                                            </Button>
+                                                            <DeleteProjectDialog
+                                                                projectId={project.id}
+                                                                projectName={project.name}
+                                                                currentUserId={currentUserId}
+                                                                kahierCategoryId={project.kahierCategoryId}
+                                                                kahierTabId={project.kahierTabId}
+                                                                redirectTo="/dashboard/projects"
+                                                                triggerClassName="h-10 w-10 rounded-full"
+                                                                triggerLabel="Supprimer"
+                                                                triggerIconOnly
+                                                            />
+                                                        </>
                                                     )}
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </section>
-                        </MotionReveal>
-                    </div>
-
-                    <MotionReveal delay={110}>
-                        <aside id="projects-planning" className="space-y-6 xl:sticky xl:top-28">
-                            <section className="h-fit rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="space-y-5">
-                                    <div>
-                                        <h2 className="text-2xl font-semibold text-slate-950">Échéances proches</h2>
-                                    </div>
-
-                                    {hasApiIssue ? (
-                                        <div className="rounded-[1.25rem] border border-dashed border-slate-300 bg-white/70 px-4 py-3 text-sm text-slate-600">
-                                            Indisponible.
-                                        </div>
-                                    ) : upcomingProjects.length === 0 ? (
-                                        <div className="rounded-[1.25rem] border border-dashed border-slate-300 bg-white/70 px-4 py-3 text-sm text-slate-600">
-                                            Aucune échéance.
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {upcomingProjects.map((project) => (
-                                                <Link
-                                                    key={project.id}
-                                                    href={`/dashboard/projects/${project.id}`}
-                                                    className="block rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-slate-300 hover:bg-white"
-                                                >
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="rounded-2xl bg-[#eef1fb] p-2 text-[#5f667f]">
-                                                            <CalendarRange className="h-4 w-4" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-medium text-slate-950">{project.name}</p>
-                                                            <p className="text-xs text-slate-500">
-                                                                {formatDate(project.endDate)} · {project.client?.name ?? "Sans client"}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-[#f7f8fc] px-4 py-4">
-                                        <p className="text-sm font-medium text-[#1e2234]">{summary.dueSoon} échéance(s)</p>
-                                    </div>
-
-                                    <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
-                                        <div className="flex items-center gap-2 text-slate-950">
-                                            <Layers3 className="h-4 w-4 text-slate-700" />
-                                            <span className="text-sm font-medium">CRM</span>
-                                        </div>
-                                        <p className="mt-2 text-sm text-slate-600">{summary.inProgress} production · {summary.completed} clôturé(s)</p>
-                                    </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            </section>
+                            </>
+                        )}
+                    </section>
+                </MotionReveal>
 
-                            <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="space-y-4">
-                                    <div>
-                                        <h2 className="text-2xl font-semibold text-slate-950">Nouvelle fiche projet</h2>
-                                    </div>
-                                    <Link
-                                        href="/dashboard/projects/new"
-                                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#111322] px-4 text-sm font-medium text-white hover:bg-[#191d2e]"
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                        Créer un projet détaillé
-                                    </Link>
-                                </div>
-                            </section>
-                        </aside>
-                    </MotionReveal>
-                </div>
             </main>
         </DashboardShell>
     );

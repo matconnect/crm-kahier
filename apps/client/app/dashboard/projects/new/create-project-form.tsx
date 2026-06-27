@@ -67,6 +67,8 @@ export type ProjectFormValues = {
     successMetrics: string;
     risks: string;
     notes: string;
+    kahierTabId: string;
+    kahierCategoryName: string;
     createKahierTask: boolean;
     kahierCategoryId: string;
 };
@@ -124,6 +126,8 @@ const defaultValues = (currentUserId: string): ProjectFormValues => ({
     successMetrics: "",
     risks: "",
     notes: "",
+    kahierTabId: "",
+    kahierCategoryName: "",
     createKahierTask: false,
     kahierCategoryId: "",
 });
@@ -216,10 +220,14 @@ export function ProjectForm({
     const [creatingKahierCategory, setCreatingKahierCategory] = React.useState(false);
     const defaultKahierZoneId = React.useMemo(() => Number(process.env.NEXT_PUBLIC_KAHIER_ZONE_ID ?? 33), []);
     const selectedTabIdRef = React.useRef("");
+    const initialKahierTabIdRef = React.useRef(initialValues?.kahierTabId ?? "");
+    const initialKahierCategoryIdRef = React.useRef(initialValues?.kahierCategoryId ?? "");
     const kahierLoadInFlightRef = React.useRef(false);
 
     React.useEffect(() => {
         setForm(buildInitialValues(currentUserId, initialValues));
+        initialKahierTabIdRef.current = initialValues?.kahierTabId ?? "";
+        initialKahierCategoryIdRef.current = initialValues?.kahierCategoryId ?? "";
     }, [currentUserId, initialValues]);
 
     React.useEffect(() => {
@@ -290,23 +298,33 @@ export function ProjectForm({
         setKahierCategoriesByTab(payload.categoriesByPeriode);
         if (!payload.periodes.length) {
             setKahierSelectedTabId("");
-            setForm((prev) => ({ ...prev, kahierCategoryId: "" }));
+            setForm((prev) => ({ ...prev, kahierTabId: "", kahierCategoryName: "", kahierCategoryId: "" }));
             return;
         }
+        const preferredTabId = initialKahierTabIdRef.current || selectedTabIdRef.current;
+        const preferredTabExists = preferredTabId
+            ? payload.periodes.some((tab) => String(tab.id) === preferredTabId)
+            : false;
         const firstTab = payload.periodes[0];
         if (!firstTab) {
             setKahierSelectedTabId("");
-            setForm((prev) => ({ ...prev, kahierCategoryId: "" }));
+            setForm((prev) => ({ ...prev, kahierTabId: "", kahierCategoryName: "", kahierCategoryId: "" }));
             return;
         }
         const selectedTabStillExists = payload.periodes.some((tab) => String(tab.id) === selectedTabIdRef.current);
-        const nextTabId = selectedTabStillExists ? selectedTabIdRef.current : String(firstTab.id);
+        const nextTabId = preferredTabExists ? preferredTabId : selectedTabStillExists ? selectedTabIdRef.current : String(firstTab.id);
         setKahierSelectedTabId(nextTabId);
         setForm((prev) => {
             const categories = payload.categoriesByPeriode[nextTabId] ?? [];
-            return categories.some((cat) => String(cat.id) === prev.kahierCategoryId)
-                ? prev
-                : { ...prev, kahierCategoryId: "" };
+            const hasSelectedCategory = categories.some((cat) => String(cat.id) === prev.kahierCategoryId);
+            const selectedCategory = categories.find((cat) => String(cat.id) === prev.kahierCategoryId) ?? null;
+            return hasSelectedCategory
+                ? {
+                      ...prev,
+                      kahierTabId: nextTabId,
+                      kahierCategoryName: selectedCategory?.name ?? prev.kahierCategoryName,
+                  }
+                : { ...prev, kahierTabId: nextTabId, kahierCategoryName: "", kahierCategoryId: "" };
         });
     }, []);
 
@@ -366,17 +384,52 @@ export function ProjectForm({
         if (!kahierSelectedTabId) return;
         const categories = kahierCategoriesByTab[kahierSelectedTabId] ?? [];
         if (!categories.length) {
-            setForm((prev) => ({ ...prev, kahierCategoryId: "" }));
+            setForm((prev) => ({ ...prev, kahierTabId: kahierSelectedTabId, kahierCategoryName: "", kahierCategoryId: "" }));
             return;
         }
-        if (!categories.some((cat) => String(cat.id) === form.kahierCategoryId)) {
-            setForm((prev) => ({ ...prev, kahierCategoryId: "" }));
+        const selectedCategory = categories.find((cat) => String(cat.id) === form.kahierCategoryId) ?? null;
+        if (!selectedCategory) {
+            setForm((prev) => ({ ...prev, kahierTabId: kahierSelectedTabId, kahierCategoryName: "", kahierCategoryId: "" }));
+            return;
         }
+        setForm((prev) => ({
+            ...prev,
+            kahierTabId: kahierSelectedTabId,
+            kahierCategoryName: selectedCategory.name,
+        }));
     }, [kahierCategoriesByTab, kahierSelectedTabId, form.kahierCategoryId]);
 
     function update<K extends keyof ProjectFormValues>(key: K, value: ProjectFormValues[K]) {
         setForm((prev) => ({ ...prev, [key]: value }));
     }
+
+    const patchKahierCategoryLink = React.useCallback(
+        async (categoryId: string, tabId: string, projectId: string | null, projectName: string | null) => {
+            if (!apiBase || !categoryId || !tabId.trim()) return;
+            const resolvedApiKey = await resolveKahierApiKey();
+            if (!resolvedApiKey) {
+                throw new Error("Clé API Kahier absente pour cet établissement.");
+            }
+
+            const response = await fetch(`${apiBase}/kahier/categories/${categoryId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": resolvedApiKey,
+                },
+                body: JSON.stringify({
+                    periodeTabId: Number(tabId),
+                    crmProjectId: projectId,
+                    crmProjectName: projectName,
+                }),
+            });
+            const data = (await response.json().catch(() => null)) as { error?: string } | null;
+            if (!response.ok) {
+                throw new Error(data?.error ?? "Impossible de mettre à jour le lien Kahier.");
+            }
+        },
+        [apiBase, resolveKahierApiKey],
+    );
 
     async function handleCreateKahierTab() {
         if (!apiBase) {
@@ -465,7 +518,9 @@ export function ProjectForm({
             }
             await loadKahierCategories(true);
             if (typeof data?.id === "number") {
+                update("kahierTabId", kahierSelectedTabId);
                 update("kahierCategoryId", String(data.id));
+                update("kahierCategoryName", name);
             }
             setNewKahierCategoryName("");
             toast.success("Catégorie Kahier créée.");
@@ -502,6 +557,11 @@ export function ProjectForm({
 
         setPending(true);
         try {
+            const selectedKahierCategory =
+                form.kahierTabId && form.kahierCategoryId
+                    ? (kahierCategoriesByTab[form.kahierTabId] ?? []).find((cat) => String(cat.id) === form.kahierCategoryId) ?? null
+                    : null;
+            const categoryChanged = initialKahierCategoryIdRef.current.trim() !== form.kahierCategoryId.trim();
             const payload = {
                 name: form.name.trim(),
                 reference: form.reference.trim() || null,
@@ -509,7 +569,7 @@ export function ProjectForm({
                 ownerId: currentUserRole === "ADMIN" ? form.ownerId : undefined,
                 status: form.status,
                 priority: form.priority,
-                progress: Number(form.progress || "0"),
+                progress: categoryChanged ? 0 : Number(form.progress || "0"),
                 budgetAmount: form.budgetAmount.trim() ? Number(form.budgetAmount) : null,
                 revenueAmount: form.revenueAmount.trim() ? Number(form.revenueAmount) : null,
                 costAmount: form.costAmount.trim() ? Number(form.costAmount) : null,
@@ -518,6 +578,10 @@ export function ProjectForm({
                 billingMode: form.billingMode.trim() || null,
                 startDate: form.startDate || null,
                 endDate: form.endDate || null,
+                kahierTabId: form.kahierTabId.trim() ? Number(form.kahierTabId) : null,
+                kahierCategoryId: form.kahierCategoryId.trim() ? Number(form.kahierCategoryId) : null,
+                kahierCategoryName: selectedKahierCategory?.name ?? (form.kahierCategoryName.trim() || null),
+                kahierTaskCompletionState: categoryChanged ? null : undefined,
                 description: form.description.trim() || null,
                 context: form.context.trim() || null,
                 goals: form.goals.trim() || null,
@@ -541,6 +605,26 @@ export function ProjectForm({
             if (!response.ok) {
                 throw new Error(data?.error ?? (mode === "edit" ? "Impossible de mettre à jour le projet." : "Impossible de créer le projet."));
             }
+
+            const projectIdFromApi = typeof data?.id === "string" ? data.id : mode === "edit" ? projectId ?? "" : "";
+            const currentKahierCategoryId = form.kahierCategoryId.trim();
+            const currentKahierTabId = form.kahierTabId.trim();
+            const previousKahierCategoryId = initialKahierCategoryIdRef.current.trim();
+            const previousKahierTabId = initialKahierTabIdRef.current.trim();
+            const currentProjectName = form.name.trim() || null;
+
+            if (currentKahierCategoryId && currentKahierTabId) {
+                await patchKahierCategoryLink(currentKahierCategoryId, currentKahierTabId, projectIdFromApi || null, currentProjectName);
+            }
+            if (
+                previousKahierCategoryId &&
+                previousKahierTabId &&
+                previousKahierCategoryId !== currentKahierCategoryId
+            ) {
+                await patchKahierCategoryLink(previousKahierCategoryId, previousKahierTabId, null, null);
+            }
+            initialKahierCategoryIdRef.current = currentKahierCategoryId;
+            initialKahierTabIdRef.current = form.kahierTabId.trim();
 
             if (mode === "create" && form.createKahierTask && form.kahierCategoryId) {
                 const resolvedApiKey = await resolveKahierApiKey();
@@ -661,103 +745,118 @@ export function ProjectForm({
                             disabled={pending}
                         />
                     </div>
-                    {mode === "create" ? (
-                        <div className="space-y-2 md:col-span-2">
-                            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-[#f8f9fd] px-3 py-3">
-                                <Checkbox
-                                    id="create-kahier-task"
-                                    checked={form.createKahierTask}
-                                    onCheckedChange={(checked) => update("createKahierTask", checked === true)}
-                                    disabled={pending}
-                                />
-                                <Label htmlFor="create-kahier-task" className="cursor-pointer">
-                                    Créer une tâche Kahier liée à ce projet
-                                </Label>
+                    <div className="space-y-4 rounded-[1.5rem] border border-dashed border-slate-200 bg-[#f8f9fd]/70 p-4 md:col-span-2">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-sm font-medium text-slate-950">Liaison Kahier</p>
+                                <p className="text-xs text-slate-500">Relie ce projet à une catégorie Kahier pour synchroniser les tâches.</p>
                             </div>
-
-                            {form.createKahierTask ? (
-                                <>
-                                    <OptionalLabel>Catégorie tâche Kahier</OptionalLabel>
-                                    <div className="grid gap-2 md:grid-cols-2">
-                                        <Select
-                                            value={kahierSelectedTabId}
-                                            onValueChange={(value) => setKahierSelectedTabId(value)}
-                                            disabled={pending || kahierLoading || kahierTabs.length === 0}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Onglet Kahier" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {kahierTabs.map((tab) => (
-                                                    <SelectItem key={tab.id} value={String(tab.id)}>
-                                                        {tab.label || tab.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <Select
-                                            value={form.kahierCategoryId}
-                                            onValueChange={(value) => update("kahierCategoryId", value)}
-                                            disabled={pending || kahierLoading || !kahierSelectedTabId}
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Catégorie Kahier (optionnel)" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {(kahierCategoriesByTab[kahierSelectedTabId] ?? []).map((category) => (
-                                                    <SelectItem key={category.id} value={String(category.id)}>
-                                                        {category.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid gap-2 md:grid-cols-2">
-                                        <div className="flex gap-2">
-                                            <Input
-                                                value={newKahierTabName}
-                                                onChange={(e) => setNewKahierTabName(e.target.value)}
-                                                placeholder="Créer un onglet Kahier"
-                                                disabled={pending || kahierLoading || creatingKahierTab}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                className="shrink-0"
-                                                onClick={() => void handleCreateKahierTab()}
-                                                disabled={pending || kahierLoading || creatingKahierTab}
-                                            >
-                                                <Plus className="h-4 w-4" />
-                                                Onglet
-                                            </Button>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                value={newKahierCategoryName}
-                                                onChange={(e) => setNewKahierCategoryName(e.target.value)}
-                                                placeholder="Créer une catégorie Kahier"
-                                                disabled={pending || kahierLoading || !kahierSelectedTabId || creatingKahierCategory}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                className="shrink-0"
-                                                onClick={() => void handleCreateKahierCategory()}
-                                                disabled={pending || kahierLoading || !kahierSelectedTabId || creatingKahierCategory}
-                                            >
-                                                <Plus className="h-4 w-4" />
-                                                Catégorie
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-slate-500">
-                                        Si une catégorie est choisie, une tâche Kahier sera créée automatiquement à la création du projet.
-                                    </p>
-                                    {kahierError ? <p className="text-xs text-slate-700">{kahierError}</p> : null}
-                                </>
+                            {mode === "create" ? (
+                                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2">
+                                    <Checkbox
+                                        id="create-kahier-task"
+                                        checked={form.createKahierTask}
+                                        onCheckedChange={(checked) => update("createKahierTask", checked === true)}
+                                        disabled={pending}
+                                    />
+                                    <Label htmlFor="create-kahier-task" className="cursor-pointer text-sm">
+                                        Créer la tâche
+                                    </Label>
+                                </div>
                             ) : null}
                         </div>
-                    ) : null}
+
+                        <div className="grid gap-2 md:grid-cols-2">
+                            <Select
+                                value={kahierSelectedTabId}
+                                onValueChange={(value) => {
+                                    setKahierSelectedTabId(value);
+                                    update("kahierTabId", value);
+                                }}
+                                disabled={pending || kahierLoading || kahierTabs.length === 0}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Onglet Kahier" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {kahierTabs.map((tab) => (
+                                        <SelectItem key={tab.id} value={String(tab.id)}>
+                                            {tab.label || tab.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={form.kahierCategoryId}
+                                onValueChange={(value) => {
+                                    update("kahierCategoryId", value);
+                                    const nextCategory = (kahierCategoriesByTab[kahierSelectedTabId] ?? []).find(
+                                        (category) => String(category.id) === value,
+                                    );
+                                    update("kahierCategoryName", nextCategory?.name ?? "");
+                                    update("kahierTabId", kahierSelectedTabId);
+                                }}
+                                disabled={pending || kahierLoading || !kahierSelectedTabId}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Catégorie Kahier" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {(kahierCategoriesByTab[kahierSelectedTabId] ?? []).map((category) => (
+                                        <SelectItem key={category.id} value={String(category.id)}>
+                                            {category.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="grid gap-2 md:grid-cols-2">
+                            <div className="flex gap-2">
+                                <Input
+                                    value={newKahierTabName}
+                                    onChange={(e) => setNewKahierTabName(e.target.value)}
+                                    placeholder="Créer un onglet Kahier"
+                                    disabled={pending || kahierLoading || creatingKahierTab}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="shrink-0"
+                                    onClick={() => void handleCreateKahierTab()}
+                                    disabled={pending || kahierLoading || creatingKahierTab}
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Onglet
+                                </Button>
+                            </div>
+                            <div className="flex gap-2">
+                                <Input
+                                    value={newKahierCategoryName}
+                                    onChange={(e) => setNewKahierCategoryName(e.target.value)}
+                                    placeholder="Créer une catégorie Kahier"
+                                    disabled={pending || kahierLoading || !kahierSelectedTabId || creatingKahierCategory}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="shrink-0"
+                                    onClick={() => void handleCreateKahierCategory()}
+                                    disabled={pending || kahierLoading || !kahierSelectedTabId || creatingKahierCategory}
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Catégorie
+                                </Button>
+                            </div>
+                        </div>
+
+                        {mode === "create" ? (
+                            <p className="text-xs text-slate-500">
+                                Si une catégorie est choisie, une tâche Kahier sera créée automatiquement à la création du projet.
+                            </p>
+                        ) : null}
+                        {kahierError ? <p className="text-xs text-slate-700">{kahierError}</p> : null}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -785,18 +884,8 @@ export function ProjectForm({
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="project-progress">Progression initiale</Label>
-                        <Input
-                            id="project-progress"
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={form.progress}
-                            onChange={(e) => update("progress", e.target.value)}
-                            placeholder="0"
-                            disabled={pending}
-                        />
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-600">
+                        L&apos;avancement sera mis à jour automatiquement depuis les tâches liées au projet.
                     </div>
                     <div className="space-y-2">
                         <OptionalLabel htmlFor="project-budget">Budget estimé</OptionalLabel>
@@ -975,11 +1064,6 @@ export function ProjectForm({
                 </CardContent>
             </Card>
 
-            <div className="flex justify-end">
-                <Button type="submit" className="h-10 rounded-full border border-[#11131d] bg-[#11131d] px-6 text-white hover:bg-black" disabled={pending}>
-                    {pending ? (mode === "edit" ? "Mise à jour..." : "Création...") : mode === "edit" ? "Mettre à jour le projet" : "Créer le projet"}
-                </Button>
-            </div>
         </form>
     );
 }

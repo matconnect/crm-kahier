@@ -16,12 +16,12 @@ type FiltersProps = {
     };
 };
 
-function getInitialStatus(value?: string) {
-    return CLIENT_STATUS_OPTIONS.some((option) => option.value === value) ? value : "all";
+function getInitialStatus(value?: string): string {
+    return value && CLIENT_STATUS_OPTIONS.some((option) => option.value === value) ? value : "all";
 }
 
-function getInitialSegment(value?: string) {
-    return CLIENT_SEGMENT_OPTIONS.some((option) => option.value === value) ? value : "all";
+function getInitialSegment(value?: string): string {
+    return value && CLIENT_SEGMENT_OPTIONS.some((option) => option.value === value) ? value : "all";
 }
 
 export function ClientsFilters({ searchParams }: FiltersProps) {

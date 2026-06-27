@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, BriefcaseBusiness, Mail, MapPin, Pencil, Phone, Save, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowUpRight, BriefcaseBusiness, Mail, MapPin, Pencil, Phone, Save, X } from "lucide-react";
 import { getRevenueSourceLabel, type ClientSegment, type ClientStatus, type RevenueSource } from "@/lib/client-enums";
 import { getServerApiBase } from "@/lib/api-base";
 import { requireAuth } from "@/lib/authz";
@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { LogInteraction } from "../_components/log-interaction";
+import { CreateInteractionDialog } from "../_components/create-interaction-dialog";
 import { InteractionsList } from "../_components/interactions-list";
 import { AddContactDialog } from "../_components/add-contact-dialog";
 import { EditContactDialog } from "../_components/edit-contact-dialog";
@@ -87,10 +87,10 @@ type ClientDetail = {
 };
 
 const PROJECT_STATUS_META = {
-    DRAFT: { label: "En cadrage", tone: "bg-slate-50 text-slate-700 border-slate-200" },
-    IN_PROGRESS: { label: "En production", tone: "bg-slate-50 text-slate-700 border-slate-200" },
-    ON_HOLD: { label: "En pause", tone: "bg-slate-50 text-slate-700 border-slate-200" },
-    COMPLETED: { label: "Clôturé", tone: "bg-slate-100 text-slate-700 border-slate-200" },
+    DRAFT: { label: "En cadrage", tone: "bg-white text-slate-700 border-slate-200" },
+    IN_PROGRESS: { label: "En production", tone: "bg-white text-slate-700 border-slate-200" },
+    ON_HOLD: { label: "En pause", tone: "bg-white text-slate-700 border-slate-200" },
+    COMPLETED: { label: "Clôturé", tone: "bg-white text-slate-700 border-slate-200" },
 } as const;
 
 const PROJECT_PRIORITY_LABEL = {
@@ -225,14 +225,16 @@ export default async function ClientDetailPage({ params, searchParams }: DetailP
                     <div className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
                         <div className="relative flex flex-wrap items-start justify-between gap-4">
                             <div className="space-y-1" id="client-summary">
-                                <h1 className="mt-2 text-2xl font-bold  text-[#1f2335] md:text-3xl">{client.name}</h1>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{statusLabel}</Badge>
-                                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{ownerDisplay}</Badge>
-                                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{revenueSourceLabel}</Badge>
-                                    {managerNames.length > 0 ? (
-                                        <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{managerNames.length} assigné(s)</Badge>
-                                    ) : null}
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <h1 className="text-2xl font-bold text-[#1f2335] md:text-3xl">{client.name}</h1>
+                                    <div className="flex flex-wrap items-center gap-2 md:ml-3">
+                                        <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{statusLabel}</Badge>
+                                        <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{ownerDisplay}</Badge>
+                                        <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{revenueSourceLabel}</Badge>
+                                        {managerNames.length > 0 ? (
+                                            <Badge variant="outline" className="border-slate-200 bg-white text-slate-700">{managerNames.length} assigné(s)</Badge>
+                                        ) : null}
+                                    </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-3 text-sm text-[#6f7488]">
                                     {client.location && (
@@ -254,36 +256,6 @@ export default async function ClientDetailPage({ params, searchParams }: DetailP
                                         </span>
                                     )}
                                 </div>
-                                {(clientEmails.length > 1 || clientPhones.length > 1) && (
-                                    <div className="mt-3 grid gap-3 text-sm text-[#6f7488] sm:grid-cols-2">
-                                        {clientEmails.length > 0 && (
-                                            <div className="rounded-[1.25rem] border border-dashed border-[#d8ddeb] bg-white/70 px-3 py-2">
-                                                <p className="text-xs text-[#8f93a9]">Emails</p>
-                                                <div className="mt-1 space-y-1 text-sm font-medium text-[#2f3344]">
-                                                    {clientEmails.map((email, index) => (
-                                                        <div key={email} className="flex items-center gap-2">
-                                                            <span className="break-all">{email}</span>
-                                                            {index === 0 && <Badge variant="secondary">Principal</Badge>}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                        {clientPhones.length > 0 && (
-                                            <div className="rounded-[1.25rem] border border-dashed border-[#d8ddeb] bg-white/70 px-3 py-2">
-                                                <p className="text-xs text-[#8f93a9]">Téléphones</p>
-                                                <div className="mt-1 space-y-1 text-sm font-medium text-[#2f3344]">
-                                                    {clientPhones.map((phone, index) => (
-                                                        <div key={phone} className="flex items-center gap-2">
-                                                            <span>{phone}</span>
-                                                            {index === 0 && <Badge variant="secondary">Principal</Badge>}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
                             </div>
                             {nextInteraction && (
                                 <Alert className="border-slate-200 bg-white text-slate-900">
@@ -355,6 +327,7 @@ export default async function ClientDetailPage({ params, searchParams }: DetailP
                                 )}
                             </div>
                         </div>
+
                     </div>
                 </MotionReveal>
 
@@ -374,8 +347,13 @@ export default async function ClientDetailPage({ params, searchParams }: DetailP
                     <MotionReveal delay={80} className="lg:col-span-2">
                         <div className="space-y-6">
                             <Card className="rounded-lg border border-slate-200 bg-white/95 shadow-[0_16px_42px_rgba(28,35,54,0.06)] backdrop-blur-sm transition hover:-translate-y-px hover:shadow-[0_20px_54px_rgba(28,35,54,0.08)] lg:col-span-2">
-                                <CardHeader>
-                                    <CardTitle className="text-base text-slate-950">Notes & dernières interactions</CardTitle>
+                                <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                                    <div className="space-y-1">
+                                        <CardTitle className="text-base text-slate-950">Notes & dernières interactions</CardTitle>
+                                    </div>
+                                    {canEdit && (
+                                        <CreateInteractionDialog clientId={client.id} currentUserId={currentUserId} />
+                                    )}
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2">
@@ -409,47 +387,44 @@ export default async function ClientDetailPage({ params, searchParams }: DetailP
                                             <Link
                                                 key={project.id}
                                                 href={`/dashboard/projects/${project.id}`}
-                                                className="block rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300 hover:bg-slate-50"
+                                                className="group block rounded-2xl border border-slate-200 bg-white px-4 py-4 transition hover:border-slate-300 hover:bg-slate-50"
                                             >
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="rounded-2xl bg-slate-950 p-2 text-white">
-                                                                <BriefcaseBusiness className="h-4 w-4" />
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <BriefcaseBusiness className="h-4 w-4 shrink-0 text-slate-400" />
+                                                            <p className="truncate text-sm font-semibold text-slate-950">{project.name}</p>
+                                                            <Badge variant="outline" className={PROJECT_STATUS_META[project.status].tone}>
+                                                                {PROJECT_STATUS_META[project.status].label}
+                                                            </Badge>
+                                                        </div>
+                                                        <p className="mt-2 text-xs text-slate-500">
+                                                            Priorité {PROJECT_PRIORITY_LABEL[project.priority].toLowerCase()}
+                                                            {project.endDate
+                                                                ? ` · Échéance ${new Date(project.endDate).toLocaleDateString("fr-FR", {
+                                                                      day: "numeric",
+                                                                      month: "short",
+                                                                      timeZone: "Europe/Paris",
+                                                                  })}`
+                                                                : ""}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-slate-500">
+                                                            Revenu {formatAmount(project.revenueAmount)} · Coût {formatAmount(project.costAmount)}
+                                                        </p>
+                                                        <div className="mt-3 space-y-1">
+                                                            <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                                                <span>Avancement</span>
+                                                                <span>{project.progress}%</span>
                                                             </div>
-                                                            <div>
-                                                                <p className="text-sm font-medium text-slate-950">{project.name}</p>
-                                                                <p className="text-xs text-slate-500">
-                                                                    Priorité {PROJECT_PRIORITY_LABEL[project.priority].toLowerCase()}
-                                                                    {project.endDate
-                                                                        ? ` · Échéance ${new Date(project.endDate).toLocaleDateString("fr-FR", {
-                                                                              day: "numeric",
-                                                                              month: "short",
-                                                                              timeZone: "Europe/Paris",
-                                                                          })}`
-                                                                        : ""}
-                                                                </p>
-                                                                <p className="text-xs text-slate-500">
-                                                                    Revenu {formatAmount(project.revenueAmount)} · Coût {formatAmount(project.costAmount)}
-                                                                </p>
+                                                            <div className="h-1.5 rounded-full bg-slate-100">
+                                                                <div
+                                                                    className="h-1.5 rounded-full bg-slate-950"
+                                                                    style={{ width: `${project.progress}%` }}
+                                                                />
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <Badge variant="outline" className={PROJECT_STATUS_META[project.status].tone}>
-                                                        {PROJECT_STATUS_META[project.status].label}
-                                                    </Badge>
-                                                </div>
-                                                <div className="mt-4 space-y-2">
-                                                    <div className="flex items-center justify-between text-xs text-slate-500">
-                                                        <span>Avancement</span>
-                                                        <span>{project.progress}%</span>
-                                                    </div>
-                                                    <div className="h-2 rounded-full bg-slate-100">
-                                                        <div
-                                                            className="h-2 rounded-full bg-slate-950"
-                                                            style={{ width: `${project.progress}%` }}
-                                                        />
-                                                    </div>
+                                                    <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 transition group-hover:text-slate-700" />
                                                 </div>
                                             </Link>
                                         ))
@@ -460,68 +435,62 @@ export default async function ClientDetailPage({ params, searchParams }: DetailP
                     </MotionReveal>
 
                     <MotionReveal delay={130}>
-                        <Card className="rounded-lg border border-slate-200 bg-white/95 shadow-[0_16px_42px_rgba(28,35,54,0.06)] backdrop-blur-sm transition hover:-translate-y-px hover:shadow-[0_20px_54px_rgba(28,35,54,0.08)]" id="client-contacts">
-                            <CardHeader>
-                                <CardTitle className="text-base text-slate-950">Contacts</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {client.contacts.length === 0 && (
-                                    <p className="text-sm text-slate-500">Aucun contact associé.</p>
-                                )}
-                                {client.contacts.map((contact) => (
-                                    <div key={contact.id} className="rounded-[1.25rem] border border-dashed border-slate-300 px-3 py-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="text-sm font-medium">
-                                            {`${contact.firstName} ${contact.lastName}`.trim() || "Contact"}
-                                        </div>
-                                        {contact.role && (
-                                            <span className="text-xs text-muted-foreground uppercase ">
-                                                {contact.role}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="mt-1 space-y-1 text-sm text-muted-foreground">
-                                        {(contact.emails?.length ? contact.emails : contact.email ? [contact.email] : []).map((email, index) => (
-                                            <span key={`${contact.id}-${email}`} className="flex items-center gap-2">
-                                                <Mail className="h-4 w-4" />
-                                                {email}
-                                                {index === 0 && <Badge variant="secondary">Principal</Badge>}
-                                            </span>
-                                        ))}
-                                        {(contact.phones?.length ? contact.phones : contact.phone ? [contact.phone] : []).map((phone, index) => (
-                                            <span key={`${contact.id}-${phone}`} className="flex items-center gap-2">
-                                                <Phone className="h-4 w-4" />
-                                                {phone}
-                                                {index === 0 && <Badge variant="secondary">Principal</Badge>}
-                                            </span>
-                                        ))}
-                                    </div>
-                                    {canEdit && (
-                                        <div className="pt-2 flex flex-wrap gap-2 justify-end">
-                                            <EditContactDialog clientId={client.id} contact={contact} currentUserId={currentUserId} />
-                                            <DeleteContactDialog clientId={client.id} contactId={contact.id} currentUserId={currentUserId} />
-                                        </div>
+                        <div className="space-y-6">
+                            <Card className="rounded-lg border border-slate-200 bg-white/95 shadow-[0_16px_42px_rgba(28,35,54,0.06)] backdrop-blur-sm transition hover:-translate-y-px hover:shadow-[0_20px_54px_rgba(28,35,54,0.08)]" id="client-contacts">
+                                <CardHeader>
+                                    <CardTitle className="text-base text-slate-950">Contacts</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {client.contacts.length === 0 && (
+                                        <p className="text-sm text-slate-500">Aucun contact associé.</p>
                                     )}
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
+                                    {client.contacts.map((contact) => (
+                                        <div key={contact.id} className="rounded-[1.25rem] border border-dashed border-slate-300 px-3 py-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-sm font-medium">
+                                                    {`${contact.firstName} ${contact.lastName}`.trim() || "Contact"}
+                                                </div>
+                                                {contact.role && (
+                                                    <span className="text-xs text-muted-foreground uppercase ">
+                                                        {contact.role}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="mt-1 space-y-1 text-sm text-muted-foreground">
+                                                {(contact.emails?.length ? contact.emails : contact.email ? [contact.email] : []).map((email, index) => (
+                                                    <span key={`${contact.id}-${email}`} className="flex items-center gap-2">
+                                                        <Mail className="h-4 w-4" />
+                                                        {email}
+                                                        {index === 0 && <Badge variant="secondary">Principal</Badge>}
+                                                    </span>
+                                                ))}
+                                                {(contact.phones?.length ? contact.phones : contact.phone ? [contact.phone] : []).map((phone, index) => (
+                                                    <span key={`${contact.id}-${phone}`} className="flex items-center gap-2">
+                                                        <Phone className="h-4 w-4" />
+                                                        {phone}
+                                                        {index === 0 && <Badge variant="secondary">Principal</Badge>}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            {canEdit && (
+                                                <div className="pt-2 flex flex-wrap gap-2 justify-end">
+                                                    <EditContactDialog clientId={client.id} contact={contact} currentUserId={currentUserId} />
+                                                    <DeleteContactDialog clientId={client.id} contactId={contact.id} currentUserId={currentUserId} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+
+                            <ClientDocumentsCard
+                                clientId={client.id}
+                                currentUserId={currentUserId}
+                                canEdit={canEdit}
+                            />
+                        </div>
                     </MotionReveal>
                 </div>
-
-                <MotionReveal delay={180}>
-                    <ClientDocumentsCard
-                        clientId={client.id}
-                        currentUserId={currentUserId}
-                        canEdit={canEdit}
-                    />
-                </MotionReveal>
-
-                {canEdit && (
-                    <MotionReveal delay={220}>
-                        <LogInteraction clientId={client.id} currentUserId={currentUserId} />
-                    </MotionReveal>
-                )}
             </div>
         </DashboardShell>
     );

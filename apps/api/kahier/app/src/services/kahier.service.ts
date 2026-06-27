@@ -3,11 +3,14 @@ import type {
     KahierCreateCategoryPayload,
     KahierCreateTabPayload,
     KahierPeriodeTab,
+    KahierSetTaskCompletionPayload,
     KahierTaskPayload,
     KahierUser,
     KahierPlanning,
     KahierLegend,
     KahierCreateLegendPayload,
+    KahierUpdateCategoryPayload,
+    KahierTask,
 } from "../types/kahier.types.js";
 import { readFileSync } from "node:fs";
 
@@ -244,4 +247,112 @@ export async function createCategoryTab(payload: KahierCreateCategoryPayload, ap
     }
 
     return (await res.json()) as KahierCategory;
+}
+
+export async function updateCategoryLink(
+    categoryId: number,
+    payload: KahierUpdateCategoryPayload,
+    apiKey?: string | null,
+) {
+    const baseUrl = requireEnv("KAHIER_API_BASE");
+    const headers = buildHeaders(true, apiKey);
+    const categoriesRes = await fetch(`${baseUrl}/categories/${payload.periodeTabId}`, {
+        headers: buildHeaders(false, apiKey),
+    });
+
+    if (!categoriesRes.ok) {
+        const details = await extractUpstreamError(categoriesRes);
+        throw new KahierServiceError(`Impossible de charger la catégorie Kahier. ${details}`, categoriesRes.status);
+    }
+
+    const categories = (await categoriesRes.json()) as KahierCategory[];
+    const currentCategory = categories.find((category) => category.id === categoryId);
+
+    if (!currentCategory) {
+        throw new KahierServiceError("Catégorie introuvable", 404);
+    }
+
+    const res = await fetch(`${baseUrl}/categories/${categoryId}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+            id: currentCategory.id,
+            name: currentCategory.name,
+            caseNumber: currentCategory.caseNumber ?? null,
+            clientName: currentCategory.clientName ?? null,
+            departureCode: currentCategory.departureCode ?? null,
+            arrivalCode: currentCategory.arrivalCode ?? null,
+            recurrenceDate: currentCategory.recurrenceDate ?? null,
+            deadlineDate: currentCategory.deadlineDate ?? null,
+            displayOrder: currentCategory.displayOrder,
+            periodeTabId: currentCategory.periodeTabId,
+            crmProjectId: payload.crmProjectId,
+            crmProjectName: payload.crmProjectName,
+            color: currentCategory.color ?? null,
+            assignedUserIds: Array.isArray(currentCategory.assignedUsers)
+                ? currentCategory.assignedUsers.map((user) => user.id)
+                : [],
+        }),
+    });
+
+    if (!res.ok) {
+        const details = await extractUpstreamError(res);
+        throw new KahierServiceError(`Impossible de mettre à jour la catégorie. ${details}`, res.status);
+    }
+
+    return (await res.json()) as KahierCategory;
+}
+
+export async function getCategoryTasks(categoryId: number, periodeTabId: number, apiKey?: string | null) {
+    const baseUrl = requireEnv("KAHIER_API_BASE");
+    const headers = buildHeaders(false, apiKey);
+    const res = await fetch(`${baseUrl}/categories/${periodeTabId}`, { headers });
+
+    if (!res.ok) {
+        const details = await extractUpstreamError(res);
+        throw new KahierServiceError(`Impossible de récupérer les catégories. ${details}`, res.status);
+    }
+
+    const categories = (await res.json()) as KahierCategory[];
+    const category = categories.find((entry) => entry.id === categoryId);
+
+    if (!category) {
+        throw new KahierServiceError("Catégorie introuvable", 404);
+    }
+
+    return [...(category.Task ?? [])].sort((a, b) => {
+        if (a.displayOrder !== b.displayOrder) return a.displayOrder - b.displayOrder;
+        return a.name.localeCompare(b.name, "fr");
+    }) as KahierTask[];
+}
+
+export async function setTaskCompletion(
+    taskId: number,
+    payload: KahierSetTaskCompletionPayload,
+    apiKey?: string | null,
+) {
+    const currentTask = (await getCategoryTasks(payload.categoryId, payload.periodeTabId, apiKey)).find(
+        (task) => task.id === taskId,
+    );
+
+    if (!currentTask) {
+        throw new KahierServiceError("Tâche introuvable", 404);
+    }
+
+    if (currentTask.completed === payload.completed) {
+        return currentTask;
+    }
+
+    const baseUrl = requireEnv("KAHIER_API_BASE");
+    const res = await fetch(`${baseUrl}/tasks/${taskId}/toggle`, {
+        method: "PATCH",
+        headers: buildHeaders(true, apiKey),
+    });
+
+    if (!res.ok) {
+        const details = await extractUpstreamError(res);
+        throw new KahierServiceError(`Impossible de mettre à jour la tâche. ${details}`, res.status);
+    }
+
+    return (await res.json()) as KahierTask;
 }

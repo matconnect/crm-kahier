@@ -31,6 +31,9 @@ type Props = {
     clientId: string;
     currentUserId: string;
     enabled?: boolean;
+    showCard?: boolean;
+    className?: string;
+    onSubmitted?: () => void;
 };
 
 type CollaboratorOption = {
@@ -110,7 +113,14 @@ type KahierLinkStatus = {
 //     return fetch(`${apiBase}/api/kahier-link`, init);
 // }
 
-export function LogInteraction({ clientId, currentUserId, enabled = true }: Props) {
+export function LogInteraction({
+    clientId,
+    currentUserId,
+    enabled = true,
+    showCard = true,
+    className,
+    onSubmitted,
+}: Props) {
     const apiBase = getBrowserApiBase();
     const defaultKahierZoneId = Number(process.env.NEXT_PUBLIC_KAHIER_ZONE_ID ?? 33);
     const router = useRouter();
@@ -634,6 +644,7 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
             setSummary("");
             setCollaboratorIds([]);
             router.refresh();
+            onSubmitted?.();
         } catch (error) {
             const message = error instanceof Error ? error.message : "Erreur inattendue";
             toast.error(message);
@@ -739,14 +750,9 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
         }
     }
 
-    return (
-        <Card className="border my-1">
-            <CardHeader>
-                <CardTitle className="text-base">Nouvelle interaction</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-                    <Accordion
+    const formBody = (
+        <div className="space-y-4">
+            <Accordion
                         type="multiple"
                         value={openSections}
                         onValueChange={(values) => {
@@ -1154,15 +1160,42 @@ export function LogInteraction({ clientId, currentUserId, enabled = true }: Prop
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
-                    </Accordion>
-                    <div className="flex justify-end">
-                        <Button type="submit" className="gap-2" disabled={pending}>
-                            <Send className="h-4 w-4" />
-                            Enregistrer
-                        </Button>
-                    </div>
-                </form>
-            </CardContent>
+            </Accordion>
+        </div>
+    );
+
+    const submitFooter = (
+        <div className="sticky bottom-0 z-10 -mx-4 border-t border-border/60 bg-background/95 px-4 py-4 backdrop-blur-sm sm:-mx-6 sm:px-6">
+            <div className="flex justify-end">
+                <Button type="submit" className="gap-2" disabled={pending}>
+                    <Send className="h-4 w-4" />
+                    Enregistrer
+                </Button>
+            </div>
+        </div>
+    );
+
+    const content = (
+        <form className={showCard ? "flex flex-col gap-4" : "flex h-full min-h-0 flex-col"} onSubmit={onSubmit}>
+            {showCard ? (
+                formBody
+            ) : (
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">{formBody}</div>
+            )}
+            {submitFooter}
+        </form>
+    );
+
+    if (!showCard) {
+        return <div className={className ?? "h-full min-h-0"}>{content}</div>;
+    }
+
+    return (
+        <Card className={className ?? "my-1 border"}>
+            <CardHeader>
+                <CardTitle className="text-base">Nouvelle interaction</CardTitle>
+            </CardHeader>
+            <CardContent>{content}</CardContent>
         </Card>
     );
 }

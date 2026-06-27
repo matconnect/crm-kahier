@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Command, Plus, Search } from "lucide-react";
+import { ArrowUpRight, Command, MessageSquareText, Plus, Search, Users, FolderKanban } from "lucide-react";
 import type { ClientSearchItem, InteractionItem, ProjectSearchItem } from "../shared/types";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 import { formatNowLabelAt, getGreetingAt } from "../shared/formatters";
 
@@ -28,13 +29,30 @@ export function DashboardTopHeader({
     mobileSidebar,
 }: DashboardTopHeaderProps) {
     const router = useRouter();
+    const searchInputRef = useRef<HTMLInputElement | null>(null);
     const [query, setQuery] = useState(searchValue ?? "");
-    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [now, setNow] = useState(() => new Date());
+    const [isMacLike, setIsMacLike] = useState(false);
 
     useEffect(() => {
         setQuery(searchValue ?? "");
     }, [searchValue]);
+
+    useEffect(() => {
+        setIsMacLike(/Mac|iPhone|iPad|iPod/.test(navigator.platform));
+    }, []);
+
+    useEffect(() => {
+        if (!isSearchOpen) return;
+
+        const timer = window.setTimeout(() => {
+            searchInputRef.current?.focus();
+            searchInputRef.current?.select();
+        }, 10);
+
+        return () => window.clearTimeout(timer);
+    }, [isSearchOpen]);
 
     useEffect(() => {
         const timer = window.setInterval(() => {
@@ -67,10 +85,30 @@ export function DashboardTopHeader({
         return () => window.removeEventListener("resize", updateHeight);
     }, []);
 
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k") return;
+
+            const target = event.target;
+            const isEditable =
+                target instanceof HTMLElement &&
+                (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+
+            if (isEditable && target === searchInputRef.current) return;
+
+            event.preventDefault();
+            setIsSearchOpen(true);
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         const trimmed = query.trim();
         const target = trimmed ? `/dashboard?q=${encodeURIComponent(trimmed)}` : "/dashboard";
+        setIsSearchOpen(false);
         router.push(target);
     }
 
@@ -194,86 +232,152 @@ export function DashboardTopHeader({
 
                 <div className="flex w-full items-center gap-3 md:w-auto">
                     <div className="relative flex-1 md:min-w-[360px] lg:min-w-[420px]">
-                        <form onSubmit={handleSubmit} className="flex h-12 items-center gap-2 rounded-xl border border-[#dde2eb] bg-white px-4 shadow-[0_8px_22px_rgba(28,35,54,0.04)]">
+                        <button
+                            type="button"
+                            onClick={() => setIsSearchOpen(true)}
+                            className="flex h-12 w-full items-center gap-3 rounded-xl border border-[#dde2eb] bg-white px-4 text-left shadow-[0_8px_22px_rgba(28,35,54,0.04)] hover:bg-[#fbfcff]"
+                            aria-label="Ouvrir la recherche"
+                        >
                             <Search className="h-4 w-4 text-[#10121a]" />
-                            <input
-                                name="q"
-                                value={query}
-                                onFocus={() => setIsSearchFocused(true)}
-                                onBlur={() => setTimeout(() => setIsSearchFocused(false), 120)}
-                                onChange={(event) => setQuery(event.target.value)}
-                                aria-label="Rechercher"
-                                placeholder="Rechercher"
-                                className="w-full bg-transparent text-sm outline-none placeholder:text-[#8d93a2]"
-                            />
-                            <button
-                                type="submit"
-                                className="hidden items-center gap-1 rounded-lg border border-[#e3e6ee] bg-[#f8f9fc] px-2.5 py-1.5 text-xs font-semibold text-[#606779] sm:inline-flex"
-                                aria-label="Lancer la recherche"
-                            >
-                                <Command className="h-3.5 w-3.5" /> F
-                            </button>
-                        </form>
-
-                        {isSearchFocused && query.trim() ? (
-                            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-30 rounded-2xl border border-[#dfe3ef] bg-white p-3 shadow-[0_18px_45px_rgba(29,33,49,0.16)]">
-                                {!hasSearchData ? (
-                                    <p className="px-2 py-2 text-sm text-[#8f93a9]">
-                                        Continuez à taper puis cliquez sur Rechercher pour lancer une recherche globale.
-                                    </p>
-                                ) : searchResults.total === 0 ? (
-                                    <p className="px-2 py-2 text-sm text-[#8f93a9]">Aucun résultat pour “{query}”.</p>
-                                ) : (
-                                    <div className="max-h-[360px] space-y-2 overflow-auto">
-                                        {searchResults.clients.length > 0 ? (
-                                            <div>
-                                                <p className="px-2 text-[11px] font-semibold uppercase text-[#9aa0b5]">Clients</p>
-                                                {searchResults.clients.map((item) => (
-                                                    <Link key={`client-${item.id}`} href={item.href} className="block rounded-xl px-2 py-2 hover:bg-[#f6f8fc]">
-                                                        <p className="text-sm font-semibold text-[#2f3344]">{item.label}</p>
-                                                        <p className="text-xs text-[#7c8298]">{item.meta}</p>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        ) : null}
-
-                                        {searchResults.interactions.length > 0 ? (
-                                            <div>
-                                                <p className="px-2 text-[11px] font-semibold uppercase text-[#9aa0b5]">Interactions</p>
-                                                {searchResults.interactions.map((item) => (
-                                                    <Link key={`interaction-${item.id}`} href={item.href} className="block rounded-xl px-2 py-2 hover:bg-[#f6f8fc]">
-                                                        <p className="text-sm font-semibold text-[#2f3344]">{item.label}</p>
-                                                        <p className="truncate text-xs text-[#7c8298]">{item.meta}</p>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        ) : null}
-
-                                        {searchResults.projects.length > 0 ? (
-                                            <div>
-                                                <p className="px-2 text-[11px] font-semibold uppercase text-[#9aa0b5]">Projets</p>
-                                                {searchResults.projects.map((item) => (
-                                                    <Link key={`project-${item.id}`} href={item.href} className="block rounded-xl px-2 py-2 hover:bg-[#f6f8fc]">
-                                                        <p className="text-sm font-semibold text-[#2f3344]">{item.label}</p>
-                                                        <p className="truncate text-xs text-[#7c8298]">{item.meta}</p>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                )}
-                            </div>
-                        ) : null}
+                            <span className="flex-1 text-sm text-[#8d93a2]">Rechercher</span>
+                            <span className="hidden items-center gap-1 rounded-lg border border-[#e3e6ee] bg-[#f8f9fc] px-2.5 py-1.5 text-xs font-semibold text-[#606779] sm:inline-flex">
+                                {isMacLike ? <Command className="h-3.5 w-3.5" /> : <span>Ctrl</span>} <span>K</span>
+                            </span>
+                        </button>
                     </div>
                     <Link
                         href="/dashboard/clients/new"
-                        className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[#dde2eb] bg-white px-3 text-sm font-semibold text-[#11131d] shadow-[0_8px_22px_rgba(28,35,54,0.04)] hover:bg-[#f8f9fc]"
+                        className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[#dde2eb] bg-white px-3 text-xs font-semibold whitespace-nowrap text-[#11131d] shadow-[0_8px_22px_rgba(28,35,54,0.04)] hover:bg-[#f8f9fc] sm:text-sm"
+                        aria-label="Créer un nouveau client"
                     >
                         <Plus className="h-4 w-4" />
-                        <span className="hidden sm:inline">Client</span>
+                        <span>Nouveau client</span>
                     </Link>
                 </div>
             </div>
+
+            <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+                <DialogContent
+                    hideCloseButton
+                    aria-describedby={undefined}
+                    className="overflow-hidden border-[#dfe3ef] bg-[#f8faff] p-0 text-[#2f3344] sm:max-w-3xl"
+                >
+                    <DialogTitle className="sr-only">Recherche globale</DialogTitle>
+                    <DialogDescription className="sr-only">Recherchez des clients, interactions et projets.</DialogDescription>
+
+                    <form onSubmit={handleSubmit} className="border-b border-[#e3e8f2] bg-white p-3">
+                        <div className="flex items-center gap-3 rounded-2xl border border-[#dde2eb] bg-[#fbfcff] px-4 py-3 shadow-[0_8px_22px_rgba(28,35,54,0.04)]">
+                            <Search className="h-4 w-4 text-[#10121a]" />
+                            <input
+                                ref={searchInputRef}
+                                name="q"
+                                value={query}
+                                onChange={(event) => setQuery(event.target.value)}
+                                aria-label="Rechercher"
+                                placeholder="Rechercher dans le CRM"
+                                className="w-full bg-transparent text-sm text-[#10121a] outline-none placeholder:text-[#8d93a2]"
+                            />
+                            <span className="rounded-lg border border-[#e3e6ee] bg-white px-2 py-1 text-[11px] font-semibold text-[#7a8194]">Esc</span>
+                        </div>
+                    </form>
+
+                    <div className="max-h-[min(70vh,560px)] overflow-auto bg-[#f8faff] p-4">
+                        {!query.trim() ? (
+                            <div className="flex min-h-[260px] items-center justify-center rounded-[24px] border border-dashed border-[#dfe3ef] bg-white/70 px-6 text-sm text-[#8f93a9]">
+                                Aucun historique pour le moment.
+                            </div>
+                        ) : !hasSearchData ? (
+                            <div className="flex min-h-[260px] items-center justify-center rounded-[24px] border border-dashed border-[#dfe3ef] bg-white/70 px-6 text-sm text-[#8f93a9]">
+                                Continuez à taper puis validez pour lancer une recherche globale.
+                            </div>
+                        ) : searchResults.total === 0 ? (
+                            <div className="flex min-h-[260px] items-center justify-center rounded-[24px] border border-dashed border-[#dfe3ef] bg-white/70 px-6 text-sm text-[#8f93a9]">
+                                Aucun résultat pour “{query}”.
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {searchResults.clients.length > 0 ? (
+                                    <div>
+                                        <p className="px-1 pb-3 text-[13px] font-semibold text-[#2f3344]">Clients</p>
+                                        <div className="space-y-2">
+                                        {searchResults.clients.map((item) => (
+                                            <Link
+                                                key={`client-${item.id}`}
+                                                href={item.href}
+                                                onClick={() => setIsSearchOpen(false)}
+                                                className="flex items-center gap-4 rounded-[18px] border border-[#e3e8f2] bg-white px-4 py-4 text-[#2f3344] transition hover:bg-[#f6f8fc]"
+                                            >
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#dfe3ef] bg-[#f8faff]">
+                                                    <Users className="h-4 w-4" />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-xs font-semibold text-[#95a4bd]">CRM / Clients</p>
+                                                    <p className="truncate text-[15px] font-semibold">{item.label}</p>
+                                                    <p className="truncate text-xs text-[#7c8298]">{item.meta}</p>
+                                                </div>
+                                                <ArrowUpRight className="h-4 w-4 shrink-0 text-[#91a0b8]" />
+                                            </Link>
+                                        ))}
+                                        </div>
+                                    </div>
+                                ) : null}
+
+                                {searchResults.interactions.length > 0 ? (
+                                    <div>
+                                        <p className="px-1 pb-3 text-[13px] font-semibold text-[#2f3344]">Interactions</p>
+                                        <div className="space-y-2">
+                                        {searchResults.interactions.map((item) => (
+                                            <Link
+                                                key={`interaction-${item.id}`}
+                                                href={item.href}
+                                                onClick={() => setIsSearchOpen(false)}
+                                                className="flex items-center gap-4 rounded-[18px] border border-[#e3e8f2] bg-white px-4 py-4 text-[#2f3344] transition hover:bg-[#f6f8fc]"
+                                            >
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#dfe3ef] bg-[#f8faff]">
+                                                    <MessageSquareText className="h-4 w-4" />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-xs font-semibold text-[#95a4bd]">CRM / Interactions</p>
+                                                    <p className="truncate text-[15px] font-semibold">{item.label}</p>
+                                                    <p className="truncate text-xs text-[#7c8298]">{item.meta}</p>
+                                                </div>
+                                                <ArrowUpRight className="h-4 w-4 shrink-0 text-[#91a0b8]" />
+                                            </Link>
+                                        ))}
+                                        </div>
+                                    </div>
+                                ) : null}
+
+                                {searchResults.projects.length > 0 ? (
+                                    <div>
+                                        <p className="px-1 pb-3 text-[13px] font-semibold text-[#2f3344]">Projets</p>
+                                        <div className="space-y-2">
+                                        {searchResults.projects.map((item) => (
+                                            <Link
+                                                key={`project-${item.id}`}
+                                                href={item.href}
+                                                onClick={() => setIsSearchOpen(false)}
+                                                className="flex items-center gap-4 rounded-[18px] border border-[#e3e8f2] bg-white px-4 py-4 text-[#2f3344] transition hover:bg-[#f6f8fc]"
+                                            >
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#dfe3ef] bg-[#f8faff]">
+                                                    <FolderKanban className="h-4 w-4" />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-xs font-semibold text-[#95a4bd]">CRM / Projets</p>
+                                                    <p className="truncate text-[15px] font-semibold">{item.label}</p>
+                                                    <p className="truncate text-xs text-[#7c8298]">{item.meta}</p>
+                                                </div>
+                                                <ArrowUpRight className="h-4 w-4 shrink-0 text-[#91a0b8]" />
+                                            </Link>
+                                        ))}
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

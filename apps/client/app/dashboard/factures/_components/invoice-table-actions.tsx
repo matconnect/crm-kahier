@@ -180,18 +180,7 @@ export function InvoiceTableActions({ invoiceId, invoiceNumber, currentUserId, s
                     >
                         <Eye className="h-4 w-4" />
                     </Button>
-                ) : (
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        title="Télécharger"
-                        onClick={downloadPdf}
-                    >
-                        <Download className="h-4 w-4" />
-                    </Button>
-                )}
+                ) : null}
                 {status === "DRAFT" ? (
                     <>
                         <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full" title="Modifier">

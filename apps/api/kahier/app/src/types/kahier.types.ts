@@ -13,11 +13,37 @@ export type KahierPeriodeTab = {
 export type KahierCategory = {
     id: number;
     name: string;
+    caseNumber?: string | null;
+    clientName?: string | null;
+    departureCode?: string | null;
+    arrivalCode?: string | null;
+    recurrenceDate?: string | null;
+    deadlineDate?: string | null;
     displayOrder: number;
     periodeTabId: number;
+    crmProjectId?: string | null;
+    crmProjectName?: string | null;
     createdAt: string;
     updatedAt: string;
     color?: string | null;
+    assignedUsers?: { id: number }[];
+    Task?: KahierTask[];
+};
+
+export type KahierTask = {
+    id: number;
+    name: string;
+    completed: boolean;
+    priority: number | null;
+    isRecurring: boolean;
+    displayOrder: number;
+    updatedAt: string;
+    categoryId: number;
+    assignedUsers: {
+        id: number;
+        firstname: string;
+        lastname: string;
+    }[];
 };
 
 export type KahierTaskPayload = {
@@ -76,4 +102,16 @@ export type KahierCreateTabPayload = {
 export type KahierCreateCategoryPayload = {
     name: string;
     tabId: number;
+};
+
+export type KahierUpdateCategoryPayload = {
+    periodeTabId: number;
+    crmProjectId: string | null;
+    crmProjectName: string | null;
+};
+
+export type KahierSetTaskCompletionPayload = {
+    categoryId: number;
+    periodeTabId: number;
+    completed: boolean;
 };

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { MessageSquareText, Plus, Users, UserRound, BriefcaseBusiness } from "lucide-react";
 
 import { requireAuth } from "@/lib/authz";
 import { MotionReveal } from "@/components/motion/reveal";
@@ -60,6 +60,29 @@ export default async function ClientsPage({ searchParams }: PageProps) {
                                     <Plus className="h-4 w-4" />
                                     Nouveau client
                                 </Link>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-4 sm:gap-3">
+                            <div className="rounded-[24px] border border-white/70 bg-white p-3 shadow-sm sm:p-5">
+                                <Users className="h-3.5 w-3.5 text-slate-500 sm:h-4 sm:w-4" />
+                                <p className="mt-3 text-xs text-slate-500 sm:mt-4 sm:text-sm">Total clients</p>
+                                <p className="mt-1 text-lg font-semibold text-slate-950 sm:text-2xl">{clients.length}</p>
+                            </div>
+                            <div className="rounded-[24px] border border-white/70 bg-white p-3 shadow-sm sm:p-5">
+                                <UserRound className="h-3.5 w-3.5 text-slate-500 sm:h-4 sm:w-4" />
+                                <p className="mt-3 text-xs text-slate-500 sm:mt-4 sm:text-sm">Clients actifs</p>
+                                <p className="mt-1 text-lg font-semibold text-slate-950 sm:text-2xl">{summary.active}</p>
+                            </div>
+                            <div className="rounded-[24px] border border-white/70 bg-white p-3 shadow-sm sm:p-5">
+                                <BriefcaseBusiness className="h-3.5 w-3.5 text-slate-500 sm:h-4 sm:w-4" />
+                                <p className="mt-3 text-xs text-slate-500 sm:mt-4 sm:text-sm">Prospects</p>
+                                <p className="mt-1 text-lg font-semibold text-slate-950 sm:text-2xl">{summary.prospects}</p>
+                            </div>
+                            <div className="rounded-[24px] border border-white/70 bg-white p-3 shadow-sm sm:p-5">
+                                <MessageSquareText className="h-3.5 w-3.5 text-slate-500 sm:h-4 sm:w-4" />
+                                <p className="mt-3 text-xs text-slate-500 sm:mt-4 sm:text-sm">Interactions</p>
+                                <p className="mt-1 text-lg font-semibold text-slate-950 sm:text-2xl">{summary.interactions}</p>
                             </div>
                         </div>
                     </section>

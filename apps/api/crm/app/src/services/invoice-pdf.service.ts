@@ -131,21 +131,34 @@ function buildPage(invoice: PdfInvoice, pageLines: PdfInvoice["lines"], page: nu
             pickString(client, "country", invoice.client.country ?? invoice.client.location ?? ""),
         ]),
     ]);
-    const clientIdentity = [
-        pickString(client, "siren", invoice.client.siren ?? "") ? `SIREN ${pickString(client, "siren", invoice.client.siren ?? "")}` : "",
-        pickString(client, "vatNumber", invoice.client.vatNumber ?? "") ? `TVA ${pickString(client, "vatNumber", invoice.client.vatNumber ?? "")}` : "",
-    ].filter(Boolean).join(" - ");
-    const companyIdentity = [
+    const companyLegalLine = [
         pickString(issuer, "legalForm", invoice.company.legalForm ?? ""),
         pickString(issuer, "siren", invoice.company.siren ?? "") ? `SIREN ${pickString(issuer, "siren", invoice.company.siren ?? "")}` : "",
         pickString(issuer, "siret", invoice.company.siret ?? "") ? `SIRET ${pickString(issuer, "siret", invoice.company.siret ?? "")}` : "",
     ].filter(Boolean).join(" - ");
-    const companyTax = [
+    const companyTaxLine = [
         pickString(issuer, "vatNumber", invoice.company.vatNumber ?? "") ? `TVA ${pickString(issuer, "vatNumber", invoice.company.vatNumber ?? "")}` : "",
         pickString(issuer, "rcsCity", invoice.company.rcsCity ?? "") ? `RCS ${pickString(issuer, "rcsCity", invoice.company.rcsCity ?? "")}` : "",
+    ].filter(Boolean).join(" - ");
+    const companyContactLine = [
+        pickString(issuer, "contactEmail", invoice.company.contactEmail ?? ""),
+        pickString(issuer, "contactPhone", invoice.company.contactPhone ?? ""),
+    ].filter(Boolean).join(" - ");
+    const companyMetaLine = [
+        companyLegalLine,
+        companyTaxLine,
+        companyContactLine,
         pickNumber(issuer, "capitalSocialCents", invoice.company.capitalSocialCents ?? 0) > 0
             ? `Capital ${formatMoney(pickNumber(issuer, "capitalSocialCents", invoice.company.capitalSocialCents ?? 0))}`
             : "",
+    ].filter(Boolean).join(" - ");
+    const clientIdentityLine = [
+        pickString(client, "siren", invoice.client.siren ?? "") ? `SIREN ${pickString(client, "siren", invoice.client.siren ?? "")}` : "",
+        pickString(client, "vatNumber", invoice.client.vatNumber ?? "") ? `TVA ${pickString(client, "vatNumber", invoice.client.vatNumber ?? "")}` : "",
+    ].filter(Boolean).join(" - ");
+    const clientContactLine = [
+        pickString(client, "primaryEmail", invoice.client.primaryEmail ?? ""),
+        pickString(client, "primaryPhone", invoice.client.primaryPhone ?? ""),
     ].filter(Boolean).join(" - ");
     const commands: string[] = [
         "0.98 0.98 0.99 rg 0 0 595 842 re f",
@@ -153,27 +166,33 @@ function buildPage(invoice: PdfInvoice, pageLines: PdfInvoice["lines"], page: nu
         text(45, 792, invoice.company.name, 17, true, "1 1 1"),
         text(45, 765, "FACTURE", 10, true, "0.78 0.80 0.88"),
         text(380, 792, invoice.number, 15, true, "1 1 1"),
-        text(45, 705, "FACTURE A", 9, true, "0.42 0.45 0.55"),
-        text(45, 680, invoice.client.name, 13, true),
-        text(45, 660, clientAddress, 9),
-        text(45, 644, pickString(client, "primaryEmail", invoice.client.primaryEmail ?? ""), 9),
-        text(45, 631, clientIdentity, 8, false, "0.42 0.45 0.55"),
         text(360, 705, "Emission", 9, true, "0.42 0.45 0.55"),
         text(470, 705, formatDate(invoice.issueDate), 9),
         text(360, 684, "Echeance", 9, true, "0.42 0.45 0.55"),
         text(470, 684, formatDate(invoice.dueDate), 9),
-        text(45, 620, issuerAddress, 8, false, "0.42 0.45 0.55"),
-        text(45, 608, companyIdentity, 8, false, "0.42 0.45 0.55"),
-        text(45, 596, companyTax, 8, false, "0.42 0.45 0.55"),
-        "0.94 0.95 0.97 rg 45 594 505 32 re f",
-        text(55, 606, "DESIGNATION", 8, true, "0.30 0.33 0.42"),
-        text(315, 606, "QTE", 8, true, "0.30 0.33 0.42"),
-        text(370, 606, "P.U. HT", 8, true, "0.30 0.33 0.42"),
-        text(448, 606, "TVA", 8, true, "0.30 0.33 0.42"),
-        text(495, 606, "TOTAL HT", 8, true, "0.30 0.33 0.42"),
+        "1 1 1 rg 45 592 245 88 re f",
+        "0.88 0.89 0.93 RG 45 592 245 88 re S",
+        "1 1 1 rg 305 592 245 88 re f",
+        "0.88 0.89 0.93 RG 305 592 245 88 re S",
+        text(58, 661, "EMIS PAR", 8, true, "0.42 0.45 0.55"),
+        text(58, 643, invoice.company.name, 12, true),
+        text(58, 626, issuerAddress || invoice.company.addressLine1 || "", 8, false, "0.42 0.45 0.55"),
+        text(58, 611, companyMetaLine || "", 7.2, false, "0.42 0.45 0.55"),
+        text(58, 597, "", 7.2, false, "0.42 0.45 0.55"),
+        text(323, 661, "DESTINATAIRE", 8, true, "0.42 0.45 0.55"),
+        text(323, 643, invoice.client.name, 12, true),
+        text(323, 626, clientAddress || invoice.client.location || "", 8, false, "0.42 0.45 0.55"),
+        text(323, 611, clientIdentityLine || clientContactLine || "", 7.2, false, "0.42 0.45 0.55"),
+        text(323, 597, "", 7.2, false, "0.42 0.45 0.55"),
+        "0.94 0.95 0.97 rg 45 556 505 32 re f",
+        text(55, 568, "DESIGNATION", 8, true, "0.30 0.33 0.42"),
+        text(315, 568, "QTE", 8, true, "0.30 0.33 0.42"),
+        text(370, 568, "P.U. HT", 8, true, "0.30 0.33 0.42"),
+        text(448, 568, "TVA", 8, true, "0.30 0.33 0.42"),
+        text(495, 568, "TOTAL HT", 8, true, "0.30 0.33 0.42"),
     ];
 
-    let y = 570;
+    let y = 532;
     for (const item of pageLines) {
         const descriptions = splitDescription(item.description);
         commands.push(text(55, y, descriptions[0] ?? "", 9));

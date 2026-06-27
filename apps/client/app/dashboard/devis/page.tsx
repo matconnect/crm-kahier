@@ -65,17 +65,17 @@ export default async function DevisPage({
                                 </Link>
                             </Button>
                         </div>
-                        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="mt-6 grid gap-2 sm:gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             {[
                                 { label: "Montant proposé TTC", value: formatQuoteMoney(summary?.totalCents ?? 0), icon: FileText },
                                 { label: "Acceptés", value: formatQuoteMoney(summary?.acceptedCents ?? 0), icon: BadgeCheck },
                                 { label: "En attente", value: formatQuoteMoney(summary?.pendingCents ?? 0), icon: CircleCheck },
                                 { label: "Expirés", value: String(summary?.expired ?? 0), icon: TimerReset },
                             ].map(({ label, value, icon: Icon }) => (
-                                <div key={label} className="rounded-[24px] border border-white/70 bg-white p-5 shadow-sm">
-                                    <Icon className="h-4 w-4 text-slate-500" />
-                                    <p className="mt-4 text-sm text-slate-500">{label}</p>
-                                    <p className="mt-1 text-2xl font-semibold text-slate-950">{value}</p>
+                                <div key={label} className="rounded-[24px] border border-white/70 bg-white p-3 shadow-sm sm:p-5">
+                                    <Icon className="h-3.5 w-3.5 text-slate-500 sm:h-4 sm:w-4" />
+                                    <p className="mt-3 text-xs text-slate-500 sm:mt-4 sm:text-sm">{label}</p>
+                                    <p className="mt-1 text-lg font-semibold text-slate-950 sm:text-2xl">{value}</p>
                                 </div>
                             ))}
                         </div>

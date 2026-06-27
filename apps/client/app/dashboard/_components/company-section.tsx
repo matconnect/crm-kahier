@@ -187,6 +187,22 @@ export function CompanySection({ userId }: Props) {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
         const payload = Object.fromEntries(formData.entries());
+        const parsePercent = (value: FormDataEntryValue | undefined) => {
+            if (typeof value !== "string") return null;
+            const normalized = value.replace(",", ".").trim();
+            if (!normalized) return null;
+            const parsed = Number(normalized);
+            if (!Number.isFinite(parsed)) return null;
+            return Math.round(parsed * 100);
+        };
+        const parseEurosToCents = (value: FormDataEntryValue | undefined) => {
+            if (typeof value !== "string") return 4000;
+            const normalized = value.replace(",", ".").trim();
+            if (!normalized) return 4000;
+            const parsed = Number(normalized);
+            if (!Number.isFinite(parsed)) return 4000;
+            return Math.round(parsed * 100);
+        };
         setLegalSaving(true);
         try {
             const apiBase = getBrowserApiBase() ?? "";
@@ -196,8 +212,8 @@ export function CompanySection({ userId }: Props) {
                 body: JSON.stringify({
                     ...payload,
                     capitalSocialCents: payload.capitalSocialCents ? Number(payload.capitalSocialCents) : null,
-                    latePenaltyRateBps: payload.latePenaltyRateBps ? Number(payload.latePenaltyRateBps) : null,
-                    fixedCompensationCents: payload.fixedCompensationCents ? Number(payload.fixedCompensationCents) : 4000,
+                    latePenaltyRateBps: parsePercent(payload.latePenaltyRateBps),
+                    fixedCompensationCents: parseEurosToCents(payload.fixedCompensationCents),
                 }),
             });
             const data = await res.json().catch(() => null);
@@ -351,15 +367,21 @@ export function CompanySection({ userId }: Props) {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Pénalités de retard (basis points)</Label>
-                            <Input name="latePenaltyRateBps" defaultValue={companyData.latePenaltyRateBps ?? ""} inputMode="numeric" placeholder="1000 = 10%" />
+                            <Label>Pénalités de retard (%)</Label>
+                            <Input
+                                name="latePenaltyRateBps"
+                                defaultValue={companyData.latePenaltyRateBps != null ? companyData.latePenaltyRateBps / 100 : ""}
+                                inputMode="decimal"
+                                placeholder="Ex. 10 pour 10%"
+                            />
                         </div>
                         <div className="space-y-2">
-                            <RequiredLabel>Indemnité forfaitaire (centimes)</RequiredLabel>
+                            <RequiredLabel>Indemnité forfaitaire de recouvrement (€)</RequiredLabel>
                             <Input
                                 name="fixedCompensationCents"
-                                defaultValue={companyData.fixedCompensationCents ?? 4000}
-                                inputMode="numeric"
+                                defaultValue={companyData.fixedCompensationCents != null ? companyData.fixedCompensationCents / 100 : 40}
+                                inputMode="decimal"
+                                placeholder="Ex. 40"
                                 className={!companyData.fixedCompensationCents ? "border-red-300 focus-visible:ring-red-100" : undefined}
                             />
                         </div>

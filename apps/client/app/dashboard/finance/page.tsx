@@ -1,12 +1,10 @@
-import Link from "next/link";
-import { ArrowUpRight, Banknote, CircleDollarSign, HandCoins, ReceiptText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Banknote, HandCoins, Info, ReceiptText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 import { getServerApiBase } from "@/lib/api-base";
 import { requireBillingFeature } from "@/lib/authz";
 import { getRevenueSourceLabel, type RevenueSource } from "@/lib/client-enums";
 import { MotionReveal } from "@/components/motion/reveal";
-import { Badge } from "@/components/ui/badge";
-
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DashboardShell, fetchDashboardData } from "../_components";
 
 type ProjectItem = {
@@ -78,6 +76,29 @@ function formatPercent(value: number) {
     return `${value.toFixed(1)}%`;
 }
 
+function formatCompactNumber(value: number) {
+    return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value);
+}
+
+function FormulaPopover({ content }: { content: string }) {
+    return (
+        <Popover>
+                    <PopoverTrigger asChild>
+                        <button
+                            type="button"
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#d7dced] bg-white text-[#747c92] transition hover:border-[#c4cbdb] hover:text-[#1e2234]"
+                            aria-label="Voir le calcul"
+                        >
+                            <Info className="h-3.5 w-3.5" />
+                        </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 rounded-2xl border-[#e2e6f0] p-3 text-sm text-[#4f566b]">
+                {content}
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 function buildRevenueBreakdown(projects: ProjectItem[], clients: ClientItem[]): RevenueSourceBreakdown[] {
     const sourceByClientId = new Map(clients.map((client) => [client.id, client.revenueSource ?? "OTHER"]));
     const buckets = new Map<RevenueSource, RevenueSourceBreakdown>();
@@ -129,27 +150,26 @@ export default async function FinancePage() {
     const outstanding = invoiced - received;
 
     const activeProjects = projects.filter((project) => project.status !== "COMPLETED").length;
+    const averageRevenue = projects.length > 0 ? plannedRevenue / projects.length : 0;
+    const averageMargin = projects.length > 0 ? plannedMargin / projects.length : 0;
+    const collectionRate = invoiced > 0 ? (received / invoiced) * 100 : 0;
     const hasApiIssue = !apiBase || projectsData === null || clientsData === null;
 
-    const topProjects = [...projects]
-        .map((project) => ({
-            ...project,
-            margin: (project.revenueAmount ?? 0) - (project.costAmount ?? 0),
-            outstanding: (project.invoicedAmount ?? 0) - (project.receivedAmount ?? 0),
-        }))
-        .sort((a, b) => b.margin - a.margin)
-        .slice(0, 8);
-
-    const outstandingProjects = [...projects]
-        .map((project) => ({
-            ...project,
-            outstanding: (project.invoicedAmount ?? 0) - (project.receivedAmount ?? 0),
-        }))
-        .filter((project) => project.outstanding > 0)
-        .sort((a, b) => b.outstanding - a.outstanding)
-        .slice(0, 8);
-
     const revenueBreakdown = buildRevenueBreakdown(projects, clients);
+    const topSourceRevenue = revenueBreakdown[0]?.revenue ?? 0;
+    const sourceItems = revenueBreakdown.map((item) => ({
+        ...item,
+        share: topSourceRevenue > 0 ? (item.revenue / topSourceRevenue) * 100 : item.projects > 0 ? 100 : 0,
+    }));
+    const flowItems = [
+        { label: "Prévu", value: plannedRevenue, tone: "bg-[#1f2434]" },
+        { label: "Facturé", value: invoiced, tone: "bg-[#4b5568]" },
+        { label: "Encaissé", value: received, tone: "bg-[#7c869b]" },
+        { label: "Reste", value: outstanding, tone: "bg-[#c8ceda]" },
+    ].map((item) => ({
+        ...item,
+        width: plannedRevenue > 0 ? (item.value / plannedRevenue) * 100 : 0,
+    }));
 
     return (
         <DashboardShell
@@ -165,75 +185,82 @@ export default async function FinancePage() {
             <main className="mx-auto flex w-full max-w-7xl flex-col gap-6">
                 <MotionReveal>
                     <section className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="space-y-3">
-                                <div>
-                                    <h1 className="text-2xl font-bold  md:text-3xl">Finance</h1>
-                                </div>
-                            </div>
+                        <div className="flex items-center justify-between gap-4">
+                            <h1 className="text-2xl font-bold md:text-3xl">Finance</h1>
+                        </div>
 
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Link
-                                    href="/dashboard/projects/new"
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#111322] px-4 text-sm font-medium text-white hover:bg-[#191d2e]"
-                                >
-                                    <CircleDollarSign className="h-4 w-4" />
-                                    Nouveau projet
-                                </Link>
-                                <Link
-                                    href="/dashboard/projects"
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
-                                >
-                                    Voir les projets
-                                    <ArrowUpRight className="h-4 w-4" />
-                                </Link>
+                        <div className="mt-6 grid gap-2 sm:gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="rounded-[28px] border border-white/70 bg-white p-3 shadow-[0_20px_50px_rgba(29,33,49,0.08)] sm:p-5">
+                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
+                                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-[11px] uppercase text-[#8f93a9] sm:text-xs">Revenu prévisionnel</p>
+                                    <FormulaPopover content="Somme de tous les montants de revenu renseignés sur les projets." />
+                                </div>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-2xl">{formatAmount(plannedRevenue)}</p>
+                            </div>
+                            <div className="rounded-[28px] border border-white/70 bg-white p-3 shadow-[0_20px_50px_rgba(29,33,49,0.08)] sm:p-5">
+                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
+                                    <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-[11px] uppercase text-[#8f93a9] sm:text-xs">Coût projet</p>
+                                    <FormulaPopover content="Somme de tous les coûts renseignés sur les projets." />
+                                </div>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-2xl">{formatAmount(plannedCost)}</p>
+                            </div>
+                            <div className="rounded-[28px] border border-white/70 bg-white p-3 shadow-[0_20px_50px_rgba(29,33,49,0.08)] sm:p-5">
+                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
+                                    <Wallet className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-[11px] uppercase text-[#8f93a9] sm:text-xs">Marge estimée</p>
+                                    <FormulaPopover content="Marge estimée = revenu prévisionnel moins coût projet. Le taux de marge = marge estimée / revenu prévisionnel." />
+                                </div>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-2xl">{formatAmount(plannedMargin)}</p>
+                                <p className="mt-1 text-xs text-[#6f7488]">Taux de marge: {formatPercent(marginRate)}</p>
+                            </div>
+                            <div className="rounded-[28px] border border-white/70 bg-white p-3 shadow-[0_20px_50px_rgba(29,33,49,0.08)] sm:p-5">
+                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
+                                    <ReceiptText className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </div>
+                                <p className="text-[11px] uppercase text-[#8f93a9] sm:text-xs">Facturé</p>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-2xl">{formatAmount(invoiced)}</p>
+                            </div>
+                            <div className="rounded-[28px] border border-white/70 bg-white p-3 shadow-[0_20px_50px_rgba(29,33,49,0.08)] sm:p-5">
+                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
+                                    <HandCoins className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </div>
+                                <p className="text-[11px] uppercase text-[#8f93a9] sm:text-xs">Encaissé</p>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-2xl">{formatAmount(received)}</p>
+                            </div>
+                            <div className="rounded-[28px] border border-white/70 bg-white p-3 shadow-[0_20px_50px_rgba(29,33,49,0.08)] sm:p-5">
+                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
+                                    <Banknote className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </div>
+                                <p className="text-[11px] uppercase text-[#8f93a9] sm:text-xs">Reste à encaisser</p>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-2xl">{formatAmount(outstanding)}</p>
+                                <p className="mt-1 text-xs text-[#6f7488]">{activeProjects} projet(s) actif(s)</p>
                             </div>
                         </div>
 
-                        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <TrendingUp className="h-5 w-5" />
-                                </div>
-                                <p className="text-xs uppercase  text-[#8f93a9]">Revenu prévisionnel</p>
-                                <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(plannedRevenue)}</p>
+                        <div className="mt-3 grid gap-2 sm:gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-[24px] border border-white/70 bg-white/80 px-3 py-3 sm:px-4 sm:py-4">
+                                <p className="text-[10px] uppercase text-[#8f93a9] sm:text-[11px]">Encaissement</p>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-xl">{formatPercent(collectionRate)}</p>
                             </div>
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <TrendingDown className="h-5 w-5" />
-                                </div>
-                                <p className="text-xs uppercase  text-[#8f93a9]">Coût projet</p>
-                                <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(plannedCost)}</p>
+                            <div className="rounded-[24px] border border-white/70 bg-white/80 px-3 py-3 sm:px-4 sm:py-4">
+                                <p className="text-[10px] uppercase text-[#8f93a9] sm:text-[11px]">Ticket moyen</p>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-xl">{formatAmount(averageRevenue)}</p>
                             </div>
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <Wallet className="h-5 w-5" />
-                                </div>
-                                <p className="text-xs uppercase  text-[#8f93a9]">Marge estimée</p>
-                                <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(plannedMargin)}</p>
-                                <p className="mt-1 text-xs text-[#6f7488]">Taux de marge: {formatPercent(marginRate)}</p>
+                            <div className="rounded-[24px] border border-white/70 bg-white/80 px-3 py-3 sm:px-4 sm:py-4">
+                                <p className="text-[10px] uppercase text-[#8f93a9] sm:text-[11px]">Marge moyenne</p>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-xl">{formatAmount(averageMargin)}</p>
                             </div>
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <ReceiptText className="h-5 w-5" />
-                                </div>
-                                <p className="text-xs uppercase  text-[#8f93a9]">Facturé</p>
-                                <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(invoiced)}</p>
-                            </div>
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <HandCoins className="h-5 w-5" />
-                                </div>
-                                <p className="text-xs uppercase  text-[#8f93a9]">Encaissé</p>
-                                <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(received)}</p>
-                            </div>
-                            <div className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <Banknote className="h-5 w-5" />
-                                </div>
-                                <p className="text-xs uppercase  text-[#8f93a9]">Reste à encaisser</p>
-                                <p className="mt-2 text-2xl font-semibold text-[#1e2234]">{formatAmount(outstanding)}</p>
-                                <p className="mt-1 text-xs text-[#6f7488]">{activeProjects} projet(s) actif(s)</p>
+                            <div className="rounded-[24px] border border-white/70 bg-white/80 px-3 py-3 sm:px-4 sm:py-4">
+                                <p className="text-[10px] uppercase text-[#8f93a9] sm:text-[11px]">Actifs</p>
+                                <p className="mt-2 text-lg font-semibold text-[#1e2234] sm:text-xl">{formatCompactNumber(activeProjects)}</p>
                             </div>
                         </div>
                     </section>
@@ -242,46 +269,35 @@ export default async function FinancePage() {
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
                     <MotionReveal delay={70}>
                         <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:p-6">
-                            <div className="mb-5 flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-2xl font-semibold text-slate-950">Top rentabilité</h2>
-                                </div>
-                                <Badge variant="secondary" className="border border-[#d7dced] bg-[#f7f8fc] text-[#2f3344]">
-                                    {projects.length} projets
-                                </Badge>
-                            </div>
+                            <h2 className="text-2xl font-semibold text-slate-950">Sources</h2>
 
                             {hasApiIssue ? (
                                 <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-600">
                                     Données indisponibles.
                                 </div>
-                            ) : topProjects.length === 0 ? (
+                            ) : revenueBreakdown.every((item) => item.revenue <= 0 && item.cost <= 0 && item.projects === 0) ? (
                                 <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 p-5 text-sm text-slate-600">
-                                    Aucun projet.
+                                    Aucune donnée.
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {topProjects.map((project) => (
-                                        <Link
-                                            key={project.id}
-                                            href={`/dashboard/projects/${project.id}`}
-                                            className="block rounded-[1.25rem] border border-slate-200 bg-white p-4 transition hover:border-slate-300"
-                                        >
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div>
-                                                    <p className="text-sm font-semibold text-slate-950">{project.name}</p>
-                                                    <p className="text-xs text-slate-500">{project.client?.name ?? "Sans client"}</p>
-                                                </div>
-                                                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
-                                                    {formatAmount(project.margin)}
-                                                </Badge>
+                                    {sourceItems.map((item) => (
+                                        <div key={item.source} className="rounded-[1.5rem] border border-slate-200 bg-slate-50/90 p-4">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <p className="text-sm font-semibold text-slate-950">{item.label}</p>
+                                                <p className="text-sm font-semibold text-slate-950">{formatAmount(item.revenue)}</p>
                                             </div>
-                                            <div className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-3">
-                                                <p>Revenu: <span className="font-medium text-slate-900">{formatAmount(project.revenueAmount ?? 0)}</span></p>
-                                                <p>Coût: <span className="font-medium text-slate-900">{formatAmount(project.costAmount ?? 0)}</span></p>
-                                                <p>Reste: <span className="font-medium text-slate-900">{formatAmount(project.outstanding)}</span></p>
+                                            <div className="mt-3 h-2 rounded-full bg-white">
+                                                <div
+                                                    className="h-2 rounded-full bg-[#1f2434]"
+                                                    style={{ width: `${Math.max(item.share, item.projects > 0 ? 8 : 0)}%` }}
+                                                />
                                             </div>
-                                        </Link>
+                                            <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                                                <span>{formatCompactNumber(item.projects)}</span>
+                                                <span>{formatAmount(item.cost)}</span>
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             )}
@@ -289,44 +305,21 @@ export default async function FinancePage() {
                     </MotionReveal>
 
                     <MotionReveal delay={120}>
-                        <aside className="space-y-6 xl:sticky xl:top-28">
+                        <aside className="xl:sticky xl:top-28">
                             <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <h2 className="text-2xl font-semibold text-slate-950">Sources</h2>
+                                <h2 className="text-2xl font-semibold text-slate-950">Flux</h2>
                                 <div className="mt-4 space-y-3">
-                                    {revenueBreakdown.map((item) => (
-                                        <div key={item.source} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-sm font-medium text-slate-950">{item.label}</p>
-                                                <p className="text-xs text-slate-500">{item.projects} projet(s)</p>
+                                    {flowItems.map((item) => (
+                                        <div key={item.label} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <p className="text-sm font-medium text-slate-700">{item.label}</p>
+                                                <p className="text-sm font-semibold text-slate-950">{formatAmount(item.value)}</p>
                                             </div>
-                                            <p className="mt-2 text-sm text-slate-700">
-                                                {formatAmount(item.revenue)} revenu · {formatAmount(item.cost)} coût
-                                            </p>
+                                            <div className="mt-3 h-2 rounded-full bg-white">
+                                                <div className={`h-2 rounded-full ${item.tone}`} style={{ width: `${Math.max(item.width, item.value > 0 ? 8 : 0)}%` }} />
+                                            </div>
                                         </div>
                                     ))}
-                                </div>
-                            </section>
-
-                            <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)]">
-                                <h2 className="text-2xl font-semibold text-slate-950">À encaisser</h2>
-                                <div className="mt-4 space-y-3">
-                                    {outstandingProjects.length === 0 ? (
-                                        <p className="rounded-[1.25rem] border border-dashed border-slate-300 bg-white/70 px-4 py-3 text-sm text-slate-600">
-                                            Aucun reste.
-                                        </p>
-                                    ) : (
-                                        outstandingProjects.map((project) => (
-                                            <Link
-                                                key={project.id}
-                                                href={`/dashboard/projects/${project.id}`}
-                                                className="block rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-slate-300 hover:bg-white"
-                                            >
-                                                <p className="text-sm font-medium text-slate-950">{project.name}</p>
-                                                <p className="mt-1 text-xs text-slate-500">{project.client?.name ?? "Sans client"}</p>
-                                                <p className="mt-2 text-sm font-semibold text-slate-900">{formatAmount(project.outstanding)}</p>
-                                            </Link>
-                                        ))
-                                    )}
                                 </div>
                             </section>
                         </aside>

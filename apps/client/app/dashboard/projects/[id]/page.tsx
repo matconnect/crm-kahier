@@ -5,8 +5,6 @@ import {
     CalendarRange,
     CircleDollarSign,
     FilePenLine,
-    FolderKanban,
-    Target,
     UserRound,
 } from "lucide-react";
 
@@ -16,6 +14,7 @@ import { MotionReveal } from "@/components/motion/reveal";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardShell, fetchDashboardData } from "../../_components";
+import { ProjectTaskProgress } from "../_components/project-task-progress";
 
 type DetailPageProps = {
     params: Promise<{ id: string }>;
@@ -43,6 +42,10 @@ type ProjectDetail = {
     billingMode: string | null;
     startDate: string | null;
     endDate: string | null;
+    kahierTabId: number | null;
+    kahierCategoryId: number | null;
+    kahierCategoryName: string | null;
+    kahierTaskCompletionState: Record<string, boolean> | null;
     createdAt: string;
     updatedAt: string;
     client: { id: string; name: string } | null;
@@ -195,13 +198,6 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
                                 <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
-                                    <FolderKanban className="h-5 w-5" />
-                                </div>
-                                <p className="text-xs uppercase  text-[#8f93a9]">Avancement</p>
-                                <p className="mt-2 text-3xl font-semibold text-[#1e2234]">{project.progress}%</p>
-                            </div>
-                            <div className="rounded-[1.5rem] border border-[#e1e4ef] bg-white p-4">
-                                <div className="mb-3 inline-flex rounded-2xl bg-[#f1f3fa] p-2 text-[#5f667f]">
                                     <CalendarRange className="h-5 w-5" />
                                 </div>
                                 <p className="text-xs uppercase  text-[#8f93a9]">Planning</p>
@@ -249,7 +245,19 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                     </div>
                 </MotionReveal>
 
-                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+                <div className="grid gap-6">
+                    <MotionReveal delay={40}>
+                        <ProjectTaskProgress
+                            projectId={project.id}
+                            currentUserId={currentUserId}
+                            kahierCategoryId={project.kahierCategoryId}
+                            kahierTabId={project.kahierTabId}
+                            initialProgress={project.progress}
+                            initialTaskCompletionState={project.kahierTaskCompletionState}
+                            canEdit={canEdit}
+                        />
+                    </MotionReveal>
+
                     <MotionReveal delay={80}>
                         <section className="space-y-6" id="project-details">
                             <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
@@ -269,81 +277,6 @@ export default async function ProjectDetailPage({ params }: DetailPageProps) {
                         </section>
                     </MotionReveal>
 
-                    <MotionReveal delay={120}>
-                        <aside className="space-y-6 xl:sticky xl:top-28" id="project-insights">
-                            <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-slate-950">Lecture rapide</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase  text-slate-400">Priorité</p>
-                                        <p className="mt-2 text-sm font-medium text-slate-950">{PRIORITY_META[project.priority]}</p>
-                                    </div>
-                                    <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase  text-slate-400">Client</p>
-                                        <p className="mt-2 text-sm font-medium text-slate-950">{project.client?.name ?? "Sans client"}</p>
-                                    </div>
-                                    <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase  text-slate-400">Facturation</p>
-                                        <p className="mt-2 text-sm font-medium text-slate-950">{project.billingMode || "Non renseignée"}</p>
-                                        <p className="mt-1 text-xs text-slate-500">
-                                            Facturé {formatAmount(project.invoicedAmount)} · Encaissé {formatAmount(project.receivedAmount)}
-                                        </p>
-                                    </div>
-                                    <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase  text-slate-400">Objectif de pilotage</p>
-                                        <p className="mt-2 text-sm font-medium text-slate-950">{project.progress}% réalisé</p>
-                                        <div className="mt-3 h-2 rounded-full bg-slate-100">
-                                            <div
-                                                className="h-2 rounded-full bg-slate-950"
-                                                style={{ width: `${project.progress}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3">
-                                        <p className="text-xs uppercase  text-slate-400">Suivi</p>
-                                        <p className="mt-2 text-sm font-medium text-slate-950">Màj le {formatDate(project.updatedAt, true)}</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl transition">
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-slate-950">Repères projet</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    {canEdit ? (
-                                        <Link
-                                            href={`/dashboard/projects/${project.id}/edit`}
-                                            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border-0 bg-[#111322] px-4 text-sm font-medium text-white hover:bg-[#191d2e]"
-                                        >
-                                            <FilePenLine className="h-4 w-4" />
-                                            Modifier le projet
-                                        </Link>
-                                    ) : (
-                                        <div className="rounded-[1.25rem] border border-dashed border-slate-300 bg-white/70 px-4 py-3 text-sm text-slate-600">
-                                            Modification indisponible avec ton niveau d’accès actuel.
-                                        </div>
-                                    )}
-                                    <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-slate-700">
-                                        <div className="flex items-center gap-2 text-slate-950">
-                                            <Target className="h-4 w-4 text-slate-700" />
-                                            <span className="text-sm font-medium">Cadrage</span>
-                                        </div>
-                                        <p className="mt-2 text-sm leading-6">{project.goals?.trim() || "Aucun objectif formalisé pour le moment."}</p>
-                                    </div>
-                                    <div className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-4 text-slate-700">
-                                        <div className="flex items-center gap-2 text-slate-950">
-                                            <Target className="h-4 w-4 text-slate-700" />
-                                            <span className="text-sm font-medium">Livrables attendus</span>
-                                        </div>
-                                        <p className="mt-2 text-sm leading-6">{project.deliverables?.trim() || "Aucun livrable renseigné."}</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </aside>
-                    </MotionReveal>
                 </div>
             </div>
         </DashboardShell>

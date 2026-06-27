@@ -460,6 +460,10 @@ model Project {
   billingMode String?
   startDate   DateTime?
   endDate     DateTime?
+  kahierTabId Int?
+  kahierCategoryId Int?       @unique
+  kahierCategoryName String?
+  kahierTaskCompletionState String? @db.LongText
   companyId   String
   clientId    String?
   ownerId     String?
@@ -478,4 +482,5 @@ model Project {
   @@index([priority])
   @@index([name])
   @@index([endDate])
+  @@index([kahierTabId])
 }

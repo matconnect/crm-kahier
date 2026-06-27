@@ -1,6 +1,6 @@
 import { prisma } from "@kahier/db-crm";
 import { ProjectPriority, ProjectStatus, type Prisma } from "@kahier/db-crm";
-import type { ListItem, ListParams, ListResponse, ProjectWithRelations } from "./projects.types.js";
+import type { ListItem, ListParams, ListResponse, ProjectTaskCompletionState, ProjectWithRelations } from "./projects.types.js";
 
 export async function list(params: ListParams): Promise<ListResponse> {
     const { q = "", status, priority, clientId, page, pageSize, companyId, assignedUserId } = params;
@@ -41,6 +41,7 @@ export async function list(params: ListParams): Promise<ListResponse> {
     ]);
 
     const formatted: ListItem[] = items.map((project) => ({
+        ...project,
         id: project.id,
         name: project.name,
         reference: project.reference ?? null,
@@ -62,6 +63,12 @@ export async function list(params: ListParams): Promise<ListResponse> {
         billingMode: project.billingMode ?? null,
         startDate: project.startDate ?? null,
         endDate: project.endDate ?? null,
+        kahierTabId: (project as typeof project & { kahierTabId: number | null }).kahierTabId ?? null,
+        kahierCategoryId: (project as typeof project & { kahierCategoryId: number | null }).kahierCategoryId ?? null,
+        kahierCategoryName: (project as typeof project & { kahierCategoryName: string | null }).kahierCategoryName ?? null,
+        kahierTaskCompletionState: parseTaskCompletionState(
+            (project as typeof project & { kahierTaskCompletionState?: string | null }).kahierTaskCompletionState ?? null,
+        ),
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
         client: project.client,
@@ -123,28 +130,30 @@ export async function summary(companyId: string) {
 }
 
 export async function create(input: Prisma.ProjectCreateInput) {
-    return prisma.project.create({
+    const project = await prisma.project.create({
         data: input,
         include: {
             client: { select: { id: true, name: true } },
             owner: { select: { id: true, firstName: true, lastName: true, email: true } },
         },
     });
+    return formatProject(project);
 }
 
 export async function getById(id: string, companyId: string): Promise<ProjectWithRelations> {
-    return prisma.project.findFirstOrThrow({
+    const project = await prisma.project.findFirstOrThrow({
         where: { id, companyId },
         include: {
             client: { select: { id: true, name: true } },
             owner: { select: { id: true, firstName: true, lastName: true, email: true } },
         },
     });
+    return formatProject(project);
 }
 
 export async function update(id: string, companyId: string, input: Prisma.ProjectUpdateInput) {
     await prisma.project.findFirstOrThrow({ where: { id, companyId }, select: { id: true } });
-    return prisma.project.update({
+    const project = await prisma.project.update({
         where: { id },
         data: input,
         include: {
@@ -152,6 +161,7 @@ export async function update(id: string, companyId: string, input: Prisma.Projec
             owner: { select: { id: true, firstName: true, lastName: true, email: true } },
         },
     });
+    return formatProject(project);
 }
 
 export async function remove(id: string, companyId: string) {
@@ -179,4 +189,38 @@ function isProjectStatus(value: unknown): value is ProjectStatus {
 
 function isProjectPriority(value: unknown): value is ProjectPriority {
     return typeof value === "string" && Object.values(ProjectPriority).includes(value as ProjectPriority);
+}
+
+function parseTaskCompletionState(raw: string | null | undefined): ProjectTaskCompletionState | null {
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw) as unknown;
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+            return null;
+        }
+
+        const entries = Object.entries(parsed as Record<string, unknown>).filter(
+            ([taskId, checked]) => taskId.trim() && typeof checked === "boolean",
+        );
+
+        if (!entries.length) return null;
+        return Object.fromEntries(entries) as ProjectTaskCompletionState;
+    } catch {
+        return null;
+    }
+}
+
+function formatProject<T extends {
+    kahierTaskCompletionState?: string | null;
+    kahierTabId?: number | null;
+    kahierCategoryId?: number | null;
+    kahierCategoryName?: string | null;
+}>(project: T): T & ProjectWithRelations {
+    return {
+        ...project,
+        kahierTabId: project.kahierTabId ?? null,
+        kahierCategoryId: project.kahierCategoryId ?? null,
+        kahierCategoryName: project.kahierCategoryName ?? null,
+        kahierTaskCompletionState: parseTaskCompletionState(project.kahierTaskCompletionState ?? null),
+    } as T & ProjectWithRelations;
 }

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma, ProjectPriority, ProjectStatus, type Prisma } from "@kahier/db-crm";
+import { prisma, Prisma, ProjectPriority, ProjectStatus } from "@kahier/db-crm";
 import * as service from "../services/projects.service.js";
 import { getCurrentUser, getParamValue, type CurrentUser } from "../lib/current-user.js";
 
@@ -72,6 +72,26 @@ function normalizeOptionalNumber(value: unknown) {
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) return undefined;
     return Math.round(parsed);
+}
+
+function normalizeOptionalInteger(value: unknown) {
+    const parsed = normalizeOptionalNumber(value);
+    if (parsed === null) return null;
+    if (parsed === undefined) return undefined;
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function normalizeTaskCompletionState(value: unknown) {
+    if (value === undefined) return undefined;
+    if (value === null) return null;
+    if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+
+    const entries = Object.entries(value as Record<string, unknown>).filter(
+        ([taskId, checked]) => taskId.trim() && typeof checked === "boolean",
+    );
+
+    if (!entries.length) return null;
+    return JSON.stringify(Object.fromEntries(entries));
 }
 
 export async function list(req: Request, res: Response) {
@@ -154,10 +174,14 @@ export async function create(req: Request, res: Response) {
         billingMode: normalizeOptionalString(req.body?.billingMode),
         startDate: normalizeDate(req.body?.startDate) ?? null,
         endDate: normalizeDate(req.body?.endDate) ?? null,
+        kahierTabId: normalizeOptionalInteger(req.body?.kahierTabId) ?? null,
+        kahierCategoryId: normalizeOptionalInteger(req.body?.kahierCategoryId) ?? null,
+        kahierCategoryName: normalizeOptionalString(req.body?.kahierCategoryName),
+        kahierTaskCompletionState: normalizeTaskCompletionState(req.body?.kahierTaskCompletionState) ?? null,
         company: { connect: { id: currentUser.companyId } },
         ...(clientId ? { client: { connect: { id: clientId } } } : {}),
         ...(ownerId ? { owner: { connect: { id: ownerId } } } : {}),
-    } satisfies Parameters<typeof service.create>[0];
+    } as Parameters<typeof service.create>[0];
 
     try {
         const project = await service.create(payload);
@@ -200,7 +224,11 @@ export async function update(req: Request, res: Response) {
         return res.status(403).json({ error: "Acces refuse" });
     }
 
-    const data: Prisma.ProjectUpdateInput = {};
+    const data: Prisma.ProjectUpdateInput & {
+        kahierTabId?: number | null;
+        kahierCategoryId?: number | null;
+        kahierCategoryName?: string | null;
+    } = {};
     if ("name" in (req.body ?? {})) {
         const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
         if (!name) return res.status(400).json({ error: "Le nom du projet est requis" });
@@ -279,6 +307,26 @@ export async function update(req: Request, res: Response) {
     if ("endDate" in (req.body ?? {})) {
         data.endDate = normalizeDate(req.body?.endDate) ?? null;
     }
+    if ("kahierTabId" in (req.body ?? {})) {
+        const kahierTabId = normalizeOptionalInteger(req.body?.kahierTabId);
+        if (kahierTabId === undefined) return res.status(400).json({ error: "Onglet Kahier invalide" });
+        data.kahierTabId = kahierTabId;
+    }
+    if ("kahierCategoryId" in (req.body ?? {})) {
+        const kahierCategoryId = normalizeOptionalInteger(req.body?.kahierCategoryId);
+        if (kahierCategoryId === undefined) return res.status(400).json({ error: "Catégorie Kahier invalide" });
+        data.kahierCategoryId = kahierCategoryId;
+    }
+    if ("kahierCategoryName" in (req.body ?? {})) {
+        data.kahierCategoryName = normalizeOptionalString(req.body?.kahierCategoryName);
+    }
+    if ("kahierTaskCompletionState" in (req.body ?? {})) {
+        const kahierTaskCompletionState = normalizeTaskCompletionState(req.body?.kahierTaskCompletionState);
+        if (kahierTaskCompletionState === undefined) {
+            return res.status(400).json({ error: "État des tâches Kahier invalide" });
+        }
+        data.kahierTaskCompletionState = kahierTaskCompletionState;
+    }
     if ("clientId" in (req.body ?? {})) {
         const clientId = typeof req.body?.clientId === "string" && req.body.clientId.trim() ? req.body.clientId.trim() : null;
         if (clientId) {
@@ -314,7 +362,17 @@ export async function update(req: Request, res: Response) {
         res.json(project);
     } catch (error) {
         console.error("updateProject", error);
-        res.status(500).json({ error: "Impossible de mettre a jour le projet" });
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            const target = error.meta?.target;
+            const targetFields = Array.isArray(target) ? target.map(String) : typeof target === "string" ? [target] : [];
+            if (error.code === "P2002" && targetFields.includes("kahierCategoryId")) {
+                return res.status(409).json({ error: "Cette catégorie Kahier est déjà liée à un autre projet" });
+            }
+        }
+        if (error instanceof Prisma.PrismaClientValidationError) {
+            return res.status(400).json({ error: "Les données envoyées pour le projet sont invalides" });
+        }
+        res.status(500).json({ error: "Impossible de mettre à jour le projet" });
     }
 }
 

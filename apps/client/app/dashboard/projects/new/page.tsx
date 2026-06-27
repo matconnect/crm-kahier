@@ -59,7 +59,7 @@ export default async function NewProjectPage() {
             searchInteractions={dashboardData.interactions}
             searchProjects={dashboardData.projects}
         >
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6" id="project-form">
+            <main className="mx-auto flex w-full max-w-6xl flex-col gap-6">
                 <FormPageHeader
                     title="Nouveau projet"
                     returnHref="/dashboard/projects"
@@ -75,7 +75,7 @@ export default async function NewProjectPage() {
                     clients={clients}
                     owners={owners}
                 />
-            </div>
+            </main>
         </DashboardShell>
     );
 }

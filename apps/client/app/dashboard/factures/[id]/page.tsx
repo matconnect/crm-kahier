@@ -8,6 +8,40 @@ import { InvoiceForm } from "../_components/invoice-form";
 import { INVOICE_STATUS_OPTIONS } from "../_lib/invoices";
 import { fetchInvoice, fetchInvoiceClients } from "../_lib/server";
 
+function formatAddress(parts: Array<string | null | undefined>) {
+    return parts
+        .map((value) => (typeof value === "string" ? value.trim() : ""))
+        .filter(Boolean)
+        .join(", ");
+}
+
+function PartyCard({
+    title,
+    lines,
+}: {
+    title: string;
+    lines: Array<string | null | undefined>;
+}) {
+    return (
+        <article className="rounded-[24px] border border-slate-200 bg-[#fafbff] p-5 shadow-[0_16px_40px_rgba(29,33,49,0.05)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{title}</p>
+            <div className="mt-4 space-y-1.5">
+                {lines.filter(Boolean).length ? (
+                    lines
+                        .filter((line): line is string => Boolean(line))
+                        .map((line, index) => (
+                            <p key={`${title}-${index}`} className={index === 0 ? "text-lg font-semibold text-slate-950" : "text-sm text-slate-600"}>
+                                {line}
+                            </p>
+                        ))
+                ) : (
+                    <p className="text-sm text-slate-400">Informations à compléter</p>
+                )}
+            </div>
+        </article>
+    );
+}
+
 export default async function InvoiceDetailPage({
     params,
     searchParams,
@@ -55,6 +89,34 @@ export default async function InvoiceDetailPage({
                         }
                     />
                 ) : null}
+                <section className="grid gap-4 lg:grid-cols-2">
+                    <PartyCard
+                        title="Émis par"
+                        lines={[
+                            invoice.company.name,
+                            formatAddress([
+                                invoice.company.addressLine1,
+                                invoice.company.addressLine2,
+                                formatAddress([invoice.company.postalCode, invoice.company.city, invoice.company.country]),
+                            ]),
+                            invoice.company.contactEmail,
+                            invoice.company.contactPhone,
+                        ]}
+                    />
+                    <PartyCard
+                        title="Destinataire"
+                        lines={[
+                            invoice.client.name,
+                            formatAddress([
+                                invoice.client.addressLine1,
+                                invoice.client.addressLine2,
+                                formatAddress([invoice.client.postalCode, invoice.client.city, invoice.client.country]),
+                            ]),
+                            invoice.client.primaryEmail,
+                            invoice.client.primaryPhone,
+                        ]}
+                    />
+                </section>
                 <InvoiceForm currentUserId={currentUserId} clients={clients} invoice={invoice} initialPreviewOpen={query.preview === "1"} />
             </main>
         </DashboardShell>

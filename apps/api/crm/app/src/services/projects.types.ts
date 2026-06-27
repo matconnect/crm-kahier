@@ -1,5 +1,7 @@
 import type { Prisma, ProjectPriority, ProjectStatus } from "@kahier/db-crm";
 
+export type ProjectTaskCompletionState = Record<string, boolean>;
+
 export type ListParams = {
     q?: string;
     status?: ProjectStatus | string;
@@ -33,6 +35,10 @@ export type ListItem = {
     billingMode: string | null;
     startDate: Date | null;
     endDate: Date | null;
+    kahierTabId: number | null;
+    kahierCategoryId: number | null;
+    kahierCategoryName: string | null;
+    kahierTaskCompletionState: ProjectTaskCompletionState | null;
     createdAt: Date;
     updatedAt: Date;
     client: { id: string; name: string } | null;
@@ -51,4 +57,9 @@ export type ProjectWithRelations = Prisma.ProjectGetPayload<{
         client: { select: { id: true; name: true } };
         owner: { select: { id: true; firstName: true; lastName: true; email: true } };
     };
-}>;
+}> & {
+    kahierTabId: number | null;
+    kahierCategoryId: number | null;
+    kahierCategoryName: string | null;
+    kahierTaskCompletionState: ProjectTaskCompletionState | null;
+};

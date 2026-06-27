@@ -26,28 +26,21 @@ describe("ClientsFilters", () => {
     });
 
     it("affiche les filtres actifs valides", () => {
-        navigationMocks.params = new URLSearchParams({
-            q: "kahier",
-            status: "ACTIVE",
-            segment: "PME",
-            location: "Paris",
-        });
-
         render(
             <ClientsFilters
                 searchParams={{
                     q: "kahier",
                     status: "ACTIVE",
                     segment: "PME",
-                    location: "Paris",
                 }}
             />,
         );
 
-        expect(screen.getByLabelText("Recherche")).toHaveValue("kahier");
-        expect(screen.getByText("2 filtres actifs")).toBeInTheDocument();
-        expect(screen.getByText("ACTIVE")).toBeInTheDocument();
-        expect(screen.getAllByText("PME").length).toBeGreaterThan(0);
+        const [statusSelect, segmentSelect] = screen.getAllByRole("combobox");
+
+        expect(screen.getByPlaceholderText("Nom du client ou contact")).toHaveValue("kahier");
+        expect(statusSelect).toHaveTextContent("Client actif");
+        expect(segmentSelect).toHaveTextContent("PME");
     });
 
     it("ignore les valeurs de statut et segment invalides", () => {
@@ -60,7 +53,10 @@ describe("ClientsFilters", () => {
             />,
         );
 
-        expect(screen.getByText("0 filtre actif")).toBeInTheDocument();
+        const [statusSelect, segmentSelect] = screen.getAllByRole("combobox");
+
+        expect(statusSelect).toHaveTextContent("Tous les statuts");
+        expect(segmentSelect).toHaveTextContent("Tous les segments");
         expect(screen.queryByText("DELETED")).not.toBeInTheDocument();
         expect(screen.queryByText("VIP")).not.toBeInTheDocument();
     });
@@ -68,21 +64,27 @@ describe("ClientsFilters", () => {
     it("applique la recherche après debounce", () => {
         render(<ClientsFilters searchParams={{}} />);
 
-        fireEvent.change(screen.getByLabelText("Recherche"), {
+        fireEvent.change(screen.getByPlaceholderText("Nom du client ou contact"), {
             target: { value: "  atelier  " },
         });
 
         act(() => {
-            vi.advanceTimersByTime(300);
+            vi.advanceTimersByTime(250);
         });
 
-        expect(navigationMocks.replace).toHaveBeenLastCalledWith("/dashboard/clients?page=1&q=atelier");
+        expect(navigationMocks.replace).toHaveBeenLastCalledWith("/dashboard/clients?q=atelier");
     });
 
-    it("réinitialise les filtres", () => {
-        render(<ClientsFilters searchParams={{ q: "kahier", status: "ACTIVE" }} />);
+    it("revient à la route de base quand la recherche est vidée", () => {
+        render(<ClientsFilters searchParams={{ q: "kahier" }} />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Réinitialiser" }));
+        fireEvent.change(screen.getByPlaceholderText("Nom du client ou contact"), {
+            target: { value: "   " },
+        });
+
+        act(() => {
+            vi.advanceTimersByTime(250);
+        });
 
         expect(navigationMocks.replace).toHaveBeenLastCalledWith("/dashboard/clients");
     });

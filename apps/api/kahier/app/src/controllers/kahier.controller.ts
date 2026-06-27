@@ -11,6 +11,9 @@ import {
     getPlannings,
     getPlanningLegends,
     getZoneData,
+    getCategoryTasks,
+    setTaskCompletion,
+    updateCategoryLink,
 } from "../services/kahier.service.js";
 import type { KahierTaskPayload } from "../types/kahier.types.js";
 
@@ -210,6 +213,118 @@ export async function postCategory(req: Request, res: Response) {
             return res.status(error.status).json({ error: error.message });
         }
         console.error("Erreur kahier create category:", error);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+}
+
+export async function patchCategory(req: Request, res: Response) {
+    const categoryId = Number(getParamValue(req, "categoryId"));
+    if (!Number.isInteger(categoryId) || categoryId <= 0) {
+        return res.status(400).json({ error: "categoryId requis" });
+    }
+
+    const body = req.body as { periodeTabId?: unknown; crmProjectId?: unknown; crmProjectName?: unknown };
+    const periodeTabId = Number(body.periodeTabId);
+    if (!Number.isInteger(periodeTabId) || periodeTabId <= 0) {
+        return res.status(400).json({ error: "periodeTabId requis" });
+    }
+
+    const crmProjectId = body.crmProjectId === null
+        ? null
+        : typeof body.crmProjectId === "string" && body.crmProjectId.trim()
+            ? body.crmProjectId.trim()
+            : undefined;
+    const crmProjectName = body.crmProjectName === null
+        ? null
+        : typeof body.crmProjectName === "string" && body.crmProjectName.trim()
+            ? body.crmProjectName.trim()
+            : undefined;
+
+    const hasProjectId = crmProjectId !== undefined;
+    const hasProjectName = crmProjectName !== undefined;
+
+    if (!hasProjectId || !hasProjectName) {
+        return res.status(400).json({ error: "crmProjectId et crmProjectName sont requis" });
+    }
+
+    try {
+        const category = await updateCategoryLink(
+            categoryId,
+            { periodeTabId, crmProjectId, crmProjectName },
+            getApiKeyFromRequest(req),
+        );
+        return res.json(category);
+    } catch (error) {
+        if (error instanceof KahierServiceError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("Erreur kahier patch category:", error);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+}
+
+export async function getCategoryTasksController(req: Request, res: Response) {
+    const categoryId = Number(getParamValue(req, "categoryId"));
+    const periodeTabId = typeof req.query.periodeTabId === "string" ? Number(req.query.periodeTabId) : Number.NaN;
+
+    if (!Number.isInteger(categoryId) || categoryId <= 0) {
+        return res.status(400).json({ error: "categoryId requis" });
+    }
+
+    if (!Number.isInteger(periodeTabId) || periodeTabId <= 0) {
+        return res.status(400).json({ error: "periodeTabId requis" });
+    }
+
+    try {
+        const tasks = await getCategoryTasks(categoryId, periodeTabId, getApiKeyFromRequest(req));
+        return res.json(tasks);
+    } catch (error) {
+        if (error instanceof KahierServiceError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("Erreur kahier category tasks:", error);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+}
+
+export async function patchTaskCompletion(req: Request, res: Response) {
+    const taskId = Number(getParamValue(req, "taskId"));
+    if (!Number.isInteger(taskId) || taskId <= 0) {
+        return res.status(400).json({ error: "taskId requis" });
+    }
+
+    const body = req.body as { categoryId?: unknown; periodeTabId?: unknown; completed?: unknown };
+    const categoryId = Number(body.categoryId);
+    const periodeTabId = Number(body.periodeTabId);
+
+    if (!Number.isInteger(categoryId) || categoryId <= 0) {
+        return res.status(400).json({ error: "categoryId requis" });
+    }
+
+    if (!Number.isInteger(periodeTabId) || periodeTabId <= 0) {
+        return res.status(400).json({ error: "periodeTabId requis" });
+    }
+
+    if (typeof body.completed !== "boolean") {
+        return res.status(400).json({ error: "completed requis" });
+    }
+
+    try {
+        const task = await setTaskCompletion(
+            taskId,
+            {
+                categoryId,
+                periodeTabId,
+                completed: body.completed,
+            },
+            getApiKeyFromRequest(req),
+        );
+        return res.json(task);
+    } catch (error) {
+        if (error instanceof KahierServiceError) {
+            return res.status(error.status).json({ error: error.message });
+        }
+        console.error("Erreur kahier patch task completion:", error);
         return res.status(500).json({ error: "Erreur serveur" });
     }
 }

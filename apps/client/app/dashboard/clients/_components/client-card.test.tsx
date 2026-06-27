@@ -12,23 +12,6 @@ vi.mock("next/link", () => ({
     ),
 }));
 
-vi.mock("./contact-flash", () => ({
-    ContactFlash: ({ primaryEmail, primaryPhone }: { primaryEmail: string | null; primaryPhone: string | null }) => (
-        <div>
-            <span>{primaryEmail}</span>
-            <span>{primaryPhone}</span>
-        </div>
-    ),
-}));
-
-vi.mock("./log-interaction", () => ({
-    LogInteraction: () => <form>Nouvelle interaction</form>,
-}));
-
-vi.mock("./edit-client-dialog", () => ({
-    EditClientDialog: () => <button>Modifier</button>,
-}));
-
 vi.mock("./delete-client-dialog", () => ({
     DeleteClientDialog: () => <button>Supprimer</button>,
 }));
@@ -58,7 +41,6 @@ describe("ClientCard", () => {
                             type: "Email",
                             summary: "Premier échange",
                             occurredAt: "2026-01-12T10:00:00.000Z",
-                            user: { firstName: "Ada", lastName: "Lovelace", email: "ada@example.com" },
                         },
                     ],
                 }}
@@ -74,6 +56,7 @@ describe("ClientCard", () => {
         expect(screen.getByText("hello@kahier.fr")).toBeInTheDocument();
         expect(screen.getByText("+33123456789")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Voir le détail" })).toHaveAttribute("href", "/dashboard/clients/client-1");
+        expect(screen.getByRole("link", { name: "Modifier" })).toHaveAttribute("href", "/dashboard/clients/client-1?edit=1");
     });
 
     it("affiche les libellés de repli quand les données optionnelles sont absentes", () => {
@@ -101,7 +84,7 @@ describe("ClientCard", () => {
 
         expect(screen.getByText("AUTRE")).toBeInTheDocument();
         expect(screen.getByText("Prospect")).toBeInTheDocument();
-        expect(screen.getByText("Non renseigné")).toBeInTheDocument();
+        expect(screen.getAllByText("Non renseigné").length).toBeGreaterThan(0);
         expect(screen.getByText("0 contact")).toBeInTheDocument();
         expect(screen.getByText("Non assigné")).toBeInTheDocument();
         expect(screen.getByText("Aucune")).toBeInTheDocument();

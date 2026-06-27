@@ -60,7 +60,26 @@ export type Quote = {
         primaryEmail: string | null;
         primaryPhone: string | null;
     };
-    company: { id: string; name: string };
+    company: {
+        id: string;
+        name: string;
+        legalForm: string | null;
+        capitalSocialCents: number | null;
+        siren: string | null;
+        siret: string | null;
+        vatNumber: string | null;
+        rcsCity: string | null;
+        addressLine1: string | null;
+        addressLine2: string | null;
+        postalCode: string | null;
+        city: string | null;
+        country: string | null;
+        contactEmail: string | null;
+        contactPhone: string | null;
+        paymentTerms: string | null;
+        latePenaltyRateBps: number | null;
+        fixedCompensationCents: number | null;
+    };
     lines: QuoteLine[];
     createdAt: string;
     updatedAt: string;

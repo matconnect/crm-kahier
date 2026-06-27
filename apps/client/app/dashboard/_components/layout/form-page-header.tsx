@@ -106,10 +106,15 @@ export function FormPageHeader(props: Props) {
             </div>
             <div
                 className={[
-                    "fixed left-4 right-4 top-4 z-40 lg:left-[calc(300px+2rem)] lg:right-[2rem]",
+                    "fixed left-4 right-4 top-0 z-40 lg:left-[calc(300px+2rem)] lg:right-[2rem]",
                     "transition-all duration-300 ease-out",
-                    compact ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
+                    compact ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
                 ].join(" ")}
+                style={{
+                    transform: compact
+                        ? "translateY(calc(var(--dashboard-top-header-height, 88px) + 1rem))"
+                        : "translateY(calc(var(--dashboard-top-header-height, 88px) + 0.75rem))",
+                }}
                 aria-hidden={!compact}
             >
                 <HeaderShell {...props} />

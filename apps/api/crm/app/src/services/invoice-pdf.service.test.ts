@@ -13,13 +13,37 @@ describe("invoice PDF", () => {
             subtotalCents: 10_000,
             vatCents: 2_000,
             totalCents: 12_000,
-            company: { name: "Kahier Conseil" },
+            company: {
+                name: "Kahier Conseil",
+                legalForm: "SAS",
+                capitalSocialCents: 100_000,
+                siren: "123456789",
+                siret: "12345678900011",
+                vatNumber: "FR123456789",
+                rcsCity: "Paris",
+                addressLine1: "1 rue de Paris",
+                addressLine2: null,
+                postalCode: "75001",
+                city: "Paris",
+                country: "France",
+                contactEmail: "hello@kahier.fr",
+                contactPhone: "0102030405",
+                paymentTerms: "30 jours",
+                latePenaltyRateBps: 375,
+                fixedCompensationCents: 4000,
+            },
             client: {
                 name: "Acme",
                 location: "Paris",
+                addressLine1: "10 rue du Client",
+                addressLine2: null,
+                postalCode: "75002",
+                city: "Paris",
+                country: "France",
                 primaryEmail: "contact@acme.test",
                 primaryPhone: null,
                 vatNumber: "FR123456789",
+                siren: null,
             },
             lines: [
                 {
@@ -36,6 +60,8 @@ describe("invoice PDF", () => {
 
         expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
         expect(pdf.toString("latin1")).toContain("FAC-2026-0001");
+        expect(pdf.toString("latin1")).toContain("EMIS PAR");
+        expect(pdf.toString("latin1")).toContain("DESTINATAIRE");
         expect(pdf.toString("latin1")).not.toContain("Envoyee");
         expect(pdf.toString("latin1")).toContain("TVA FR123456789");
         expect(pdf.length).toBeGreaterThan(1_000);
@@ -52,8 +78,38 @@ describe("invoice PDF", () => {
             subtotalCents: 110_000,
             vatCents: 22_000,
             totalCents: 132_000,
-            company: { name: "Kahier Conseil" },
-            client: { name: "Acme", location: null, primaryEmail: null, primaryPhone: null, vatNumber: null },
+            company: {
+                name: "Kahier Conseil",
+                legalForm: "SAS",
+                capitalSocialCents: 100_000,
+                siren: "123456789",
+                siret: "12345678900011",
+                vatNumber: "FR123456789",
+                rcsCity: "Paris",
+                addressLine1: "1 rue de Paris",
+                addressLine2: null,
+                postalCode: "75001",
+                city: "Paris",
+                country: "France",
+                contactEmail: "hello@kahier.fr",
+                contactPhone: "0102030405",
+                paymentTerms: "30 jours",
+                latePenaltyRateBps: 375,
+                fixedCompensationCents: 4000,
+            },
+            client: {
+                name: "Acme",
+                location: null,
+                addressLine1: null,
+                addressLine2: null,
+                postalCode: null,
+                city: null,
+                country: null,
+                primaryEmail: null,
+                primaryPhone: null,
+                vatNumber: null,
+                siren: null,
+            },
             lines: Array.from({ length: 11 }, (_, index) => ({
                 description: `Ligne ${index + 1}`,
                 quantityMilli: 1_000,

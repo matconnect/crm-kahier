@@ -1,12 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, LayoutGrid, Save } from "lucide-react";
+import Link from "next/link";
 
 import { getServerApiBase } from "@/lib/api-base";
 import { requireAuth } from "@/lib/authz";
 import { MotionReveal } from "@/components/motion/reveal";
-import { Button } from "@/components/ui/button";
 import { DashboardShell, fetchDashboardData } from "../../../_components";
+import { FormPageHeader } from "../../../_components/layout/form-page-header";
 import { ProjectForm, type ClientOption, type OwnerOption, type ProjectFormValues } from "../../new/create-project-form";
 
 type EditPageProps = {
@@ -35,6 +34,9 @@ type ProjectDetail = {
     billingMode: string | null;
     startDate: string | null;
     endDate: string | null;
+    kahierTabId: number | null;
+    kahierCategoryId: number | null;
+    kahierCategoryName: string | null;
     client: { id: string; name: string } | null;
     owner: { id: string; firstName: string; lastName: string; email: string } | null;
 };
@@ -96,6 +98,9 @@ function toFormValues(project: ProjectDetail, currentUserId: string): ProjectFor
         billingMode: project.billingMode ?? "",
         startDate: project.startDate ? new Date(project.startDate).toISOString().slice(0, 10) : "",
         endDate: project.endDate ? new Date(project.endDate).toISOString().slice(0, 10) : "",
+        kahierTabId: project.kahierTabId === null ? "" : String(project.kahierTabId),
+        kahierCategoryId: project.kahierCategoryId === null ? "" : String(project.kahierCategoryId),
+        kahierCategoryName: project.kahierCategoryName ?? "",
         description: project.description ?? "",
         context: project.context ?? "",
         goals: project.goals ?? "",
@@ -104,7 +109,6 @@ function toFormValues(project: ProjectDetail, currentUserId: string): ProjectFor
         risks: project.risks ?? "",
         notes: project.notes ?? "",
         createKahierTask: false,
-        kahierCategoryId: "",
     };
 }
 
@@ -149,39 +153,24 @@ export default async function EditProjectPage({ params }: EditPageProps) {
             searchInteractions={dashboardData.interactions}
             searchProjects={dashboardData.projects}
         >
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6" id="project-form">
-                <MotionReveal>
-                    <div className="rounded-[28px] border border-white/70 bg-[#f8f9fd] px-6 py-7 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:px-8">
-                        <div className="relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h1 className="text-2xl font-bold  text-[#1f2335] md:text-3xl">Modifier {project.name}</h1>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Link
-                                    href={`/dashboard/projects/${project.id}`}
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
-                                >
-                                    <ArrowLeft className="h-4 w-4" />
-                                    Retour fiche
-                                </Link>
-                                <Link
-                                    href="/dashboard/projects"
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
-                                >
-                                    <LayoutGrid className="h-4 w-4" />
-                                    Retour liste
-                                </Link>
-                                <Button asChild className="h-10 gap-2 rounded-full border-0 bg-[#111322] px-4 text-white hover:bg-[#191d2e]">
-                                    <button type="submit" form="project-form">
-                                        <Save className="h-4 w-4" />
-                                        Enregistrer les modifications
-                                    </button>
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </MotionReveal>
+            <main className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+                <FormPageHeader
+                    title={`Modifier ${project.name}`}
+                    returnHref={`/dashboard/projects/${project.id}`}
+                    returnLabel="Retour fiche"
+                    submitLabel="Enregistrer les modifications"
+                    formId="project-form"
+                    returnIcon="arrow-left"
+                    submitIcon="save"
+                    extraAction={
+                        <Link
+                            href="/dashboard/projects"
+                            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#d7dced] bg-white px-4 text-sm font-medium text-[#2f3344] shadow-sm hover:bg-[#f8f9fd]"
+                        >
+                            Retour liste
+                        </Link>
+                    }
+                />
 
                 <MotionReveal delay={100}>
                     <ProjectForm
@@ -195,7 +184,7 @@ export default async function EditProjectPage({ params }: EditPageProps) {
                         onSuccessRedirect={`/dashboard/projects/${project.id}`}
                     />
                 </MotionReveal>
-            </div>
+            </main>
         </DashboardShell>
     );
 }

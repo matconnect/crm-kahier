@@ -44,4 +44,5 @@ yarn-error.log*
 /packages/db-company/generated
 /packages/db-crm/generated
 
+/docs/
 /secrets/

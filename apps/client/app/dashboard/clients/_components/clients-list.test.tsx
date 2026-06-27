@@ -91,8 +91,8 @@ describe("ClientsList", () => {
         );
 
         expect(screen.getByText("2 clients")).toBeInTheDocument();
-        expect(screen.getByText("Kahier")).toBeInTheDocument();
-        expect(screen.getByText("Atelier Nord")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Kahier" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Atelier Nord" })).toBeInTheDocument();
         expect(fetchMock).toHaveBeenCalledWith(
             "https://api.local/clients?page=2&pageSize=10&status=ACTIVE&segment=PME&location=Paris&q=kahier",
             {
