@@ -18,10 +18,13 @@ RSYNC_EXCLUDES := \
 	--exclude .git \
 	--exclude node_modules \
 	--exclude .pnpm-store \
+	--exclude node-compile-cache \
 	--exclude .next \
 	--exclude dist \
 	--exclude coverage \
 	--exclude .turbo \
+	--exclude packages/db-company/generated \
+	--exclude packages/db-crm/generated \
 	--exclude .deploy.env \
 	--exclude secrets
 
