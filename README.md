@@ -123,6 +123,27 @@ yarn exec turbo link
 pnpm exec turbo link
 ```
 
+## Déploiement CI/CD
+
+Chaque push sur `main` lance le workflow `.github/workflows/ci-cd.yml`. Le workflow compile d'abord le projet avec `pnpm build`, synchronise ensuite le code sur le serveur par SSH, puis exécute :
+
+```sh
+make build ENV=prod
+```
+
+La cible `make build` reconstruit et relance la stack Docker de production. Les fichiers `secrets/` et `.deploy.env` présents sur le serveur ne sont pas remplacés.
+
+Dans l'environnement GitHub `production` (ou dans les secrets du dépôt), ajouter les secrets suivants :
+
+- `DEPLOY_HOST` : nom ou adresse IP du serveur
+- `DEPLOY_USER` : utilisateur SSH, par exemple `debian`
+- `DEPLOY_PORT` : port SSH, généralement `22`
+- `DEPLOY_PATH` : chemin du projet, généralement `/var/www/crm-kahier`
+- `DEPLOY_SSH_KEY` : clé privée SSH autorisée par `~/.ssh/authorized_keys` sur le serveur
+- `DEPLOY_KNOWN_HOSTS` : sortie de `ssh-keyscan -H -p 22 serveur.example.com`
+
+L'utilisateur SSH doit pouvoir exécuter Docker et `make` sans saisie interactive.
+
 ## Useful Links
 
 Learn more about the power of Turborepo:

@@ -37,12 +37,13 @@ endif
 
 COMPOSE := docker compose -p $(PROJECT) -f $(COMPOSE_FILE)
 
-.PHONY: help test release deploy
+.PHONY: help test build release deploy
 
 help:
 	@printf '%s\n' \
 		'Commandes disponibles:' \
 		'  make test                 Lance les tests avec un récapitulatif final' \
+		'  make build ENV=prod       Rebuild et relance la stack prod' \
 		'  make release ENV=dev      Rebuild et relance la stack dev' \
 		'  make release ENV=prod     Rebuild et relance la stack prod' \
 		'  make deploy ENV=dev       Vérifie, synchronise et déploie en dev' \
@@ -50,6 +51,8 @@ help:
 
 test:
 	./scripts/run-test-summary.sh
+
+build: release
 
 release:
 	$(COMPOSE) up -d --build --remove-orphans
