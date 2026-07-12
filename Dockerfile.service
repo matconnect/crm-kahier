@@ -29,6 +29,12 @@ COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
+FROM depsdev AS migrate
+
+WORKDIR /app
+
+CMD ["pnpm", "exec", "prisma", "migrate", "deploy", "--schema", "prisma/schema.prisma"]
+
 FROM depsdev AS build
 
 ARG SERVICE_FILTER

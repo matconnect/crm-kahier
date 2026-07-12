@@ -21,6 +21,31 @@ const quickPoints = [
   },
 ];
 
+const pricingPlans = [
+  {
+    name: "Démarrage",
+    price: "0€",
+    detail: "/ mois",
+    note: "Pour commencer",
+    features: ["1 utilisateur", "200 contacts", "Gestion clients"],
+  },
+  {
+    name: "Professionnel",
+    price: "29€",
+    detail: "/ mois",
+    note: "ou 24€/mois en annuel",
+    features: ["10 utilisateurs", "Finance", "Devis et factures"],
+    highlighted: true,
+  },
+  {
+    name: "Entreprise",
+    price: "79€",
+    detail: "/ mois",
+    note: "ou 65€/mois en annuel",
+    features: ["Utilisateurs étendus", "Modules complets", "Pilotage avancé"],
+  },
+];
+
 export default async function HomePage() {
   const session = await auth();
 
@@ -163,6 +188,56 @@ export default async function HomePage() {
               <div className="rounded-[28px] border border-black/10 bg-[#f5f5f5] p-6">
                 <p className="text-sm text-black/55">Facturation</p>
                 <p className="mt-2 text-xl font-semibold">Devis et factures dans le même flux.</p>
+              </div>
+            </section>
+          </MotionReveal>
+          <MotionReveal delay={160}>
+            <section className="rounded-[32px] border border-black/10 bg-white p-6 md:p-8">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h2 className="text-3xl font-semibold md:text-4xl">Tarifs</h2>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {pricingPlans.map((plan) => (
+                  <div
+                    key={plan.name}
+                    className={
+                      plan.highlighted
+                        ? "rounded-[28px] bg-black p-6 text-white"
+                        : "rounded-[28px] border border-black/10 bg-[#f5f5f5] p-6 text-black"
+                    }
+                  >
+                    <div className="flex min-h-[180px] flex-col justify-between gap-6">
+                      <div>
+                        <p className={plan.highlighted ? "text-sm text-white/60" : "text-sm text-black/55"}>
+                          {plan.name}
+                        </p>
+                        <div className="mt-3 flex items-end gap-1">
+                          <span className="text-4xl font-semibold">{plan.price}</span>
+                          <span className={plan.highlighted ? "pb-1 text-sm text-white/60" : "pb-1 text-sm text-black/55"}>
+                            {plan.detail}
+                          </span>
+                        </div>
+                        <p className={plan.highlighted ? "mt-2 text-sm text-white/70" : "mt-2 text-sm text-black/60"}>
+                          {plan.note}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {plan.features.map((feature) => (
+                          <div key={feature} className="flex items-center gap-2">
+                            <Check className={plan.highlighted ? "h-4 w-4 text-white" : "h-4 w-4 text-black"} />
+                            <span className={plan.highlighted ? "text-sm text-white/85" : "text-sm text-black/75"}>
+                              {feature}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
           </MotionReveal>

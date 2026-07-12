@@ -153,6 +153,32 @@ services:
     networks:
       - app-net
 
+  migrate-crm:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      target: migrate
+      args:
+        SERVICE_NAME: "api/crm"
+    environment:
+      NODE_ENV: production
+      DB_PROTOCOL_FILE: "/run/secrets/db_protocol"
+      DB_HOST_FILE: "/run/secrets/db_host"
+      DB_PORT_FILE: "/run/secrets/db_port"
+      DB_USER_FILE: "/run/secrets/db_crm_user"
+      DB_PASSWORD_FILE: "/run/secrets/db_crm_password"
+      DB_NAME_FILE: "/run/secrets/db_crm_name"
+    secrets:
+      - db_protocol
+      - db_host
+      - db_port
+      - db_crm_user
+      - db_crm_password
+      - db_crm_name
+    networks:
+      - app-net
+    restart: "no"
+
   client:
     restart: unless-stopped
     build:
