@@ -1,13 +1,7 @@
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { prisma } from "@kahier/db-crm";
-import { s3 } from "../lib/s3.js";
-
-function requireBucket() {
-  const bucket = process.env.AWS_S3_BUCKET_NAME;
-  if (!bucket) throw new Error("Bucket S3 non configuré");
-  return bucket;
-}
+import { getS3BucketName, getS3Client } from "../lib/s3.js";
 
 async function assertClientAccess(clientId: string, companyId: string) {
   await prisma.client.findFirstOrThrow({ where: { id: clientId, companyId }, select: { id: true } });
@@ -29,14 +23,14 @@ export async function list(clientId: string, companyId: string) {
   });
 }
 
-export async function createUploadUrl(clientId: string, companyId: string, fileName: string) {
+export async function createUploadUrl(clientId: string, companyId: string, fileName: string, contentType?: string) {
   await assertClientAccess(clientId, companyId);
 
-  const bucket = requireBucket();
+  const bucket = getS3BucketName();
   const safeName = fileName.replace(/[^a-zA-Z0-9.\-_ ]/g, "").trim().replace(/\s+/g, "_");
   const key = `clients/${clientId}/${Date.now()}-${crypto.randomUUID()}-${safeName || "document"}`;
-  const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-  const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
+  const command = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType });
+  const uploadUrl = await getSignedUrl(getS3Client(), command, { expiresIn: 60 * 5 });
 
   return { uploadUrl, key };
 }
@@ -66,7 +60,7 @@ export async function create(
 }
 
 export async function createDownloadUrl(documentId: string, clientId: string, companyId: string) {
-  const bucket = requireBucket();
+  const bucket = getS3BucketName();
   const doc = await prisma.clientDocument.findFirstOrThrow({
     where: {
       id: documentId,
@@ -86,7 +80,7 @@ export async function createDownloadUrl(documentId: string, clientId: string, co
     ResponseContentType: doc.mimeType ?? undefined,
     ResponseContentDisposition: `attachment; filename="${encodeURIComponent(doc.fileName)}"`,
   });
-  return getSignedUrl(s3, command, { expiresIn: 60 * 5 });
+  return getSignedUrl(getS3Client(), command, { expiresIn: 60 * 5 });
 }
 
 export async function updateName(documentId: string, clientId: string, companyId: string, fileName: string) {
@@ -113,6 +107,6 @@ export async function remove(documentId: string, clientId: string, companyId: st
   });
   await prisma.clientDocument.delete({ where: { id: doc.id } });
 
-  const bucket = requireBucket();
-  await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: doc.s3Key }));
+  const bucket = getS3BucketName();
+  await getS3Client().send(new DeleteObjectCommand({ Bucket: bucket, Key: doc.s3Key }));
 }

@@ -109,7 +109,7 @@ export function HomeDashboardOverview({ summary, interactions, clients, projects
     return (
         <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-3xl font-semibold tracking-normal text-[#11131d]">Tableau de bord</h1>
+                <h1 className="text-3xl font-semibold text-[#11131d]">Tableau de bord</h1>
                 <label className="inline-flex items-center gap-2 rounded-lg border border-[#dfe3ec] bg-white px-3 py-2 text-sm font-semibold text-[#434965] shadow-[0_8px_22px_rgba(28,35,54,0.04)]">
                     <Select value={period} onValueChange={(value) => setPeriod(value as PeriodKey)}>
                         <SelectTrigger className="h-8 w-[170px] border-0 bg-white px-0 text-[#2f3344] shadow-none">

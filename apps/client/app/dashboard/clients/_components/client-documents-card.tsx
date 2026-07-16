@@ -99,6 +99,7 @@ export function ClientDocumentsCard({ clientId, currentUserId, canEdit }: Props)
 
             const uploadRes = await fetch(presignData.uploadUrl, {
                 method: "PUT",
+                headers: presignData.contentType ? { "Content-Type": presignData.contentType } : undefined,
                 body: file,
             });
             if (!uploadRes.ok) {

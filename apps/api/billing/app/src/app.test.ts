@@ -1,9 +1,15 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@kahier/db-company", () => ({
+    prisma: {},
+    Role: { USER: "USER", MANAGER: "MANAGER", ADMIN: "ADMIN" },
+}));
 
 const servers: Array<{ close: () => void }> = [];
 
 afterEach(() => {
     for (const server of servers.splice(0)) server.close();
+    vi.unstubAllEnvs();
 });
 
 async function request(path: string) {
@@ -17,6 +23,11 @@ async function request(path: string) {
 }
 
 describe("billing app", () => {
+    beforeEach(() => {
+        vi.stubEnv("DATABASE_URL", "");
+        vi.stubEnv("DATABASE_URL_FILE", "");
+    });
+
     it("expose la santé du service", async () => {
         const response = await request("/health");
         expect(response.status).toBe(200);

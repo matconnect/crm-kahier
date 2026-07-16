@@ -466,7 +466,7 @@ export function QuoteForm({ currentUserId, clients, quote, initialPreviewOpen }:
                     }
                 />
             ) : null}
-            <form onSubmit={submit} className="space-y-6">
+            <form id="quote-form" onSubmit={submit} className="space-y-6">
                 <section className="grid gap-6 rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_20px_50px_rgba(29,33,49,0.08)] md:grid-cols-2 md:p-7">
                     <div className="md:col-span-2">
                         <p className="text-xs text-slate-500">Les champs obligatoires sont signalés par *</p>

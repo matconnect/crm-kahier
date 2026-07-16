@@ -113,4 +113,48 @@ describe("invoice statuses", () => {
         expect(isInvoiceStatusTransitionAllowed("PAID", "OVERDUE")).toBe(true);
         expect(isInvoiceStatusTransitionAllowed("CANCELLED", "PAID")).toBe(true);
     });
+
+    it("defaults a valid invoice to draft", () => {
+        const result = validateInvoiceInput({
+            clientId: " client-1 ",
+            issueDate: "2026-06-22",
+            dueDate: "2026-07-22",
+            lines: [{ description: " Conseil ", quantity: 1, unitPrice: 10, vatRate: 20 }],
+        });
+
+        expect(result.ok).toBe(true);
+        if (result.ok) expect(result.data.status).toBe("DRAFT");
+    });
+
+    it("accepts comma decimal notation", () => {
+        const totals = calculateInvoiceTotals([{ description: "Service", quantity: "1,5", unitPrice: "10,20", vatRate: "20" }]);
+
+        expect(totals.lines[0]).toEqual(expect.objectContaining({ quantityMilli: 1_500, unitPriceCents: 1_020 }));
+    });
+
+    it("sets a payment date when a paid invoice has none", () => {
+        const result = validateInvoiceInput({
+            clientId: "client-1",
+            status: "PAID",
+            issueDate: "2026-06-22",
+            dueDate: "2026-07-22",
+            lines: [{ description: "Service", quantity: 1, unitPrice: 10, vatRate: 0 }],
+        });
+
+        expect(result.ok).toBe(true);
+        if (result.ok) expect(result.data.paidAt).toBeInstanceOf(Date);
+    });
+
+    it("rejects an invalid payment date", () => {
+        const result = validateInvoiceInput({
+            clientId: "client-1",
+            issueDate: "2026-06-22",
+            dueDate: "2026-07-22",
+            paidAt: "not-a-date",
+            lines: [{ description: "Service", quantity: 1, unitPrice: 10, vatRate: 0 }],
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.errors).toEqual(expect.arrayContaining([expect.objectContaining({ field: "paidAt" })]));
+    });
 });

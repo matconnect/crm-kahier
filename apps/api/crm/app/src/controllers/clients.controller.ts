@@ -439,12 +439,13 @@ export async function presignDocument(req: Request, res: Response) {
     }
 
     try {
-        const { uploadUrl, key } = await documentService.createUploadUrl(clientId, currentUser.companyId, fileName);
+        const normalizedContentType = contentType || "application/octet-stream";
+        const { uploadUrl, key } = await documentService.createUploadUrl(clientId, currentUser.companyId, fileName, normalizedContentType);
         res.json({
             uploadUrl,
             key,
             fileName,
-            contentType: contentType || "application/octet-stream",
+            contentType: normalizedContentType,
         });
     } catch (error) {
         console.error("presignDocument", error);

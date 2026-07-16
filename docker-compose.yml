@@ -42,7 +42,7 @@ services:
       DB_PASSWORD_FILE: "/run/secrets/db_crm_password"
       DB_NAME_FILE: "/run/secrets/db_crm_name"
       AWS_ACCESS_KEY_ID_FILE: "/run/secrets/aws_access_key_id"
-      AWS_ACCESS_KEY_FILE: "/run/secrets/aws_access_key"
+      AWS_SECRET_ACCESS_KEY_FILE: "/run/secrets/aws_access_key"
       AWS_REGION_FILE: "/run/secrets/aws_region"
       AWS_S3_BUCKET_NAME_FILE: "/run/secrets/aws_s3_bucket_name"
     secrets:

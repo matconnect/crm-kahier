@@ -24,7 +24,7 @@ function PartyCard({
 }) {
     return (
         <article className="rounded-[24px] border border-slate-200 bg-[#fafbff] p-5 shadow-[0_16px_40px_rgba(29,33,49,0.05)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{title}</p>
+            <p className="text-xs font-semibold uppercase text-slate-500">{title}</p>
             <div className="mt-4 space-y-1.5">
                 {lines.filter(Boolean).length ? (
                     lines
