@@ -11,7 +11,6 @@ import { getBrowserApiBase } from "@/lib/public-api-base";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -69,7 +68,6 @@ export type ProjectFormValues = {
     notes: string;
     kahierTabId: string;
     kahierCategoryName: string;
-    createKahierTask: boolean;
     kahierCategoryId: string;
 };
 
@@ -128,7 +126,6 @@ const defaultValues = (currentUserId: string): ProjectFormValues => ({
     notes: "",
     kahierTabId: "",
     kahierCategoryName: "",
-    createKahierTask: false,
     kahierCategoryId: "",
 });
 
@@ -626,40 +623,6 @@ export function ProjectForm({
             initialKahierCategoryIdRef.current = currentKahierCategoryId;
             initialKahierTabIdRef.current = form.kahierTabId.trim();
 
-            if (mode === "create" && form.createKahierTask && form.kahierCategoryId) {
-                const resolvedApiKey = await resolveKahierApiKey();
-                if (!resolvedApiKey) {
-                    throw new Error("Clé API Kahier absente pour cet établissement.");
-                }
-                const taskRes = await fetch(`${apiBase}/kahier/tasks`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-api-key": resolvedApiKey,
-                    },
-                    body: JSON.stringify({
-                        name: form.name.trim(),
-                        categoryId: Number(form.kahierCategoryId),
-                        assignedUserIds: [],
-                        daysOfWeek: [],
-                        displayOrder: 0,
-                        positionAfterId: "",
-                        isRecurring: false,
-                        endDate: null,
-                        reminder_1: null,
-                        reminder_2: null,
-                        reminder_3: null,
-                        priority: null,
-                    }),
-                });
-                if (!taskRes.ok) {
-                    const taskData = await taskRes.json().catch(() => null);
-                    toast.error(taskData?.error ?? "Projet créé, mais la tâche Kahier n'a pas pu être créée.");
-                } else {
-                    toast.success("Tâche Kahier liée au projet créée.");
-                }
-            }
-
             toast.success(mode === "edit" ? "Projet mis à jour." : "Projet créé.");
             router.push(onSuccessRedirect ?? (mode === "edit" && projectId ? `/dashboard/projects/${projectId}` : "/dashboard/projects"));
             router.refresh();
@@ -749,21 +712,10 @@ export function ProjectForm({
                         <div className="flex items-center justify-between gap-3">
                             <div>
                                 <p className="text-sm font-medium text-slate-950">Liaison Kahier</p>
-                                <p className="text-xs text-slate-500">Relie ce projet à une catégorie Kahier pour synchroniser les tâches.</p>
+                                <p className="text-xs text-slate-500">
+                                    Choisis l&apos;onglet et la catégorie Kahier où les tâches du projet seront ajoutées plus tard.
+                                </p>
                             </div>
-                            {mode === "create" ? (
-                                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2">
-                                    <Checkbox
-                                        id="create-kahier-task"
-                                        checked={form.createKahierTask}
-                                        onCheckedChange={(checked) => update("createKahierTask", checked === true)}
-                                        disabled={pending}
-                                    />
-                                    <Label htmlFor="create-kahier-task" className="cursor-pointer text-sm">
-                                        Créer la tâche
-                                    </Label>
-                                </div>
-                            ) : null}
                         </div>
 
                         <div className="grid gap-2 md:grid-cols-2">
@@ -850,11 +802,6 @@ export function ProjectForm({
                             </div>
                         </div>
 
-                        {mode === "create" ? (
-                            <p className="text-xs text-slate-500">
-                                Si une catégorie est choisie, une tâche Kahier sera créée automatiquement à la création du projet.
-                            </p>
-                        ) : null}
                         {kahierError ? <p className="text-xs text-slate-700">{kahierError}</p> : null}
                     </div>
                 </CardContent>

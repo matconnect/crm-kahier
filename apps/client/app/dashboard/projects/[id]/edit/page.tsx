@@ -108,7 +108,6 @@ function toFormValues(project: ProjectDetail, currentUserId: string): ProjectFor
         successMetrics: project.successMetrics ?? "",
         risks: project.risks ?? "",
         notes: project.notes ?? "",
-        createKahierTask: false,
     };
 }
 
