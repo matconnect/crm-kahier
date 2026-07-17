@@ -94,6 +94,15 @@ function normalizeTaskCompletionState(value: unknown) {
     return JSON.stringify(Object.fromEntries(entries));
 }
 
+function isDuplicateKahierCategoryError(error: unknown) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
+        return false;
+    }
+    const target = error.meta?.target;
+    const targetFields = Array.isArray(target) ? target.map(String) : typeof target === "string" ? [target] : [];
+    return targetFields.includes("kahierCategoryId");
+}
+
 export async function list(req: Request, res: Response) {
     const currentUser = await getCurrentUser(req);
     if (!currentUser) return res.status(401).json({ error: "Utilisateur ou entreprise introuvable" });
@@ -191,6 +200,12 @@ export async function create(req: Request, res: Response) {
         res.status(201).json(project);
     } catch (error) {
         console.error("createProject", error);
+        if (isDuplicateKahierCategoryError(error)) {
+            return res.status(409).json({ error: "Cette catégorie Kahier est déjà liée à un autre projet" });
+        }
+        if (error instanceof Prisma.PrismaClientValidationError) {
+            return res.status(400).json({ error: "Les données envoyées pour le projet sont invalides" });
+        }
         res.status(500).json({ error: "Impossible de creer le projet" });
     }
 }
@@ -362,12 +377,8 @@ export async function update(req: Request, res: Response) {
         res.json(project);
     } catch (error) {
         console.error("updateProject", error);
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            const target = error.meta?.target;
-            const targetFields = Array.isArray(target) ? target.map(String) : typeof target === "string" ? [target] : [];
-            if (error.code === "P2002" && targetFields.includes("kahierCategoryId")) {
-                return res.status(409).json({ error: "Cette catégorie Kahier est déjà liée à un autre projet" });
-            }
+        if (isDuplicateKahierCategoryError(error)) {
+            return res.status(409).json({ error: "Cette catégorie Kahier est déjà liée à un autre projet" });
         }
         if (error instanceof Prisma.PrismaClientValidationError) {
             return res.status(400).json({ error: "Les données envoyées pour le projet sont invalides" });

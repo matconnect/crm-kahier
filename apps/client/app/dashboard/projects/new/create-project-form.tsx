@@ -578,7 +578,7 @@ export function ProjectForm({
                 kahierTabId: form.kahierTabId.trim() ? Number(form.kahierTabId) : null,
                 kahierCategoryId: form.kahierCategoryId.trim() ? Number(form.kahierCategoryId) : null,
                 kahierCategoryName: selectedKahierCategory?.name ?? (form.kahierCategoryName.trim() || null),
-                kahierTaskCompletionState: categoryChanged ? null : undefined,
+                kahierTaskCompletionState: mode === "edit" && categoryChanged ? null : undefined,
                 description: form.description.trim() || null,
                 context: form.context.trim() || null,
                 goals: form.goals.trim() || null,

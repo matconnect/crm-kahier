@@ -67,6 +67,7 @@ vi.mock("@kahier/db-crm", () => ({
 }));
 
 import * as controller from "./projects.controller.js";
+import { Prisma } from "@kahier/db-crm";
 
 function createResponse() {
     const res: any = {
@@ -252,6 +253,38 @@ describe("projects controller", () => {
         });
         expect(res.status).toHaveBeenCalledWith(201);
         expect(res.json).toHaveBeenCalledWith({ id: "project-1", name: "Migration CRM" });
+    });
+
+    it("returns a conflict when a Kahier category is already linked on creation", async () => {
+        mocks.getCurrentUser.mockResolvedValue({
+            id: "admin-1",
+            companyId: "company-1",
+            role: "ADMIN",
+            subscriptionType: "PRO",
+        });
+        mocks.create.mockRejectedValue(
+            new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+                code: "P2002",
+                clientVersion: "test",
+                meta: { target: ["kahierCategoryId"] },
+            }),
+        );
+        const req = {
+            body: {
+                name: "Refonte",
+                clientId: "client-1",
+                ownerId: "owner-2",
+                kahierTabId: 244,
+                kahierCategoryId: 457,
+                kahierCategoryName: "Projet 1",
+            },
+        } as never;
+        const res = createResponse();
+
+        await controller.create(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith({ error: "Cette catégorie Kahier est déjà liée à un autre projet" });
     });
 
     it("rejects invalid progress updates before hitting the service", async () => {
